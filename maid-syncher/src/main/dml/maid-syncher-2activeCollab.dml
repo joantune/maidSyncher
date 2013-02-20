@@ -1,0 +1,187 @@
+package pt.ist.maidSyncher.domain.activeCollab;
+
+class ACObject extends .pt.ist.maidSyncher.domain.SynchableObject {
+}
+
+class ACInstance extends ACObject {
+}
+
+class ACProject extends ACObject {
+}
+
+class ACProjectCategory extends ACObject{
+}
+
+class ACTaskCategory extends ACObject {
+	Boolean open;
+}
+
+class ACMilestone extends ACObject {
+}
+
+class ACAssignmentLabel extends ACObject {
+}
+
+class ACGeneralTask extends ACObject{
+}
+
+class ACTask extends ACGeneralTask {
+}
+
+class ACSubTask extends ACGeneralTask {
+}
+
+class ACComment extends ACObject {
+}
+
+class ACAssignee extends ACObject {
+}
+
+class ACTimeEstimate extends ACObject {
+}
+
+class ACLoggedTime extends ACObject {
+}
+
+
+
+//relations
+
+relation MaidRootACInstance {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot{
+		multiplicity 1..1;
+	}
+	
+	ACInstance playsRole acInstance {
+		multiplicity 1..1;
+	}
+}
+
+// ** ACInstance relations:
+
+relation ACInstanceACProject {
+	ACInstance playsRole acInstance {
+		multiplicity 1..1;
+	}
+	ACProject playsRole projects {
+		multiplicity *;
+	}
+}
+
+relation ACInstanceACAssignmentLabel {
+	ACInstance playsRole acInstance {
+		multiplicity 1..1;
+	}
+	ACAssignmentLabel playsRole assignmentLabelsDefined {
+		multiplicity *;
+	}
+}
+
+
+// ** ACProject relations
+
+relation ACProjectACProjectCategory {
+	ACProject playsRole project {
+		multiplicity 1..1;
+	}
+	ACProjectCategory playsRole categories {
+		multiplicity *;
+	}
+}
+
+relation ACProjectACMilestone {
+	ACProject playsRole project {
+		multiplicity 1..1;
+	}
+	ACMilestone playsRole milestones {
+		multiplicity *;
+	}
+}
+
+relation ACProjectACTask {
+	ACProject playsRole project {
+		multiplicity 1..1;
+	}
+	ACTask playsRole tasks {
+		multiplicity *;
+	}
+}
+
+relation ACProjectACTaskCategory {
+	ACProject playsRole project {
+		multiplicity 1..1;
+	}
+	ACTaskCategory playsRole taskCategoriesDefined {
+		multiplicity *;
+	}
+}
+// ** ACTask relations:
+
+relation ACTaskACMilestone {
+	ACTask playsRole tasks {
+		multiplicity *;
+	}
+	ACMilestone playsRole milestone;
+}
+
+relation ACTaskACSubTask {
+	ACTask playsRole task {
+		multiplicity 1..1;
+	}
+	ACSubTask playsRole subTasks {
+		multiplicity *;
+	}
+}
+
+relation ACTaskACLoggedTime {
+	ACTask playsRole task {
+		multiplicity 1..1;
+	}
+	//we will have to sort this relation
+	ACLoggedTime playsRole loggedTimes {
+		multiplicity *;
+	}
+}
+
+
+relation ACTaskACComment {
+	ACTask playsRole task {
+		multiplicity 1..1;
+	}
+	ACComment playsRole comments {
+		multiplicity *;
+	}
+}
+
+relation ACTaskACTimeEstimate {
+	ACTask playsRole task {
+		multiplicity 1..1;
+	}
+	ACTimeEstimate playsRole timeEstimate;
+}
+
+relation ACTaskACAssignee {
+	ACTask playsRole task {
+		multiplicity 1..1;
+	}
+	ACAssignee playsRole assignees {
+		multiplicity *;
+	}
+}
+
+
+relation ACTaskACTaskCategory {
+	ACTask playsRole task;
+	ACTaskCategory playsRole taskCategory;
+}
+
+// ** ACGeneralTask relations:
+
+relation ACGeneralTaskACAssignmentLabel {
+	ACGeneralTask playsRole tasks {
+		multiplicity *;
+	}
+	ACAssignmentLabel playsRole assignedLabel;
+}
+
+	

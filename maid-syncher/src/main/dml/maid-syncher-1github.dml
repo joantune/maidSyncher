@@ -1,0 +1,282 @@
+package pt.ist.maidSyncher.domain.github;
+
+class .pt.ist.maidSyncher.domain.MaidRoot {
+}
+
+class .pt.ist.maidSyncher.domain.SynchableObject {
+  LocalTime lastSynchTime;
+}
+
+class GHObject extends .pt.ist.maidSyncher.domain.SynchableObject {
+ 	long id;
+	LocalTime createdAt;
+	String url;
+}
+
+class GHUser extends GHObject {
+
+	String name;
+	String login;
+	
+	
+	//Misc information
+	boolean hireable;
+	String avatarUrl;
+	String blog;
+	String company;
+	String email;
+
+	String gravatarId;
+
+	String htmlUrl;
+
+	String location;
+}
+
+class GHOrganization extends GHUser {
+
+}
+
+class GHRepository extends GHObject {
+
+ //misc info
+	boolean fork;
+
+	boolean hasDownloads;
+
+	boolean hasIssues;
+
+	boolean hasWiki;
+
+	//@SerializedName("private")
+	boolean isPrivate;
+	LocalTime pushedAt;
+	LocalTime updatedAt;
+
+	int forks;
+	int openIssues;
+	int size;
+	int watchers;
+	
+	String cloneUrl;
+
+	String description;
+
+	String homepage;
+	
+
+	String gitUrl;
+
+	String htmlUrl;
+
+	String language;
+
+	String masterBranch;
+
+	String mirrorUrl;
+
+	String name;
+
+	String sshUrl;
+
+	String svnUrl;
+	
+	//TODO make the owner the organization relation
+
+}
+
+class GHLabel  extends GHObject {
+}
+
+class GHMilestone extends GHObject {
+	Boolean open;
+}
+
+class GHIssue extends GHObject {
+
+	LocalTime closedAt;
+	LocalTime updatedAt;
+
+	int number;
+
+	String body;
+
+	String bodyHtml;
+
+	String bodyText;
+
+	String htmlUrl;
+
+	String state;
+
+	String title;
+
+}
+
+class GHComment extends GHObject {
+}
+
+
+
+//relations with the root
+
+relation MaidRootGHOrganization {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromOrg {
+		multiplicity 1..1;
+	}
+	
+	GHOrganization playsRole ghOrganization {
+		multiplicity 1..1;
+	}
+}
+
+relation MaidRootGHUser {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromUser;
+	
+	GHUser playsRole ghUsers {
+		multiplicity *;
+	}
+}
+
+relation MaidRootGHRepository {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromRepository {
+		multiplicity 1..1;
+	}
+	
+	GHRepository playsRole ghRepositories {
+		multiplicity *;
+	}
+}
+
+relation MaidRootGHLabel {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromLabel {
+		multiplicity 1..1;
+	}
+	
+	GHLabel playsRole ghLabels {
+		multiplicity *;
+	}
+}
+
+relation MaidRootGHMilestone {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromMilestone {
+		multiplicity 1..1;
+	}
+	
+	GHMilestone playsRole ghMilestones {
+		multiplicity *;
+	}
+}
+
+relation MaidRootGHIssue {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromIssue {
+		multiplicity 1..1;
+	}
+	
+	GHIssue playsRole ghIssues {
+		multiplicity *;
+	}
+}
+
+relation MaidRootGHComment {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromComment {
+		multiplicity 1..1;
+	}
+	
+	GHComment playsRole ghComments {
+		multiplicity *;
+	}
+}
+
+
+// ** GHOrganization relations:
+
+relation GHOrganizationGHRepository {
+	GHRepository playsRole repositories {
+		multiplicity *;
+	}
+	GHOrganization playsRole organization {
+		multiplicity 1..1;
+	}
+}
+
+relation GHOrganizationGHUser {
+	GHOrganization playsRole organization;
+	
+	GHUser playsRole gitHubUsers {
+		multiplicity *;
+	}
+}
+
+
+// ** GHRepository relations
+
+relation GHRepositoryGHLabel {
+	GHRepository playsRole repository {
+		multiplicity 1..1;
+	}
+	GHLabel playsRole labelsDefined {
+		multiplicity *;
+	}
+}
+
+relation GHRepositoryGHMilestone {
+	GHRepository playsRole repository {
+		multiplicity 1..1;
+	}
+	GHMilestone playsRole milestones {
+		multiplicity *;
+	}
+}
+
+relation GHRepositoryGHIssue {
+	GHRepository playsRole repository {
+		multiplicity 1..1;
+	}
+	GHIssue playsRole issues {
+		multiplicity *;
+	}
+}
+
+
+
+// ** GHLabel relations:
+
+relation GHLabelGHIssue {
+	GHLabel playsRole labels {
+		multiplicity *;
+	}
+	GHIssue playsRole issues {
+		multiplicity *;
+	}
+}
+
+// ** GHMilestone relations:
+
+relation GHMilestoneGHIssue {
+	GHMilestone playsRole milestone {
+		multiplicity 0..1;
+	}
+	GHIssue playsRole issues {
+		multiplicity *;
+	}
+}
+
+// ** GHIssue relations
+
+relation GHIssueGHComment {
+	GHIssue playsRole issue {
+		multiplicity 1..1;
+	}
+	GHComment playsRole comments {
+		multiplicity *;
+	}
+}
+
+relation GHIssueGHUser {
+	GHIssue playsRole issue;
+	
+	GHUser playsRole assignee;
+}
+
+	

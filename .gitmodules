@@ -1,0 +1,3 @@
+[submodule "egit-github"]
+	path = egit-github
+	url = https://github.com/eclipse/egit-github.git

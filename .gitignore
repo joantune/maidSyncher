@@ -1,0 +1,4 @@
+*.class
+target
+configuration.properties
+result.json
