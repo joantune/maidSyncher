@@ -15,6 +15,8 @@ public class GHComment extends GHComment_Base {
         MaidRoot.getInstance().addGhComments(this);
     }
 
+    //TODO receive a list of comments, so that we can detect deletions of comments
+
     @Service
     public static GHComment process(Comment comment, Issue issue) {
         checkNotNull(comment);

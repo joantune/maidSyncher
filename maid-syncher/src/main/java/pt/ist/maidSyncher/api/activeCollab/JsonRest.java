@@ -14,6 +14,7 @@ import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -25,6 +26,10 @@ public class JsonRest {
 
     public static JSONObject getJSONObject(JSONObject jsonObject, String key) {
         return (JSONObject) jsonObject.get(key);
+    }
+
+    public static JSONArray getJSONArray(JSONObject jsonObject, String key) {
+        return (JSONArray) jsonObject.get(key);
     }
 
     public static int getInt(JSONObject jsonObj, String key)
@@ -41,6 +46,12 @@ public class JsonRest {
         if(postData.length() > 0)
             postData.append("&");
         postData.append(key + "=" + value);
+    }
+
+    public static void setIntFromBoolean(StringBuilder postData, String key, boolean value) {
+        if (postData.length() > 0)
+            postData.append("&");
+        postData.append(key + "=" + (value ? "1" : "0"));
     }
 
     public static float getFloat(JSONObject jsonObj, String key)
@@ -70,6 +81,10 @@ public class JsonRest {
     public static Boolean getBooleanFromInt(JSONObject jsonObj, String key) {
         int booleanInt = getInt(jsonObj, key);
         return booleanInt == -1 ? null : booleanInt > 0;
+    }
+
+    public static Boolean getBooleanFromString(JSONObject jsonObj, String key) {
+        return (Boolean) jsonObj.get(key);
     }
 
     public static void setString(StringBuilder postData, String key, String value)
@@ -143,7 +158,7 @@ public class JsonRest {
         try {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             String jsonText = readAll(rd);
-            LOGGER.debug(jsonText);
+            LOGGER.trace(jsonText);
             return JSONValue.parse(jsonText);
         } finally {
             is.close();
@@ -172,7 +187,7 @@ public class JsonRest {
         wr.flush ();
         wr.close ();
 
-        LOGGER.debug("ACURL [" + url + "]");
+        LOGGER.trace("ACURL [" + url + "]");
         InputStream is = conn.getInputStream();
         try {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("utf-8")));

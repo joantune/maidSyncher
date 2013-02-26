@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 public class ProjectSync
 {
@@ -16,6 +17,24 @@ public class ProjectSync
 
         ACContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
         ACContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
+
+        ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();
+        System.out.println("ACInstance: " + instanceForDSI.getName());
+
+        List<ACUser> users = instanceForDSI.getUsers();
+        for (ACUser user : users) {
+            System.out.println("ACUser: " + user.getName());
+        }
+
+        //let's proccess all of the project labels
+        for (ACProjectLabel acProjectLabel : ACContext.getACProjectLabels()) {
+            System.out.println("ACProjectLabel: " + acProjectLabel.getName());
+        }
+
+        //let's proccess all of the task assignment labels
+        for (ACTaskLabel acTaskLabel : ACContext.getACTaskLabels()) {
+            System.out.println("ACTaskLabel: " + acTaskLabel.getName());
+        }
 
 
         // load ActiveCollab project
@@ -31,6 +50,12 @@ public class ProjectSync
             for (ACMilestone milestone : milestones) {
                 System.out.println("  Milestone: " + milestone.getName() + " updated on: " + milestone.getUpdatedOn() + " id: "
                         + milestone.getId());
+            }
+
+            //let's get all of the task categories for this project
+            Set<ACCategory> taskCategories = project.getTaskCategories();
+            for (ACCategory taskCategory : taskCategories) {
+                System.out.println("  Task Category: " + taskCategory.getName() + " id: " + taskCategory.getId());
             }
 
             List<ACTask> acTasks = project.getTasks();
@@ -52,7 +77,7 @@ public class ProjectSync
                 }
 
                 //getting and printing all of the comments
-                List<ACComment> comments = task.getComments();
+                Set<ACComment> comments = task.getComments();
                 System.out.println("\t\t Printing all the comments");
                 for (ACComment comment : comments) {
                     System.out.println("\t\tComment: " + comment.getId() + " content: " + comment.getBody() + " updated on: "

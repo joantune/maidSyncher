@@ -2,12 +2,16 @@ package pt.ist.maidSyncher.api.activeCollab;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class ACProject extends ACObject {
+
+    public static final String CLASS_VALUE = "Project";
 
     // attributes
     private String _name;
@@ -142,6 +146,19 @@ public class ACProject extends ACObject {
         JsonRest.setFloat(postData, "project[budget]", _budget);
         JsonRest.setInt(postData, "project[label_id]", _labelId);
         return postData.toString();
+    }
+
+    public Set<ACCategory> getTaskCategories() throws IOException {
+        Set<ACCategory> taskCategories = new HashSet<ACCategory>();
+        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/tasks/categories");
+        if (jsonArr != null) {
+            for (Object object : jsonArr) {
+                JSONObject jsonObject = (JSONObject) object;
+                String classValue = JsonRest.getString(jsonObject, "class");
+                taskCategories.add(new ACCategory(jsonObject));
+            }
+        }
+        return taskCategories;
     }
 
     public List<ACLoggedTime> getLoggedTimes() throws IOException {

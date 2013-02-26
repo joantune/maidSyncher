@@ -11,12 +11,12 @@ public abstract class ACObject {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ACObject.class);
 
-    protected int _id;
+    protected long _id;
     protected String _url;
     protected Date _createdOn;
-    protected int _createdById;
+    protected long _createdById;
     protected Date _updatedOn;
-    protected int _updatedById;
+    protected long _updatedById;
 
     public ACObject()
     {
@@ -38,7 +38,7 @@ public abstract class ACObject {
         _url = JsonRest.getString(jsonObj, "permalink");
         _url = _url.replaceFirst("public/index","api");
 
-        LOGGER.debug("URL:" + _url);
+        LOGGER.trace("URL:" + _url);
 
         _createdOn = JsonRest.getDate(jsonObj, "created_on");
         _createdById = JsonRest.getInt(jsonObj, "created_by_id");
@@ -54,7 +54,7 @@ public abstract class ACObject {
 
     }
 
-    public int getId() {
+    public long getId() {
         return _id;
     }
 
@@ -66,7 +66,7 @@ public abstract class ACObject {
         return _createdOn;
     }
 
-    public int getCreatedById() {
+    public long getCreatedById() {
         return _createdById;
     }
 
@@ -74,7 +74,7 @@ public abstract class ACObject {
         return _updatedOn;
     }
 
-    public int getUpdatedById() {
+    public long getUpdatedById() {
         return _updatedById;
     }
 

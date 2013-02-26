@@ -16,6 +16,7 @@ public class ACLoggedTime extends ACObject {
 
     protected final static String CLASS_VALUE = "TimeRecord";
 
+
     private int userId;
     private String name;
     private String parentClass;

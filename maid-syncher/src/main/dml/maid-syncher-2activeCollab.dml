@@ -1,54 +1,121 @@
 package pt.ist.maidSyncher.domain.activeCollab;
 
 class ACObject extends .pt.ist.maidSyncher.domain.SynchableObject {
+	LocalTime createdOn;
+	long createdById;
+	LocalTime updatedOn;
+	long updatedById;
+	
+
 }
 
 class ACInstance extends ACObject {
+	String name;
+	
+}
+
+class ACTaskLabel extends ACObject {
+	String name;
 }
 
 class ACProject extends ACObject {
+  	String name;
+	String overview;
+    //int _categoryId;
+    //private int _companyId;
+    //private int _leaderId;
+	String status;
+	float budget;
+    //private int _labelId;
 }
 
-class ACProjectCategory extends ACObject{
+
+class ACProjectLabel extends ACObject{
 }
 
 class ACTaskCategory extends ACObject {
+	String name;
 	Boolean open;
 }
 
 class ACMilestone extends ACObject {
+    String name;
+    String body;
+    int priority;
+    int assigneeId;
+//	private int* _otherAssigneesId;
+    LocalTime startOn;
+    LocalTime dueOn;
+
 }
 
 class ACAssignmentLabel extends ACObject {
 }
 
 class ACGeneralTask extends ACObject{
+   String name;
+    int priority;
+    LocalTime dueOn;
+
+    Boolean complete;
 }
 
 class ACTask extends ACGeneralTask {
+   boolean visibility;
+   String body;
 }
 
 class ACSubTask extends ACGeneralTask {
+    int assigneeId;
+    //int labelId;
 }
 
 class ACComment extends ACObject {
+	String comment;
 }
 
-class ACAssignee extends ACObject {
+class ACUser extends ACObject {
+	String name;
+	String firstName;
+    	String lastName;
+    	String email;
+    	//int roleId;
+    	//int companyId;
+
 }
 
-class ACTimeEstimate extends ACObject {
-}
+// impossible to retrieve the time estimate with the current API
+//class ACTimeEstimate extends ACObject {
+//}
 
 class ACLoggedTime extends ACObject {
+  //private int userId;
+    String name;
+    String parentClass;
+    //private int parentId;
+    Boolean isArchived;
+    Boolean isTrashed;
+    String summary;
+    //private int jobTypeId;
+    float value;
 }
 
 
 
 //relations
+relation MaidRootACObject {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot{
+		multiplicity 1..1;
+	}
+	
+	
+	ACObject playsRole acObjects {
+		multiplicity *;
+	}
+}
 
 relation MaidRootACInstance {
-	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot{
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromInstance{
 		multiplicity 1..1;
 	}
 	
@@ -68,6 +135,7 @@ relation ACInstanceACProject {
 	}
 }
 
+/*
 relation ACInstanceACAssignmentLabel {
 	ACInstance playsRole acInstance {
 		multiplicity 1..1;
@@ -76,18 +144,36 @@ relation ACInstanceACAssignmentLabel {
 		multiplicity *;
 	}
 }
+*/
+
+relation ACInstanceACProjectLabel {
+	ACInstance playsRole acInstance {
+		multiplicity 1..1;
+	}
+	ACProjectLabel playsRole projectLabelsDefined {
+		multiplicity *;
+	} 
+}
+
+relation ACInstanceACTaskLabel {
+	ACInstance playsRole acInstance {
+		multiplicity 1..1;
+	}
+	ACTaskLabel playsRole taskLabelsDefined {
+		multiplicity *;
+	}
+}
 
 
 // ** ACProject relations
 
-relation ACProjectACProjectCategory {
+relation ACProjectACProjectLabelAssigned {
 	ACProject playsRole project {
-		multiplicity 1..1;
+		multiplicity 0..1;
 	}
-	ACProjectCategory playsRole categories {
-		multiplicity *;
-	}
+	ACProjectLabel playsRole label; 
 }
+
 
 relation ACProjectACMilestone {
 	ACProject playsRole project {
@@ -115,6 +201,16 @@ relation ACProjectACTaskCategory {
 		multiplicity *;
 	}
 }
+
+relation ACProjectACLoggedTime {
+	ACProject playsRole project {
+		multiplicity 0..1;
+	}
+	ACLoggedTime playsRole projectLoggedTimes {
+		multiplicity *;
+	}
+}
+
 // ** ACTask relations:
 
 relation ACTaskACMilestone {
@@ -135,7 +231,7 @@ relation ACTaskACSubTask {
 
 relation ACTaskACLoggedTime {
 	ACTask playsRole task {
-		multiplicity 1..1;
+		multiplicity 0..1;
 	}
 	//we will have to sort this relation
 	ACLoggedTime playsRole loggedTimes {
@@ -153,18 +249,25 @@ relation ACTaskACComment {
 	}
 }
 
-relation ACTaskACTimeEstimate {
-	ACTask playsRole task {
-		multiplicity 1..1;
-	}
-	ACTimeEstimate playsRole timeEstimate;
-}
+// Impossible - no ACTimeEstimate representation can be retrieved from the API (maybe extracted somehow from the body of something..)
+//relation ACTaskACTimeEstimate {
+//	ACTask playsRole task {
+//		multiplicity 1..1;
+//	}
+//	ACTimeEstimate playsRole timeEstimate;
+//}
 
-relation ACTaskACAssignee {
-	ACTask playsRole task {
-		multiplicity 1..1;
+relation ACTaskACUserMainAssignee {
+	ACTask playsRole tasksWhereMainAssignee {
+		multiplicity *;
 	}
-	ACAssignee playsRole assignees {
+	ACUser playsRole mainAssignee;
+}
+relation ACTaskACUserOtherAssignees {
+	ACTask playsRole tasksWhereOtherAssignee {
+		multiplicity *;
+	}
+	ACUser playsRole otherAssignees {
 		multiplicity *;
 	}
 }
@@ -173,6 +276,13 @@ relation ACTaskACAssignee {
 relation ACTaskACTaskCategory {
 	ACTask playsRole task;
 	ACTaskCategory playsRole taskCategory;
+}
+
+relation ACTaskACTaskLabel {
+	ACTask playsRole tasks {
+		multiplicity *;
+	}
+	ACTaskLabel playsRole label;
 }
 
 // ** ACGeneralTask relations:

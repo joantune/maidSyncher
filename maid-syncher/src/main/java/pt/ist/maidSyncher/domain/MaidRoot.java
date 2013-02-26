@@ -22,7 +22,7 @@ public class MaidRoot extends MaidRoot_Base {
             setGhOrganization(new GHOrganization());
         ACInstance acInstance = getAcInstance();
         if (acInstance == null)
-            setAcInstance(new ACInstance());
+            setAcInstance(new ACInstance(this));
 
     }
 

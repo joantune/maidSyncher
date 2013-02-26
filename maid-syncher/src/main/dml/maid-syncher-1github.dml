@@ -5,12 +5,12 @@ class .pt.ist.maidSyncher.domain.MaidRoot {
 
 class .pt.ist.maidSyncher.domain.SynchableObject {
   LocalTime lastSynchTime;
+ 	long id;
+	String url;
 }
 
 class GHObject extends .pt.ist.maidSyncher.domain.SynchableObject {
- 	long id;
 	LocalTime createdAt;
-	String url;
 }
 
 class GHUser extends GHObject {

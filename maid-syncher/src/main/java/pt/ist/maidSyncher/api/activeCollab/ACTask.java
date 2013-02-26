@@ -2,10 +2,10 @@ package pt.ist.maidSyncher.api.activeCollab;
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
@@ -13,16 +13,18 @@ import org.json.simple.JSONObject;
 
 public class ACTask extends ACObject {
 
+    public static final String CLASS_VALUE = "Task";
+
     // attributes
     private String _name;
     private String _body;
-    private int _visibility;
+    private boolean _visibility;
     private int _categoryId;
     private int _labelId;
     private int _milestoneId;
     private int _priority;
     private int _assigneeId;
-//	private int* _otherAssigneesId;
+    private Set<Long> otherAssigneesId;
     private Date _dueOn;
 
     private Boolean complete;
@@ -42,7 +44,7 @@ public class ACTask extends ACObject {
     protected void init(JSONObject jsonObj) throws IOException {
         _name = JsonRest.getString(jsonObj, "name");
         _body = JsonRest.getString(jsonObj, "body");
-        _visibility = JsonRest.getInt(jsonObj, "visibility");
+        _visibility = JsonRest.getBooleanFromInt(jsonObj, "visibility");
         _categoryId = JsonRest.getInt(jsonObj, "category_id");
         _labelId = JsonRest.getInt(jsonObj, "label_id");
         _milestoneId = JsonRest.getInt(jsonObj, "milestone_id");
@@ -61,6 +63,15 @@ public class ACTask extends ACObject {
 
         setComplete(JsonRest.getBooleanFromInt(jsonObj, "is_completed"));
 
+        this.otherAssigneesId = new HashSet<Long>();
+        JSONArray jsonArray = JsonRest.getJSONArray(jsonObj, "other_assignee_ids");
+        if (jsonArray != null) {
+            for (Object object : jsonArray) {
+                Long value = Long.valueOf((String) object);
+                otherAssigneesId.add(value);
+            }
+        }
+
     }
 
     @Override
@@ -69,7 +80,7 @@ public class ACTask extends ACObject {
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "task[name]", _name);
         JsonRest.setString(postData, "task[body]", _body);
-        JsonRest.setInt(postData, "task[visibility]", _visibility);
+        JsonRest.setIntFromBoolean(postData, "task[visibility]", _visibility);
         JsonRest.setInt(postData, "task[category_id]", _categoryId);
         JsonRest.setInt(postData, "task[label_id]", _labelId);
         JsonRest.setInt(postData, "task[milestone_id]", _milestoneId);
@@ -95,11 +106,11 @@ public class ACTask extends ACObject {
         _body = body;
     }
 
-    public int getVisibility() {
+    public boolean getVisibility() {
         return _visibility;
     }
 
-    public void setVisibility(int visibility) {
+    public void setVisibility(boolean visibility) {
         _visibility = visibility;
     }
 
@@ -151,9 +162,9 @@ public class ACTask extends ACObject {
         _dueOn = dueOn;
     }
 
-    public List<ACSubTask> getSubTasks() throws IOException
+    public Set<ACSubTask> getSubTasks() throws IOException
     {
-        List<ACSubTask> subtasks = new ArrayList<ACSubTask>();
+        Set<ACSubTask> subtasks = new HashSet<ACSubTask>();
         JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/subtasks");
         if(jsonArr != null) {
             for (Object object : jsonArr) {
@@ -164,8 +175,8 @@ public class ACTask extends ACObject {
         return subtasks;
     }
 
-    public List<ACComment> getComments() throws IOException {
-        List<ACComment> comments = new ArrayList<ACComment>();
+    public Set<ACComment> getComments() throws IOException {
+        Set<ACComment> comments = new HashSet<ACComment>();
         JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/comments");
         //this URL has the
 
@@ -196,4 +207,9 @@ public class ACTask extends ACObject {
     public void setComplete(Boolean complete) {
         this.complete = complete;
     }
+
+    public Set<Long> getOtherAssigneesId() {
+        return otherAssigneesId;
+    }
+
 }

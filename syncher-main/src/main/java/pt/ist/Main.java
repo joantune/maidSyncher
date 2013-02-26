@@ -5,8 +5,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
@@ -27,7 +29,20 @@ import pt.ist.fenixframework.FenixFrameworkPlugin;
 import pt.ist.fenixframework.artifact.FenixFrameworkArtifact;
 import pt.ist.fenixframework.project.DmlFile;
 import pt.ist.fenixframework.project.exception.FenixFrameworkProjectException;
+import pt.ist.maidSyncher.api.activeCollab.ACCategory;
+import pt.ist.maidSyncher.api.activeCollab.ACComment;
+import pt.ist.maidSyncher.api.activeCollab.ACContext;
+import pt.ist.maidSyncher.api.activeCollab.ACInstance;
+import pt.ist.maidSyncher.api.activeCollab.ACLoggedTime;
+import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
+import pt.ist.maidSyncher.api.activeCollab.ACProject;
+import pt.ist.maidSyncher.api.activeCollab.ACProjectLabel;
+import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
+import pt.ist.maidSyncher.api.activeCollab.ACTask;
+import pt.ist.maidSyncher.api.activeCollab.ACTaskLabel;
+import pt.ist.maidSyncher.api.activeCollab.ACUser;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.github.GHComment;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
@@ -86,16 +101,137 @@ public class Main {
     }
 
     // FenixFramework will try automatic initialization when first accessed
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         FenixFramework.bootStrap(config);
         FenixFramework.initialize();
-        applicationCodeGoesHere();
+        syncGitHub();
+        syncActiveCollab();
     }
 
-    public static void applicationCodeGoesHere() {
+    private static void syncActiveCollab() throws IOException {
+        // setup ActiveCollab
+        Properties acConfigurationProperties = new Properties();
+        acConfigurationProperties.load(Main.class.getResourceAsStream("/configuration.properties"));
 
-        if (Thread.currentThread().getContextClassLoader().getResourceAsStream("/log4j.properties") == null)
-            System.out.println("couldn't find log4j.properties");
+        ACContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
+        ACContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
+
+        ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();
+        pt.ist.maidSyncher.domain.activeCollab.ACInstance.process(instanceForDSI);
+        System.out.println("ACInstance: " + instanceForDSI.getName());
+
+        List<ACUser> users = instanceForDSI.getUsers();
+        for (ACUser user : users) {
+            System.out.println("ACUser: " + user.getName());
+            pt.ist.maidSyncher.domain.activeCollab.ACUser.process(user);
+        }
+
+
+        //let's proccess all of the project labels
+        for (ACProjectLabel acProjectLabel : ACContext.getACProjectLabels()) {
+            System.out.println("ACProjectLabel: " + acProjectLabel.getName());
+            pt.ist.maidSyncher.domain.activeCollab.ACProjectLabel.process(acProjectLabel);
+        }
+
+        //let's proccess all of the task assignment labels
+        for (ACTaskLabel acTaskLabel : ACContext.getACTaskLabels()) {
+            System.out.println("ACTaskLabel: " + acTaskLabel.getName());
+            pt.ist.maidSyncher.domain.activeCollab.ACTaskLabel.process(acTaskLabel);
+        }
+
+        // load ActiveCollab project
+        List<ACProject> acProjects = ACContext.getProjects();
+        Iterator<ACProject> it = acProjects.iterator();
+        while(it.hasNext()) {
+            ACProject project = it.next();
+            System.out
+            .println(" Project " + project.getId() + " " + project.getName() + " updated on: " + project.getUpdatedOn());
+            pt.ist.maidSyncher.domain.activeCollab.ACProject.process(project);
+
+            System.out.println("Listing all of the milestones associated with this project");
+            List<ACMilestone> milestones = project.getMilestones();
+            for (ACMilestone milestone : milestones) {
+                System.out.println("  Milestone: " + milestone.getName() + " updated on: " + milestone.getUpdatedOn() + " id: "
+                        + milestone.getId());
+                pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(milestone, project);
+            }
+
+            //let's get all of the task categories for this project
+            Set<ACCategory> taskCategories = project.getTaskCategories();
+            for (ACCategory taskCategory : taskCategories) {
+                System.out.println("  Task Category: " + taskCategory.getName() + " id: " + taskCategory.getId());
+            }
+            ACTaskCategory.process(taskCategories, project);
+
+            List<ACTask> acTasks = project.getTasks();
+            Iterator<ACTask> itt = acTasks.iterator();
+            while(itt.hasNext()) {
+                ACTask task = itt.next();
+                System.out.println("\tTask " + task.getId() + " " + task.getName() + " " + task.getDueOn() + " updated on: "
+                        + task.getUpdatedOn());
+                pt.ist.maidSyncher.domain.activeCollab.ACTask.process(task, project);
+
+                ACCategory category = task.getCategory();
+                if (category != null)
+                    System.out.println("\t Category: " + category.getId() + " name: " + category.getName() + " updated on: "
+                            + category.getUpdatedOn());
+
+                //let's take care of the subtasks
+                Set<ACSubTask> subTasks = task.getSubTasks();
+                for (ACSubTask acSubTask : subTasks) {
+                    System.out.println("\t\tSubTask: " + acSubTask.getId() + " " + acSubTask.getName() + " updated on: "
+                            + acSubTask.getUpdatedOn());
+                }
+                pt.ist.maidSyncher.domain.activeCollab.ACSubTask.process(subTasks, task);
+
+                //getting and printing all of the comments
+                Set<ACComment> comments = task.getComments();
+                System.out.println("\t\t Printing all the comments");
+                for (ACComment comment : comments) {
+                    System.out.println("\t\tComment: " + comment.getId() + " content: " + comment.getBody() + " updated on: "
+                            + comment.getUpdatedOn());
+                }
+                pt.ist.maidSyncher.domain.activeCollab.ACComment.process(comments, task);
+            }
+
+            //let's print all of the logged times for this project
+            List<ACLoggedTime> loggedTimes = project.getLoggedTimes();
+            if (loggedTimes.isEmpty() == false) {
+                System.out.println("\tPrinting logged times: ");
+                for (ACLoggedTime acLoggedTime : loggedTimes) {
+                    System.out.println("\t  Logged time: " + acLoggedTime.getId() + " " + acLoggedTime.getUpdatedOn() + " "
+                            + acLoggedTime.getName() + " time: " + acLoggedTime.getValue());
+                    pt.ist.maidSyncher.domain.activeCollab.ACLoggedTime.process(acLoggedTime);
+                }
+            }
+        }
+
+/*
+        List<ACTask> acTasks = acp.getTasks();
+        Iterator<ACTask> it = acTasks.iterator();
+        while(it.hasNext()) {
+            ACTask task = it.next();
+            System.out.println(" Task " + task.getId() + " " + task.getName() + " " + task.getDueOn());
+            System.out.println(" SER " + task.toString());
+        }
+ */
+/*
+        HashMap<String,String> hm = new HashMap<String,String>();
+        hm.put("subtask[name]","This is a subtask of task 10!");
+        hm.put("subtask[body]","Body of task!");
+//      hm.put("task[visibility]","1");
+//      hm.put("task[category_id]","1");
+        hm.put("subtask[label_id]","1");
+//      hm.put("task[milestone_id]","1");
+        hm.put("subtask[priority]","5");
+        hm.put("subtask[due_on]","2013-10-01");
+        ACContext.processPost("projects/1/tasks/10/subtasks/add", hm);
+ */
+    }
+
+
+    private static void syncGitHub() {
+
         //let's try to connect to the GH Account
         Properties configurationProperties = new Properties();
         InputStream configurationInputStream = Main.class.getResourceAsStream("/configuration.properties");
