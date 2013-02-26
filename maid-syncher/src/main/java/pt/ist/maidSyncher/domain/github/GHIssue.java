@@ -3,9 +3,13 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.eclipse.egit.github.core.Issue;
@@ -44,11 +48,13 @@ public class GHIssue extends GHIssue_Base {
     }
 
     @Override
-    public boolean copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    InvocationTargetException,
     NoSuchMethodException {
         checkNotNull(orig);
         checkArgument(orig instanceof Issue, "provided object must be an instance of " + Issue.class.getName());
-        boolean somethingChanged = super.copyPropertiesFrom(orig); //let's first copy the simple properties
+
+        Set<PropertyDescriptor> changedPropertyDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         Issue issue = (Issue) orig;
         //now let's take care of the relations with the other objects
@@ -57,7 +63,7 @@ public class GHIssue extends GHIssue_Base {
         if (milestone != null) {
             GHMilestone ghMilestone = GHMilestone.process(milestone);
             if (!ghMilestone.equals(getMilestone()))
-                somethingChanged = true;
+                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "milestone"));
             setMilestone(ghMilestone);
         }
 
@@ -68,7 +74,7 @@ public class GHIssue extends GHIssue_Base {
             newGHLabels.add(ghLabel);
         }
         if (!ghOldLabels.equals(newGHLabels)) {
-            somethingChanged = true;
+            changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
             for (GHLabel ghLabel : getLabels()) {
                 removeLabels(ghLabel);
             }
@@ -84,15 +90,16 @@ public class GHIssue extends GHIssue_Base {
             ghNewAssignee = GHUser.process(assignee);
         GHUser ghOldAssignee = getAssignee();
         if (!ObjectUtils.equals(ghNewAssignee, ghOldAssignee))
-            somethingChanged = true;
+            changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "assignee"));
         setAssignee(ghNewAssignee);
-        return somethingChanged;
+        return changedPropertyDescriptors;
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-
+        
     }
+
 
 }

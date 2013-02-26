@@ -3,6 +3,8 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
+import java.util.Collection;
 import java.util.List;
 
 import jvstm.cps.ConsistencyPredicate;
@@ -50,9 +52,10 @@ public class GHUser extends GHUser_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-
+        
     }
+
 
 }

@@ -7,7 +7,10 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.joda.time.LocalTime;
@@ -177,9 +180,9 @@ public abstract class SynchableObject extends SynchableObject_Base {
         }
 
         //let's copy the values
-        boolean triggerSync = false;
+        HashSet<PropertyDescriptor> changedDescriptors = new HashSet<>();
         try {
-            triggerSync = toProccessAndReturn.copyPropertiesFrom(object);
+            changedDescriptors.addAll(toProccessAndReturn.copyPropertiesFrom(object));
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             if (e.getCause() instanceof IllegalWriteException)
                 throw ((IllegalWriteException) e.getCause());
@@ -188,20 +191,41 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     + toProccessAndReturn.getExternalId(), e);
         }
 
-        if (triggerSync) {
-            LOGGER.debug("Synching " + toProccessAndReturn.getExternalId() + " class: "
-                    + toProccessAndReturn.getClass().getName());
-            toProccessAndReturn.sync(object);
+        if (changedDescriptors.isEmpty() == false) {
+            logSync(toProccessAndReturn, object, changedDescriptors);
+            toProccessAndReturn.sync(object, changedDescriptors);
         }
 
         return toProccessAndReturn;
     }
 
-    public abstract void sync(Object objectThatTriggeredTheSync);
+    private static void logSync(DomainObject domainObject, Object originObject, Collection<PropertyDescriptor> changedDescriptors) {
+        String logContent =
+                "Synching " + domainObject.getExternalId() + " class: " + domainObject.getClass().getName()
+                + " changed properties: ";
+        for (PropertyDescriptor descriptor : changedDescriptors) {
+            logContent += " " + descriptor.getName();
+        }
+        LOGGER.debug(logContent);
 
-    public boolean copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    }
+
+    public abstract void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors);
+
+    /**
+     * 
+     * @param orig
+     * @return a collection with the {@link PropertyDescriptor} s that changed
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     * @throws TaskNotVisibleException
+     */
+    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    InvocationTargetException,
     NoSuchMethodException, TaskNotVisibleException {
-        boolean changesWereMade = false;
+        Set<PropertyDescriptor> propertyDescriptorsThatChanged = new HashSet<PropertyDescriptor>();
+
         Object dest = this;
 
         if (orig == null) {
@@ -217,7 +241,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     if (valueOrigin instanceof Date)
                         valueOrigin = LocalTime.fromDateFields((Date) valueOrigin);
                     if (Objects.equal(valueDest, valueOrigin) == false)
-                        changesWereMade = true;
+                        propertyDescriptorsThatChanged.add(origDescriptor);
                     try {
                         //let's see if this is actually a Date, if so, let's convert it
                         PropertyUtils.setSimpleProperty(dest, name, valueOrigin);
@@ -231,6 +255,17 @@ public abstract class SynchableObject extends SynchableObject_Base {
             }
         }
 
-        return changesWereMade;
+        return propertyDescriptorsThatChanged;
+    }
+
+    protected static PropertyDescriptor getPropertyDescriptorAndCheckItExists(Object bean, String propertyName) {
+        PropertyDescriptor propertyDescriptor;
+        try {
+            propertyDescriptor = PropertyUtils.getPropertyDescriptor(bean, propertyName);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new Error(e);
+        }
+        checkNotNull(propertyDescriptor);
+        return propertyDescriptor;
     }
 }

@@ -2,7 +2,10 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashSet;
 
 import jvstm.cps.ConsistencyPredicate;
 
@@ -21,9 +24,10 @@ public class ACLoggedTime extends ACLoggedTime_Base {
     }
 
     @Override
-    public boolean copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    InvocationTargetException,
     NoSuchMethodException, TaskNotVisibleException {
-        boolean somethingChanged = super.copyPropertiesFrom(orig);
+        HashSet<PropertyDescriptor> changedPropertyDescriptor = new HashSet<PropertyDescriptor>(super.copyPropertiesFrom(orig));
         pt.ist.maidSyncher.api.activeCollab.ACLoggedTime acLoggedTime = (pt.ist.maidSyncher.api.activeCollab.ACLoggedTime) orig;
 
         //let's get the relevant parent
@@ -37,17 +41,22 @@ public class ACLoggedTime extends ACLoggedTime_Base {
             }
             pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();
             setTask(task);
-            somethingChanged = !ObjectUtils.equals(oldTask, task);
+            if (!ObjectUtils.equals(oldTask, task)) {
+                changedPropertyDescriptor.add(getPropertyDescriptorAndCheckItExists(orig, "parentId"));
+            }
             break;
         case ACProject.CLASS_VALUE:
             pt.ist.maidSyncher.domain.activeCollab.ACProject project =
             pt.ist.maidSyncher.domain.activeCollab.ACProject.findById(acLoggedTime.getParentId());
             pt.ist.maidSyncher.domain.activeCollab.ACProject oldProject = getProject();
             setProject(project);
-            somethingChanged = !ObjectUtils.equals(oldProject, project);
+            if (!ObjectUtils.equals(oldProject, project)) {
+                changedPropertyDescriptor.add(getPropertyDescriptorAndCheckItExists(orig, "parentId"));
+            }
+
             break;
         }
-        return somethingChanged;
+        return changedPropertyDescriptor;
     }
 
     @ConsistencyPredicate
@@ -83,9 +92,9 @@ public class ACLoggedTime extends ACLoggedTime_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-
+        
     }
 
 }

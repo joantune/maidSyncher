@@ -2,6 +2,9 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
+import java.util.Collection;
+
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 
@@ -39,9 +42,10 @@ public class GHMilestone extends GHMilestone_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-
+        
     }
+
 
 }

@@ -2,6 +2,8 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -53,9 +55,9 @@ public class ACTaskCategory extends ACTaskCategory_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-
+        
     }
 
 }

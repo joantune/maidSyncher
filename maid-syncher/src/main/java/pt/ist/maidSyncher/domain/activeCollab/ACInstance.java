@@ -2,7 +2,9 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.Collections;
 
 import org.slf4j.Logger;
@@ -28,12 +30,6 @@ public class ACInstance extends ACInstance_Base {
         maidRoot.addAcObjects(this);
     }
 
-    @Override
-    public void sync(Object objectThatTriggeredTheSync) {
-        // TODO Auto-generated method stub
-
-    }
-
     @Service
     public static ACInstance process(pt.ist.maidSyncher.api.activeCollab.ACInstance acInstance) {
         checkNotNull(acInstance);
@@ -50,6 +46,12 @@ public class ACInstance extends ACInstance_Base {
         }
         return (ACInstance) findOrCreateAndProccess(acInstance, ACInstance.class,
                 Collections.singleton(MaidRoot.getInstance().getAcInstance()));
+    }
+
+    @Override
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

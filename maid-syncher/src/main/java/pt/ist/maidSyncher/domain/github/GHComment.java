@@ -2,6 +2,9 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
+import java.util.Collection;
+
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
 
@@ -35,9 +38,9 @@ public class GHComment extends GHComment_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync) {
-        //TODO
-
+    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

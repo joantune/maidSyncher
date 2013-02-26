@@ -2,7 +2,10 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,15 +23,16 @@ public class ACTask extends ACTask_Base {
         super();
     }
 
-    private boolean processMainAssignee(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<PropertyDescriptor> processMainAssignee(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
 
         ACUser acUser = ACUser.findById(acTask.getAssigneeId());
         ACUser oldMainAssignee = getMainAssignee();
         setMainAssignee(acUser);
-        return !ObjectUtils.equals(acUser, oldMainAssignee);
+        return !ObjectUtils.equals(acUser, oldMainAssignee) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask,
+                "assigneeId")) : Collections.EMPTY_SET;
     }
 
-    private boolean processOtherAssignees(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<PropertyDescriptor> processOtherAssignees(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
 
         boolean somethingChanged = false;
         Set<ACUser> newOtherAssigneesSet = new HashSet<ACUser>();
@@ -55,37 +59,39 @@ public class ACTask extends ACTask_Base {
 
         for (ACUser user : newOtherAssigneesSet)
             addOtherAssignees(user);
-        return somethingChanged;
+        return somethingChanged ? Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask, "otherAssigneesId")) : Collections.EMPTY_SET;
     }
 
-    private boolean processMilestone(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<PropertyDescriptor> processMilestone(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACMilestone newMilestone = ACMilestone.findById(acTask.getMilestoneId());
         ACMilestone oldMilestone = getMilestone();
         setMilestone(newMilestone);
-        return !ObjectUtils.equals(oldMilestone, newMilestone);
+        return !ObjectUtils.equals(oldMilestone, newMilestone) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(
+                acTask, "milestoneId")) : Collections.EMPTY_SET;
 
     }
 
     @Override
-    public boolean copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    InvocationTargetException,
     NoSuchMethodException {
-        boolean somethingChanged = super.copyPropertiesFrom(orig);
+        HashSet<PropertyDescriptor> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         pt.ist.maidSyncher.api.activeCollab.ACTask acTask = (pt.ist.maidSyncher.api.activeCollab.ACTask) orig;
         //now let's take care of the milestone, main assignee and other assignees
 
-        somethingChanged = processMainAssignee(acTask);
+        changedDescriptors.addAll(processMainAssignee(acTask));
 
-        somethingChanged = processOtherAssignees(acTask);
+        changedDescriptors.addAll(processOtherAssignees(acTask));
 
-        somethingChanged = processMilestone(acTask);
+        changedDescriptors.addAll(processMilestone(acTask));
 
-        somethingChanged = processCategory(acTask);
+        changedDescriptors.addAll(processCategory(acTask));
 
-        somethingChanged = processLabel(acTask);
+        changedDescriptors.addAll(processLabel(acTask));
 
 
-        return somethingChanged;
+        return changedDescriptors;
 
     }
 
@@ -93,19 +99,21 @@ public class ACTask extends ACTask_Base {
         return (ACTask) MiscUtils.findACObjectsById(id, ACTask.class);
     }
 
-    private boolean processLabel(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<PropertyDescriptor> processLabel(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACTaskLabel newTaskLabel = ACTaskLabel.findById(acTask.getLabelId());
         ACTaskLabel oldTaskLabel = getLabel();
         setLabel(newTaskLabel);
-        return !ObjectUtils.equals(newTaskLabel, oldTaskLabel);
+        return !ObjectUtils.equals(newTaskLabel, oldTaskLabel) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(
+                acTask, "labelId")) : Collections.EMPTY_SET;
 
     }
 
-    private boolean processCategory(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<PropertyDescriptor> processCategory(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACTaskCategory newTaskCategory = ACTaskCategory.findById(acTask.getCategoryId());
         ACTaskCategory oldTaskCategory = getTaskCategory();
         setTaskCategory(newTaskCategory);
-        return !ObjectUtils.equals(newTaskCategory, oldTaskCategory);
+        return !ObjectUtils.equals(newTaskCategory, oldTaskCategory) ? Collections
+                .singleton(getPropertyDescriptorAndCheckItExists(acTask, "categoryId")) : Collections.EMPTY_SET;
     }
 
     @Service
