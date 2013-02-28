@@ -5,10 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
@@ -23,7 +21,7 @@ import pt.ist.maidSyncher.domain.MaidRoot;
 
 public class GHIssue extends GHIssue_Base {
 
-    public  GHIssue() {
+    public GHIssue() {
         super();
         MaidRoot.getInstance().addGhIssues(this);
     }
@@ -49,8 +47,7 @@ public class GHIssue extends GHIssue_Base {
 
     @Override
     public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException,
-    NoSuchMethodException {
+    InvocationTargetException, NoSuchMethodException {
         checkNotNull(orig);
         checkArgument(orig instanceof Issue, "provided object must be an instance of " + Issue.class.getName());
 
@@ -62,27 +59,25 @@ public class GHIssue extends GHIssue_Base {
         Milestone milestone = issue.getMilestone();
         if (milestone != null) {
             GHMilestone ghMilestone = GHMilestone.process(milestone);
-            if (!ghMilestone.equals(getMilestone()))
+            if (!ObjectUtils.equals(getMilestone(), ghMilestone))
                 changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "milestone"));
             setMilestone(ghMilestone);
         }
 
-        List<GHLabel> ghOldLabels = new ArrayList<GHLabel>(getLabels());
-        List<GHLabel> newGHLabels = new ArrayList<GHLabel>();
+        Set<GHLabel> ghOldLabels = new HashSet<GHLabel>(getLabels());
+        Set<GHLabel> newGHLabels = new HashSet<GHLabel>();
         for (Label label : issue.getLabels()) {
             GHLabel ghLabel = GHLabel.process(label);
             newGHLabels.add(ghLabel);
         }
-        if (!ghOldLabels.equals(newGHLabels)) {
+        if (!ObjectUtils.equals(ghOldLabels, newGHLabels))
             changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
-            for (GHLabel ghLabel : getLabels()) {
-                removeLabels(ghLabel);
-            }
-            for (GHLabel ghLabel : newGHLabels) {
-                addLabels(ghLabel);
-            }
+        for (GHLabel ghLabel : getLabels()) {
+            removeLabels(ghLabel);
         }
-
+        for (GHLabel ghLabel : newGHLabels) {
+            addLabels(ghLabel);
+        }
 
         User assignee = issue.getAssignee();
         GHUser ghNewAssignee = null;
@@ -98,8 +93,7 @@ public class GHIssue extends GHIssue_Base {
     @Override
     public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
         // TODO Auto-generated method stub
-        
-    }
 
+    }
 
 }
