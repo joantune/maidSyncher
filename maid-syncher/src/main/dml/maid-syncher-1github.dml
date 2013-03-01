@@ -90,6 +90,15 @@ class GHLabel  extends GHObject {
 
 class GHMilestone extends GHObject {
 	Boolean open;
+	LocalTime dueOn;
+	int closedIssues;
+	int number;
+	int openIssues;
+	String description;
+	String state;
+
+	String title;
+	
 }
 
 class GHIssue extends GHObject {
@@ -114,6 +123,9 @@ class GHIssue extends GHObject {
 }
 
 class GHComment extends GHObject {
+	LocalTime updatedAt;
+
+	String body;
 }
 
 

@@ -238,6 +238,9 @@ public abstract class SynchableObject extends SynchableObject_Base {
                 if (PropertyUtils.isWriteable(dest, name)) {
                     Object valueDest = PropertyUtils.getSimpleProperty(dest, name);
                     Object valueOrigin = PropertyUtils.getSimpleProperty(orig, name);
+                    if (valueOrigin != null
+                            && valueOrigin.getClass().getPackage().getName().equalsIgnoreCase("org.eclipse.egit.github.core"))
+                        continue; //let's skip the properties with egit core objects (they shall be copied from a custom overriden version of this method)
                     if (valueOrigin instanceof Date)
                         valueOrigin = LocalTime.fromDateFields((Date) valueOrigin);
                     if (Objects.equal(valueDest, valueOrigin) == false)

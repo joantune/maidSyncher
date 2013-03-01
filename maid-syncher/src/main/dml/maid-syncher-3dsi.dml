@@ -1,0 +1,218 @@
+package pt.ist.maidSyncher.domain.dsi;
+
+class DSIObject {
+	LocalTime lastUpdatedAt;
+}
+
+// Repository:
+
+class DSIRepository extends DSIObject {
+}
+
+relation DSIRepositoryGHRepository {
+	.pt.ist.maidSyncher.domain.github.GHRepository playsRole gitHubRepository;
+	DSIRepository playsRole dsiObject;
+}
+
+relation DSIRepositoryACTaskCategory {
+	.pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory playsRole acTaskCategory;
+	DSIRepository playsRole  dsiObjectRepository;
+}
+
+// Project
+
+class DSIProject extends DSIObject {
+}
+relation DSIProjectGHLabel {
+	.pt.ist.maidSyncher.domain.github.GHLabel playsRole gitHubLabel;
+	DSIProject playsRole dsiObjectProject;
+}
+
+relation DSIProjectACProject {
+	.pt.ist.maidSyncher.domain.activeCollab.ACProject playsRole acProject;
+	DSIProject playsRole dsiObjectProject;
+}
+
+
+//Milestone
+
+class DSIMilestone extends DSIObject {
+}
+
+relation DSIMilestoneACMilestone {
+	.pt.ist.maidSyncher.domain.activeCollab.ACMilestone playsRole acMilestone;
+	DSIMilestone playsRole dsiObjectMilestone;
+}
+
+relation DSIMilestoneGHMilestone {
+	.pt.ist.maidSyncher.domain.github.GHMilestone playsRole ghMilestone;
+	DSIMilestone playsRole dsiObjectMilestone;
+}
+
+// Issue
+class DSIIssue extends DSIObject {
+}
+
+relation DSIIssueACTask {
+	.pt.ist.maidSyncher.domain.activeCollab.ACTask playsRole acTask;
+	DSIIssue playsRole dsiObjectIssue;
+}
+
+relation DSIISsueGHIssue {
+	.pt.ist.maidSyncher.domain.github.GHIssue playsRole ghIssue;
+	DSIIssue playsRole dsiObjectIssue;
+}
+
+//SubTask
+
+class DSISubTask extends DSIObject {
+}
+
+relation DSISubTaskACSubTask {
+	.pt.ist.maidSyncher.domain.activeCollab.ACSubTask playsRole acSubTask;
+	DSISubTask playsRole dsiObjectSubTask;
+}
+
+relation DSISubTaskGHIssue {
+	.pt.ist.maidSyncher.domain.github.GHIssue playsRole ghIssue;
+	DSISubTask playsRole dsiObjectSubTask;
+}
+
+relation DSISubTaskGHComment {
+	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
+	DSISubTask playsRole dsiObjectSubTask;
+}
+
+//Comment
+
+class DSIComment extends DSIObject {
+}
+
+relation DSICommentACComment {
+	.pt.ist.maidSyncher.domain.activeCollab.ACComment playsRole acComment;
+	DSIComment playsRole dsiObjectComment;
+}
+
+relation DSICommentGHComment {
+	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
+	DSIComment playsRole dsiObjectComment;
+}
+
+// Logged time
+
+class DSILoggedTime extends DSIObject {
+}
+
+relation DSILoggedTimeACLoggedTime {
+	.pt.ist.maidSyncher.domain.activeCollab.ACLoggedTime playsRole acLoggedTime;
+	DSILoggedTime playsRole dsiObjectLoggedTime;
+}
+
+relation DSILoggedTimeGHComment {
+	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
+	DSILoggedTime playsRole dsiObjectLoggedTime;
+}
+
+
+//User
+
+class DSIUser extends DSIObject {
+}
+
+relation DSIUserGHUser {
+	.pt.ist.maidSyncher.domain.github.GHUser playsRole ghUser;
+	DSIUser playsRole dsiObjectUser;
+}
+
+relation DSIUserACUser {
+	.pt.ist.maidSyncher.domain.activeCollab.ACUser playsRole acUser;
+	DSIUser playsRole dsiObjectFromACUser;
+}
+
+
+
+
+
+//Relations with root
+relation MaidRootDSIObject {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {
+		multiplicity 1..1;
+	}
+	DSIObject playsRole dsiObjects {
+		multiplicity *;
+	}
+}
+
+
+//Relations amongst themselves
+
+relation DSIRepositoryDSIIssue {
+	DSIRepository playsRole repository;
+	DSIIssue playsRole issues {
+		multiplicity *;
+	}
+}
+
+relation DSIRepositoryDSIProject {
+	DSIRepository playsRole repositories {
+		multiplicity *;
+	}
+	DSIProject playsRole project;
+}
+
+relation DSIProjectDSILoggedTime {
+	DSIProject playsRole dsiProject;
+	DSILoggedTime playsRole loggedTimes {
+		multiplicity *;
+	}
+}
+
+relation DSIProjectDSIIssue{
+	DSIProject playsRole project;
+	DSIIssue playsRole issues {
+		multiplicity *;
+	}
+}
+
+
+relation DSIIssueDSIMilestone{
+	DSIIssue playsRole issues { 
+		multiplicity *;
+	}
+	DSIMilestone playsRole milestone;
+}
+
+relation DSIIssueDSIUserMainAssignee{
+	DSIIssue playsRole mainAssigneeIssues {
+		multiplicity *;
+	}
+	DSIUser playsRole mainAssignee;
+}
+
+
+relation DSIIssueDSIUserOtherAssignees {
+	DSIIssue playsRole otherAssigneeIssues {
+		multiplicity *;
+	}
+	DSIUser playsRole otherAsignees {
+		multiplicity *;
+	}
+}
+
+relation DSIIssueDSISubTask{
+	DSIIssue playsRole issue {
+		multiplicity 1..1;
+	}
+	DSISubTask playsRole subTasks {
+		multiplicity *;
+	}
+}
+
+relation DSIIssueDSIComment{
+	DSIIssue playsRole issue {
+		multiplicity 1..1;
+	}
+	DSIComment playsRole dsiComments {
+		multiplicity *;
+	}
+}
