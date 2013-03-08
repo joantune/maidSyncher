@@ -9,6 +9,8 @@ public class ACComment extends ACObject {
 
     // attributes
     private String body;
+    private long parentId;
+    private String parentClass;
 
     public ACComment() {
         super();
@@ -31,6 +33,8 @@ public class ACComment extends ACObject {
     @Override
     protected void init(JSONObject jsonObj) {
         setBody(JsonRest.getString(jsonObj, "body"));
+        setParentId(JsonRest.getInt(jsonObj, "parent_id"));
+        setParentClass(JsonRest.getString(jsonObj, "parent_class"));
     }
 
     @Override
@@ -46,5 +50,21 @@ public class ACComment extends ACObject {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getParentClass() {
+        return parentClass;
+    }
+
+    public void setParentClass(String parentClass) {
+        this.parentClass = parentClass;
     }
 }

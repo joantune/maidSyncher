@@ -2,18 +2,25 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.commons.lang.ObjectUtils;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
-
+import pt.ist.maidSyncher.domain.dsi.DSIIssue;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 
 public class ACSubTask extends ACSubTask_Base {
 
-    public  ACSubTask() {
+    public ACSubTask() {
         super();
     }
 
@@ -21,6 +28,24 @@ public class ACSubTask extends ACSubTask_Base {
     private static ACSubTask process(pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask) {
         checkNotNull(acSubTask);
         return (ACSubTask) findOrCreateAndProccess(acSubTask, ACSubTask.class, MaidRoot.getInstance().getAcObjects());
+    }
+
+    @Override
+    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
+        Collection<PropertyDescriptor> propertyDescriptorsToReturn = super.copyPropertiesFrom(orig);
+        pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask = (pt.ist.maidSyncher.api.activeCollab.ACSubTask) orig;
+        if (acSubTask.getParentClass().equals(ACTask.CLASS_VALUE)) {
+            pt.ist.maidSyncher.domain.activeCollab.ACTask acTask = pt.ist.maidSyncher.domain.activeCollab.ACTask.findById(acSubTask.getParentId());
+            pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();
+            setTask(acTask);
+            if (!ObjectUtils.equals(acTask, oldTask)) {
+                //let's add the PropertyDescriptor
+                propertyDescriptorsToReturn.add(getPropertyDescriptorAndCheckItExists(acSubTask, "parentId"));
+
+            }
+        }
+        return propertyDescriptorsToReturn;
     }
 
     @Service
@@ -50,6 +75,21 @@ public class ACSubTask extends ACSubTask_Base {
             acDomainTask.addSubTasks(newSubTask);
         }
 
+    }
+
+    @Override
+    protected DSIObject getDSIObject() {
+        return getDsiObjectSubTask();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null) {
+            dsiObject = new DSISubTask((DSIIssue) getTask().getDSIObject());
+
+        }
+        return dsiObject;
     }
 
 }

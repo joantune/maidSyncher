@@ -2,9 +2,7 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
 import java.util.Collections;
 
 import org.slf4j.Logger;
@@ -13,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.fenixframework.pstm.IllegalWriteException;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class ACInstance extends ACInstance_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(ACInstance.class);
@@ -48,10 +47,15 @@ public class ACInstance extends ACInstance_Base {
                 Collections.singleton(MaidRoot.getInstance().getAcInstance()));
     }
 
+
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    protected DSIObject getDSIObject() {
+        return null;
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        throw new UnsupportedOperationException();
     }
 
 }

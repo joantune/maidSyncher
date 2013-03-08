@@ -14,6 +14,8 @@ public class ACSubTask extends ACObject {
     private int _priority;
     private int _labelId;
     private Date _dueOn;
+    private long parentId;
+    private String parentClass;
 
     public ACSubTask()
     {
@@ -45,6 +47,8 @@ public class ACSubTask extends ACObject {
             cal.set(Calendar.SECOND,59);
             _dueOn = cal.getTime();
         }
+        setParentClass(JsonRest.getString(jsonObj, "parent_class"));
+        setParentId(JsonRest.getInt(jsonObj, "parent_id"));
     }
 
     public int getAssigneeId() {
@@ -97,5 +101,21 @@ public class ACSubTask extends ACObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getParentClass() {
+        return parentClass;
+    }
+
+    public void setParentClass(String parentClass) {
+        this.parentClass = parentClass;
+    }
+
+    public long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
     }
 }

@@ -20,7 +20,12 @@ import org.slf4j.LoggerFactory;
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.pstm.IllegalWriteException;
+import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
+import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncEventIllegalConflict;
+import pt.ist.maidSyncher.domain.github.GHObject;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
@@ -34,6 +39,10 @@ public abstract class SynchableObject extends SynchableObject_Base {
     public SynchableObject() {
         super();
     }
+
+    protected abstract DSIObject getDSIObject();
+
+    public abstract DSIObject findOrCreateDSIObject();
 
     static void checkProccessPreconditions(Class clazz, Object object) {
         checkNotNull(object);
@@ -144,12 +153,13 @@ public abstract class SynchableObject extends SynchableObject_Base {
      * @param clazz the class of the object to find
      * @param iterable the iterable where to find it
      * @return
+     * @throws SyncEventIllegalConflict
      * @throws TaskNotVisibleException
      */
     @Service
     protected static SynchableObject findOrCreateAndProccess(Object object, Class<? extends SynchableObject> clazz,
             Iterable iterable,
-            ObjectFindStrategy... optionalObjectFindStrategy) {
+            ObjectFindStrategy... optionalObjectFindStrategy) throws SyncEventIllegalConflict {
         SynchableObject toProccessAndReturn = null;
         checkNotNull(object);
         checkNotNull(iterable);
@@ -192,25 +202,64 @@ public abstract class SynchableObject extends SynchableObject_Base {
         }
 
         if (changedDescriptors.isEmpty() == false) {
-            logSync(toProccessAndReturn, object, changedDescriptors);
-            toProccessAndReturn.sync(object, changedDescriptors);
+            //we changed something, let's create and add the syncEvent to the ChangesBuzz
+            generateSyncEvent(toProccessAndReturn, changedDescriptors, object);
         }
 
         return toProccessAndReturn;
     }
 
-    private static void logSync(DomainObject domainObject, Object originObject, Collection<PropertyDescriptor> changedDescriptors) {
+    private static void generateSyncEvent(SynchableObject toProccessAndReturn, Collection<PropertyDescriptor> changedDescriptors,
+            Object apiObject) throws SyncEventIllegalConflict {
+        SynchableObject originObject = toProccessAndReturn;
+        SyncEvent.TypeOfChangeEvent typeOfChange = null;
+        DSIObject dsiObject = toProccessAndReturn.getDSIObject();
+        if (dsiObject == null) {
+            typeOfChange = TypeOfChangeEvent.CREATE;
+        }
+        try {
+            dsiObject = toProccessAndReturn.findOrCreateDSIObject();
+
+        } catch (UnsupportedOperationException ex) {
+            LOGGER.debug(toProccessAndReturn.getClass().getName() + " doesn't support Synch");
+        }
+        if (dsiObject != null) {
+            if (typeOfChange == null) {
+                typeOfChange = TypeOfChangeEvent.UPDATE;
+            }
+
+            SyncUniverse syncUniverse = null;
+            if (originObject instanceof pt.ist.maidSyncher.domain.activeCollab.ACObject) {
+                syncUniverse = SyncUniverse.GITHUB;
+            } else if (originObject instanceof GHObject) {
+                syncUniverse = SyncUniverse.ACTIVE_COLLAB;
+            }
+            SyncEvent syncEvent =
+                    new SyncEvent(toProccessAndReturn.getUpdatedAtDate(), typeOfChange, changedDescriptors, dsiObject, apiObject,
+                            syncUniverse, originObject);
+            MaidRoot.getInstance().addSyncEvent(syncEvent);
+            logSync(syncEvent);
+
+        }
+    }
+
+
+    private static void logSync(SyncEvent syncEvent) {
+        SynchableObject originObject = syncEvent.getOriginObject();
+        Set<PropertyDescriptor> changedPropertyDescriptors = syncEvent.getChangedPropertyDescriptors();
         String logContent =
-                "Synching " + domainObject.getExternalId() + " class: " + domainObject.getClass().getName()
-                + " changed properties: ";
-        for (PropertyDescriptor descriptor : changedDescriptors) {
+                "Added Sync event with origin object: " + originObject.getExternalId() + " class: "
+                        + originObject.getClass().getName() + " changed properties: ";
+        for (PropertyDescriptor descriptor : changedPropertyDescriptors) {
             logContent += " " + descriptor.getName();
         }
         LOGGER.debug(logContent);
 
     }
 
-    public abstract void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors);
+    public abstract LocalTime getUpdatedAtDate();
+
+    public abstract void sync(SyncEvent syncEvent);
 
     /**
      * 

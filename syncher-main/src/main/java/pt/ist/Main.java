@@ -42,6 +42,7 @@ import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTaskLabel;
 import pt.ist.maidSyncher.api.activeCollab.ACUser;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.github.GHComment;
 import pt.ist.maidSyncher.domain.github.GHIssue;
@@ -106,6 +107,16 @@ public class Main {
         FenixFramework.initialize();
         syncGitHub();
         syncActiveCollab();
+        printChangesBuzz();
+    }
+
+    private static void printChangesBuzz() {
+        System.out.println("Printing changes buzz: ");
+        for (SyncEvent syncEvent :  MaidRoot.getChangesBuzz().values()) {
+            System.out.println(syncEvent);
+
+        }
+
     }
 
     private static void syncActiveCollab() throws IOException {

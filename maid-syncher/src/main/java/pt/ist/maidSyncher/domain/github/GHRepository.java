@@ -2,13 +2,13 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
-import java.util.Collection;
-
 import org.eclipse.egit.github.core.Repository;
+import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 
 public class GHRepository extends GHRepository_Base {
 
@@ -26,10 +26,23 @@ public class GHRepository extends GHRepository_Base {
         return (GHRepository) findOrCreateAndProccess(repository, GHRepository.class, maidRoot.getGhRepositories());
     }
 
+
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    protected DSIObject getDSIObject() {
+        return super.getDsiObjectRepository();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null)
+            dsiObject = new DSIRepository();
+        return dsiObject;
+    }
+
+    @Override
+    public LocalTime getUpdatedAtDate() {
+        return getUpdatedAt() == null ? getCreatedAt() : getUpdatedAt();
     }
 
 }

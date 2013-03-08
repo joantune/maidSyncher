@@ -9,15 +9,19 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import jvstm.cps.ConsistencyPredicate;
+
 import org.apache.commons.lang.ObjectUtils;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.User;
+import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class GHIssue extends GHIssue_Base {
 
@@ -91,9 +95,30 @@ public class GHIssue extends GHIssue_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
+    public LocalTime getUpdatedAtDate() {
+        return getUpdatedAt() == null ? getCreatedAt() : getUpdatedAt();
+    }
 
+    @ConsistencyPredicate
+    private boolean checkDSIObjectMultiplicity() {
+        //we cannot be both an issue and a subtask
+        if (hasDsiObjectIssue() && hasDsiObjectSubTask())
+            return false;
+        return true;
+    }
+
+    @Override
+    protected DSIObject getDSIObject() {
+        if (hasDsiObjectIssue())
+            return getDsiObjectIssue();
+        else
+            return getDsiObjectSubTask();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        // TODO
+        return null;
     }
 
 }

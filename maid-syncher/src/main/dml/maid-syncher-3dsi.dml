@@ -11,7 +11,7 @@ class DSIRepository extends DSIObject {
 
 relation DSIRepositoryGHRepository {
 	.pt.ist.maidSyncher.domain.github.GHRepository playsRole gitHubRepository;
-	DSIRepository playsRole dsiObject;
+	DSIRepository playsRole dsiObjectRepository;
 }
 
 relation DSIRepositoryACTaskCategory {

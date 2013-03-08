@@ -15,6 +15,8 @@ import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
+import pt.ist.maidSyncher.domain.dsi.DSIIssue;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
 public class ACTask extends ACTask_Base {
@@ -150,6 +152,22 @@ public class ACTask extends ACTask_Base {
 
         return toReturn;
 
+    }
+
+    @Override
+    protected DSIObject getDSIObject() {
+        return getDsiObjectIssue();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null) {
+            dsiObject = new DSIIssue();
+            setDsiObjectIssue((DSIIssue) dsiObject);
+
+        }
+        return dsiObject;
     }
 
 }

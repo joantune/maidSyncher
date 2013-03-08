@@ -16,6 +16,8 @@ import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
+import pt.ist.maidSyncher.domain.dsi.DSILoggedTime;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class ACLoggedTime extends ACLoggedTime_Base {
 
@@ -91,10 +93,19 @@ public class ACLoggedTime extends ACLoggedTime_Base {
         return true;
     }
 
+
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    protected DSIObject getDSIObject() {
+        return getDsiObjectLoggedTime();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null) {
+            dsiObject = new DSILoggedTime();
+        }
+        return dsiObject;
     }
 
 }

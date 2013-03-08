@@ -1,7 +1,6 @@
 package pt.ist.maidSyncher.domain.activeCollab;
 
-import java.beans.PropertyDescriptor;
-import java.util.Collection;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 
 public class ACAssignmentLabel extends ACAssignmentLabel_Base {
@@ -10,11 +9,15 @@ public class ACAssignmentLabel extends ACAssignmentLabel_Base {
         super();
     }
 
+
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    protected DSIObject getDSIObject() {
+        return null;
     }
 
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        throw new UnsupportedOperationException();
+    }
 
 }

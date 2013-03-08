@@ -54,6 +54,11 @@ public abstract class ACObject {
 
     }
 
+    protected static JSONObject createObject(String relativePath, String content) throws IOException {
+        return ACContext.processPost(content, relativePath);
+
+    }
+
     public long getId() {
         return _id;
     }

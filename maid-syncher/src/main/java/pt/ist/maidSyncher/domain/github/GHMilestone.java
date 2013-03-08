@@ -2,14 +2,14 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
-import java.util.Collection;
-
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
+import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class GHMilestone extends GHMilestone_Base {
 
@@ -38,14 +38,30 @@ public class GHMilestone extends GHMilestone_Base {
         GHRepository ghRepository = GHRepository.process(repository);
         ghMilestone.setRepository(ghRepository);
 
+        //we have no updateAt field, so let's use the current localtime
+
         return ghMilestone;
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    public LocalTime getUpdatedAtDate() {
+        /*we have no updated at filed (which is no big deal, so, let's make
+         * this have less priority [either return the creation date or
+         * the date of the last time it was synched] */
+        return getLastSynchTime() == null ? getCreatedAt() : getLastSynchTime();
     }
 
+    @Override
+    protected DSIObject getDSIObject() {
+        return getDsiObjectMilestone();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null)
+            dsiObject = new DSIMilestone();
+        return dsiObject;
+    }
 
 }

@@ -2,14 +2,13 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
-import java.util.Collection;
-
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Repository;
+import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class GHLabel extends GHLabel_Base {
 
@@ -42,9 +41,23 @@ public class GHLabel extends GHLabel_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    public LocalTime getUpdatedAtDate() {
+        /*we have no updated at filed (which is no big deal, so, let's make
+         * this have less priority [either return the creation date or
+         * the date of the last time it was synched] */
+        return getLastSynchTime() == null ? getCreatedAt() : getLastSynchTime();
+    }
+
+    @Override
+    protected DSIObject getDSIObject() {
+        return getDsiObjectProject();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        //not all of these kinds of objects have such a relation
+        //TODO
+        return null;
     }
 
 }

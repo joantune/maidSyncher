@@ -1,11 +1,9 @@
 package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.beans.PropertyDescriptor;
-import java.util.Collection;
-
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSIUser;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
 public class ACUser extends ACUser_Base {
@@ -24,9 +22,18 @@ public class ACUser extends ACUser_Base {
     }
 
     @Override
-    public void sync(Object objectThatTriggeredTheSync, Collection<PropertyDescriptor> changedDescriptors) {
-        // TODO Auto-generated method stub
-        
+    protected DSIObject getDSIObject() {
+        return getDsiObjectFromACUser();
+    }
+
+    @Override
+    public DSIObject findOrCreateDSIObject() {
+        DSIObject dsiObject = getDSIObject();
+        if (dsiObject == null) {
+            dsiObject = new DSIUser();
+        }
+
+        return dsiObject;
     }
 
 }

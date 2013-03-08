@@ -35,13 +35,37 @@ public class ACContext {
     }
 
     private static String buildUrl(String path) {
-        String url = path + "&auth_api_token=" + token + "&format=json";
+        return buildUrl(path, true);
+    }
+
+    private static String buildUrl(String path, boolean json) {
+        String url;
+        if (json) {
+            url = path + "&auth_api_token=" + token + "&format=json";
+        } else {
+            url = path + "&auth_api_token=" + token;
+        }
         return url;
     }
 
     public static Object processGet(String path) throws IOException
     {
         return JsonRest.processGet(buildUrl(path));
+    }
+
+    public static JSONObject processPost(String postData, String path) throws IOException {
+        //let's add the submitted=submitted that makes it work
+        String toUse = postData + "&submitted=submitted";
+        return (JSONObject) JsonRest.processPost(toUse, buildUrl(path));
+    }
+
+    /**
+     * 
+     * @return a basic string with: schema://servername/appropriatePath/api.php?path_info=pathToAppend
+     */
+    public static String getBasicUrlForPath(String pathToAppend) {
+        return "https://" + server + "/ac/api.php?path_info=" + pathToAppend;
+
     }
 
     public static Set<ACProjectLabel> getACProjectLabels() throws IOException {

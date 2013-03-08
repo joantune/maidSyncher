@@ -90,6 +90,16 @@ public class ACTask extends ACObject {
         return postData.toString();
     }
 
+    public static ACTask createTask(ACTask preliminarObject, ACProject acProject) throws IOException {
+        return createTask(preliminarObject, acProject.getId());
+    }
+
+    public static ACTask createTask(ACTask preliminarObject, long projectId) throws IOException {
+        String path = ACContext.getBasicUrlForPath("projects/" + projectId + "/tasks/add");
+        return new ACTask(createObject(path, preliminarObject.toJSONString()));
+
+    }
+
     public String getName() {
         return _name;
     }

@@ -167,7 +167,7 @@ public class JsonRest {
     }
 
 
-    public static Object processPost(String urlStr, String content) throws IOException
+    public static Object processPost(String content, String urlStr) throws IOException
     {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -192,7 +192,7 @@ public class JsonRest {
         try {
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("utf-8")));
             String jsonText = readAll(rd);
-            return jsonText;
+            return JSONValue.parse(jsonText);
         } finally {
             is.close();
             conn.disconnect();

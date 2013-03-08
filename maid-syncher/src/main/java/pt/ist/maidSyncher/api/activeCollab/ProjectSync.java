@@ -41,7 +41,17 @@ public class ProjectSync
         List<ACProject> acProjects = ACContext.getProjects();
         Iterator<ACProject> it = acProjects.iterator();
         while(it.hasNext()) {
+
             ACProject project = it.next();
+
+            //let's randomly create a test task on the projects
+            //we get
+            System.out.println("Creating a new test task");
+            ACTask newTask = new ACTask();
+            newTask.setName("task de teste - criada pelo syncher");
+            newTask.setVisibility(true);
+            ACTask.createTask(newTask, project);
+
             System.out
             .println(" Project " + project.getId() + " " + project.getName() + " updated on: " + project.getUpdatedOn());
 
