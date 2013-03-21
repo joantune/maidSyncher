@@ -11,15 +11,15 @@ Seen that the ActiveCollab (AC) universe, is richer in terms of representation o
 The conversions are as follows:
 
 
-| GitHub        | <-->         | ActiveCollab	| |
-| ------------- |:------------:| -----:		|
-| Issue      	| <--> 			| Task 			|
-| Issue      	| <-- 			|  SubTask		|
+GitHub        | <-->         | ActiveCollab  |  |
+| ------------- |------------| -----		    |----  |
+| Issue      	| <--> 			       | Task 			 |  | 
+| Issue      	| <-- 			|  SubTask		       |  |
 | Comment 		| -->			| LogedTime		| @loggedTime[nmbr] |
-| Comment		| <--			| LoggedTime	|
-| <strike>Issue		 |<strike>	-/-> |	<strike>SubTask |Not yet supported |
-| <strike> Assignee |<strike> 	<-/->	|<strike> Assigne |Not yet supported |
-| <strike>Comment| <strike>	<-/-> |<strike>	Other Assignees | Not yet supported
+| Comment		| <--			| LoggedTime	| 
+| <strike>Issue	 | <strike>	-/-></strike> |	<strike>SubTask</strike> | Not yet supported |
+| <strike> Assignee </strike>|<strike><-/-> </strike>	|<strike> Assignee</strike> | Not yet supported |
+| <strike>Comment</strike>| <strike><-/-></strike> |<strike>	Other Assignees </strike>| Not yet supported
 
 
 ##License
