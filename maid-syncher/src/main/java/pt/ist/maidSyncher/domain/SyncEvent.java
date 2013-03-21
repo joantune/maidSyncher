@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2013 Instituto Superior Técnico - João Antunes
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ * Contributors:
+ *     Luis Silva - ACGHSync
+ *     João Antunes - initial API and implementation
+ ******************************************************************************/
 /**
  * 
  */
@@ -11,6 +22,7 @@ import java.util.Set;
 import org.joda.time.LocalTime;
 
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 4 de Mar de 2013
@@ -39,7 +51,7 @@ public class SyncEvent {
 
     private final DSIObject dsiElement;
 
-    private final Object apiOriginalObject;
+    private final APIObjectWrapper apiObjectWrapper;
 
     private final SyncUniverse targetSyncUniverse;
 
@@ -48,13 +60,13 @@ public class SyncEvent {
     private final SynchableObject originObject;
 
     public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<PropertyDescriptor> propertyDescriptors,
-            DSIObject dsiObject, Object apiOriginalObject, SyncUniverse targetSyncUniverse,
+            DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse,
             SynchableObject origin) {
         this.dateOfChange = dateOfChange;
         this.typeOfChangeEvent = changeEvent;
         this.changedPropertyDescriptors = new HashSet<PropertyDescriptor>(propertyDescriptors);
         this.dsiElement = dsiObject;
-        this.apiOriginalObject = apiOriginalObject;
+        this.apiObjectWrapper = apiObjectWrapper;
         this.targetSyncUniverse = targetSyncUniverse;
         this.originObject = origin;
 
@@ -76,10 +88,6 @@ public class SyncEvent {
         return dsiElement;
     }
 
-    public Object getApiOriginalObject() {
-        return apiOriginalObject;
-    }
-
 //    public SynchableObject getTargetObject() {
 //        return targetObject;
 //    }
@@ -95,7 +103,12 @@ public class SyncEvent {
     @Override
     public String toString() {
         return "Sync event, DSIElement: " + getDsiElement().getExternalId() + " (" + getDsiElement().getClass().getSimpleName()
-                + ")" + " Type: " + getTypeOfChangeEvent() + " targetUniverse: " + getTargetSyncUniverse();
+                + ")" + " Type: " + getTypeOfChangeEvent() + " targetUniverse: " + getTargetSyncUniverse() + " originObject: "
+                + getOriginObject().getClass().getSimpleName();
+    }
+
+    public APIObjectWrapper getApiObjectWrapper() {
+        return apiObjectWrapper;
     }
 
 }

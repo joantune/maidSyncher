@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2013 Instituto Superior Técnico - João Antunes
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ * Contributors:
+ *     Luis Silva - ACGHSync
+ *     João Antunes - initial API and implementation
+ ******************************************************************************/
 package pt.ist.maidSyncher.api.activeCollab;
 
 import java.io.IOException;
@@ -91,15 +102,39 @@ public class ACContext {
 
     }
 
-    public static List<ACProject> getProjects() throws IOException
-    {
+    public static List<ACProject> getActiveProjects() throws IOException {
         List<ACProject> projects = new ArrayList<ACProject>();
         JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=projects");
-        if(jsonArr != null) {
-            for(int i = 0; i < jsonArr.size(); i++)
-                projects.add(new ACProject((JSONObject)jsonArr.get(i)));
+        if (jsonArr != null) {
+            for (int i = 0; i < jsonArr.size(); i++)
+                projects.add(new ACProject((JSONObject) jsonArr.get(i)));
         }
         return projects;
+
+    }
+
+    public static List<ACProject> getArchivedProjects() throws IOException {
+        List<ACProject> projects = new ArrayList<ACProject>();
+        JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=projects/archive");
+        if (jsonArr != null) {
+            for (int i = 0; i < jsonArr.size(); i++)
+                projects.add(new ACProject((JSONObject) jsonArr.get(i)));
+        }
+        return projects;
+
+    }
+
+    /**
+     * 
+     * @return the 'projects' and the 'projects/archived' projects
+     * @throws IOException
+     */
+    public static List<ACProject> getProjects() throws IOException
+    {
+        List<ACProject> allProjects = new ArrayList<>();
+        allProjects.addAll(getActiveProjects());
+        allProjects.addAll(getArchivedProjects());
+        return allProjects;
     }
 
     public static String getServer() {

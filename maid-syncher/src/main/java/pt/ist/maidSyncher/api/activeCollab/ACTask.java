@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2013 Instituto Superior Técnico - João Antunes
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ * Contributors:
+ *     Luis Silva - ACGHSync
+ *     João Antunes - initial API and implementation
+ ******************************************************************************/
 package pt.ist.maidSyncher.api.activeCollab;
 
 import java.io.IOException;
@@ -29,6 +40,9 @@ public class ACTask extends ACObject {
 
     private Boolean complete;
 
+    private boolean archived;
+
+
     public ACTask()
     {
         super();
@@ -59,7 +73,7 @@ public class ACTask extends ACObject {
             cal.set(Calendar.SECOND,59);
             _dueOn = cal.getTime();
         }
-        getSubTasks();
+//        getSubTasks();
 
         setComplete(JsonRest.getBooleanFromInt(jsonObj, "is_completed"));
 
@@ -71,6 +85,10 @@ public class ACTask extends ACObject {
                 otherAssigneesId.add(value);
             }
         }
+
+        setArchived(JsonRest.getBooleanFromInt(jsonObj, "is_archived"));
+
+
 
     }
 
@@ -96,7 +114,7 @@ public class ACTask extends ACObject {
 
     public static ACTask createTask(ACTask preliminarObject, long projectId) throws IOException {
         String path = ACContext.getBasicUrlForPath("projects/" + projectId + "/tasks/add");
-        return new ACTask(createObject(path, preliminarObject.toJSONString()));
+        return new ACTask(postObject(path, preliminarObject.toJSONString()));
 
     }
 
@@ -220,6 +238,14 @@ public class ACTask extends ACObject {
 
     public Set<Long> getOtherAssigneesId() {
         return otherAssigneesId;
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 
 }

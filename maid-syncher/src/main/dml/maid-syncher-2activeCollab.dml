@@ -27,6 +27,7 @@ class ACProject extends ACObject {
 	String status;
 	float budget;
     //private int _labelId;
+    	boolean archived;
 }
 
 
@@ -58,6 +59,8 @@ class ACGeneralTask extends ACObject{
     LocalTime dueOn;
 
     Boolean complete;
+    
+    boolean archived;
 }
 
 class ACTask extends ACGeneralTask {

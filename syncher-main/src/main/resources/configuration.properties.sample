@@ -1,0 +1,19 @@
+#don't change this line, FF stuff
+app.name=syncher-main
+
+github.oauth2.token=kindaSelfExplanatory
+#The GH name of the organization to import all of the data from
+github.organization.name=sandbox-org-maidSync
+
+#The host of your AC instance
+ac.server.host=host.com
+ac.server.token=kindaSelfExplanatory
+
+# FF persistence database
+
+#this example db.alias uses a MySQL connection to port 3306 on localhost on DB syncherMaid 
+#alter the URL below to alter any of the details
+
+db.alias=//localhost:3306/syncherMaid?useUnicode=true&characterEncoding=utf8&clobCharacterEncoding=utf8&zeroDateTimeBehavior=convertToNull
+db.user=maidSyncerDBUsername
+db.pass=password

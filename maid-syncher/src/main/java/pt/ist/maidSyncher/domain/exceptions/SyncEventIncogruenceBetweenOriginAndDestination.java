@@ -9,15 +9,20 @@
  *     Luis Silva - ACGHSync
  *     João Antunes - initial API and implementation
  ******************************************************************************/
-package pt.ist.maidSyncher.domain.dsi;
+/**
+ * 
+ */
+package pt.ist.maidSyncher.domain.exceptions;
 
-public class DSISubTask extends DSISubTask_Base {
+/**
+ * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 12 de Mar de 2013
+ *
+ * 
+ */
+public class SyncEventIncogruenceBetweenOriginAndDestination extends RuntimeException {
 
-    public static final String MRKR_SUBTASK = "@subtask";
-
-    public DSISubTask(DSIIssue parentIssue) {
-        super();
-        setIssue(parentIssue);
+    public SyncEventIncogruenceBetweenOriginAndDestination(String string) {
+        super(string);
     }
 
 }

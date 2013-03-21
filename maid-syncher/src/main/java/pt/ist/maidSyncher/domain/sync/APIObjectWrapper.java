@@ -9,15 +9,22 @@
  *     Luis Silva - ACGHSync
  *     João Antunes - initial API and implementation
  ******************************************************************************/
-package pt.ist.maidSyncher.domain.dsi;
+/**
+ * 
+ */
+package pt.ist.maidSyncher.domain.sync;
 
-public class DSISubTask extends DSISubTask_Base {
+import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 
-    public static final String MRKR_SUBTASK = "@subtask";
+/**
+ * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 11 de Mar de 2013
+ *
+ * 
+ */
+public interface APIObjectWrapper {
 
-    public DSISubTask(DSIIssue parentIssue) {
-        super();
-        setIssue(parentIssue);
-    }
+    void validateAPIObject() throws SyncEventOriginObjectChanged;
+
+    Object getAPIObject();
 
 }

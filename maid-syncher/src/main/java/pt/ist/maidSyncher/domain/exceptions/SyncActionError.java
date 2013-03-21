@@ -12,33 +12,35 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain.github.exceptions;
+package pt.ist.maidSyncher.domain.exceptions;
+
+import pt.ist.maidSyncher.domain.SyncEvent;
 
 /**
- * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 12 de Fev de 2013
+ * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 13 de Mar de 2013
  *
  * 
  */
-public class OauthInvalidTokenException extends Exception {
+public class SyncActionError extends RuntimeException {
 
     /**
      * 
      */
-    public OauthInvalidTokenException() {
+    public SyncActionError() {
         super();
     }
 
     /**
      * @param message
      */
-    public OauthInvalidTokenException(String message) {
+    public SyncActionError(String message) {
         super(message);
     }
 
     /**
      * @param cause
      */
-    public OauthInvalidTokenException(Throwable cause) {
+    public SyncActionError(Throwable cause) {
         super(cause);
     }
 
@@ -46,7 +48,15 @@ public class OauthInvalidTokenException extends Exception {
      * @param message
      * @param cause
      */
-    public OauthInvalidTokenException(String message, Throwable cause) {
+    public SyncActionError(String message, SyncEvent syncEvent, Throwable cause) {
+        super(message + " SyncEvent: " + syncEvent.toString(), cause);
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public SyncActionError(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -56,7 +66,7 @@ public class OauthInvalidTokenException extends Exception {
      * @param enableSuppression
      * @param writableStackTrace
      */
-    public OauthInvalidTokenException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public SyncActionError(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 

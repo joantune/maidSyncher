@@ -15,8 +15,16 @@ relation DSIRepositoryGHRepository {
 }
 
 relation DSIRepositoryACTaskCategory {
-	.pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory playsRole acTaskCategory;
+	.pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory playsRole acTaskCategories {
+		multiplicity *;
+	}
 	DSIRepository playsRole  dsiObjectRepository;
+}
+
+//default project
+relation DSIRepositoryACProject {
+	.pt.ist.maidSyncher.domain.activeCollab.ACProject playsRole defaultProject;
+	DSIRepository playsRole dsiRepositoryFromDefaultProject;
 }
 
 // Project
@@ -24,7 +32,9 @@ relation DSIRepositoryACTaskCategory {
 class DSIProject extends DSIObject {
 }
 relation DSIProjectGHLabel {
-	.pt.ist.maidSyncher.domain.github.GHLabel playsRole gitHubLabel;
+	.pt.ist.maidSyncher.domain.github.GHLabel playsRole gitHubLabels {
+		multiplicity *;
+	}
 	DSIProject playsRole dsiObjectProject;
 }
 
@@ -78,10 +88,10 @@ relation DSISubTaskGHIssue {
 	DSISubTask playsRole dsiObjectSubTask;
 }
 
-relation DSISubTaskGHComment {
-	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
-	DSISubTask playsRole dsiObjectSubTask;
-}
+//relation DSISubTaskGHComment {
+//	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
+//	DSISubTask playsRole dsiObjectSubTask;
+//}
 
 //Comment
 

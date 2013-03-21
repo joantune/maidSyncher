@@ -86,6 +86,7 @@ class GHRepository extends GHObject {
 }
 
 class GHLabel  extends GHObject {
+	String name;
 }
 
 class GHMilestone extends GHObject {
@@ -247,6 +248,15 @@ relation GHRepositoryGHIssue {
 	}
 	GHIssue playsRole issues {
 		multiplicity *;
+	}
+}
+
+relation GHRepositoryGHuser {
+	GHRepository playsRole repositoriesOwned {
+		multiplicity *;
+	}
+	GHUser playsRole owner {
+		multiplicity 1..1;
 	}
 }
 

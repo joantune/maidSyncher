@@ -9,15 +9,26 @@
  *     Luis Silva - ACGHSync
  *     João Antunes - initial API and implementation
  ******************************************************************************/
-package pt.ist.maidSyncher.domain.dsi;
+/**
+ * 
+ */
+package pt.ist.maidSyncher.domain.exceptions;
 
-public class DSISubTask extends DSISubTask_Base {
+import pt.ist.maidSyncher.domain.SyncEvent;
 
-    public static final String MRKR_SUBTASK = "@subtask";
+/**
+ * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 11 de Mar de 2013
+ * 
+ *         When a SyncEvent has an {@link SyncEvent#getApiOriginalObject()} that changed
+ */
+public class SyncEventOriginObjectChanged extends Exception {
 
-    public DSISubTask(DSIIssue parentIssue) {
-        super();
-        setIssue(parentIssue);
+    public SyncEventOriginObjectChanged(String string) {
+        super(string);
+    }
+
+    public SyncEventOriginObjectChanged(String string, Exception e) {
+        super(string, e);
     }
 
 }

@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2013 Instituto Superior Técnico - João Antunes
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ * Contributors:
+ *     Luis Silva - ACGHSync
+ *     João Antunes - initial API and implementation
+ ******************************************************************************/
 package pt.ist;
 
 import java.io.IOException;
@@ -23,8 +34,8 @@ import org.eclipse.egit.github.core.service.MilestoneService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 
+import pt.ist.fenixWebFramework.FenixWebFramework;
 import pt.ist.fenixframework.Config;
-import pt.ist.fenixframework.FenixFramework;
 import pt.ist.fenixframework.FenixFrameworkPlugin;
 import pt.ist.fenixframework.artifact.FenixFrameworkArtifact;
 import pt.ist.fenixframework.project.DmlFile;
@@ -44,10 +55,12 @@ import pt.ist.maidSyncher.api.activeCollab.ACUser;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
+import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHComment;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
+import pt.ist.maidSyncher.domain.github.GHOrganization;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 
 public class Main {
@@ -69,8 +82,8 @@ public class Main {
                     this.dbPassword = ffProperties.getProperty("db.pass");
                     this.appName = ffProperties.getProperty("app.name");
                     this.errorIfChangingDeletedObject = true;
-//                    this.canCreateDomainMetaObjects = false;
-                    this.updateRepositoryStructureIfNeeded = true;
+                    this.canCreateDomainMetaObjects = true;
+                    this.updateRepositoryStructureIfNeeded = false;
                     this.rootClass = MaidRoot.class;
                     this.errorfIfDeletingObjectNotDisconnected = true;
                     this.plugins = new FenixFrameworkPlugin[0];
@@ -102,12 +115,13 @@ public class Main {
     }
 
     // FenixFramework will try automatic initialization when first accessed
-    public static void main(String[] args) throws IOException {
-        FenixFramework.bootStrap(config);
-        FenixFramework.initialize();
+    public static void main(String[] args) throws IOException, SyncEventOriginObjectChanged {
+        FenixWebFramework.bootStrap(config);
+        FenixWebFramework.initialize();
         syncGitHub();
         syncActiveCollab();
         printChangesBuzz();
+        //MaidRoot.getInstance().processChangesBuzz(true);
     }
 
     private static void printChangesBuzz() {
@@ -243,6 +257,9 @@ public class Main {
 
     private static void syncGitHub() {
 
+        //this is the first sync task, so let us reset the changesBuzz
+        //MaidRoot.getInstance().resetSyncEvents();
+
         //let's try to connect to the GH Account
         Properties configurationProperties = new Properties();
         InputStream configurationInputStream = Main.class.getResourceAsStream("/configuration.properties");
@@ -269,12 +286,14 @@ public class Main {
         List<User> orgMembers = null;
         List<Repository> repositories = null;
         try {
+
             orgMembers = organizationService.getMembers(organizationName);
 
 
             orgMembers.addAll(organizationService.getPublicMembers(organizationName));
 
             User organization = organizationService.getOrganization(organizationName);
+            GHOrganization.process(organization);
 
             repositories = repositoryService.getRepositories(organization.getLogin());
 

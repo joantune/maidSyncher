@@ -1,3 +1,4 @@
+.serviceAnnotationLog
 *.class
 target
 configuration.properties

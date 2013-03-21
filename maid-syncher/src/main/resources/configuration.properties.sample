@@ -1,0 +1,24 @@
+
+
+
+# FF persistence database
+
+#this example db.alias uses a MySQL connection to port 3306 on localhost on DB syncherMaid 
+#alter the URL below to alter any of the details
+
+#don't change this line, FF stuff
+app.name=maid-syncher
+
+github.oauth2.token=tokenUsedForThePurposeOfUnitTests
+#The GH name of the organization to import all of the data from
+github.organization.name=sandbox-org-maidSync
+
+#The host of your AC instance - needed for tests only [no actual tests
+#are yet implemented]
+ac.server.host=host.com
+ac.server.token=kindaSelfExplanatory
+
+#Test database configurations - note, the test database will be wiped of at each run of the tests
+test.db.alias=//localhost:3306/syncherMaidTests?useUnicode=true&characterEncoding=utf8&clobCharacterEncoding=utf8&zeroDateTimeBehavior=convertToNull
+test.db.user=dbUsername
+test.db.pass=dbPassword
