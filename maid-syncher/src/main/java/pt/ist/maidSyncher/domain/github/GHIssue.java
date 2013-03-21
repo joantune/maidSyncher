@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixWebFramework.services.Service;
+import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -46,6 +47,7 @@ import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
@@ -306,12 +308,7 @@ public class GHIssue extends GHIssue_Base {
                     newAcTask.setComplete(false);
                 }
 
-                //now, the harder stuff, Milestones, and Category [aka repository]
-                DSIMilestone dsiMilestone = (DSIMilestone) getMilestone().getDSIObject(); //depended on
-                newAcTask.setMilestoneId((int) dsiMilestone.getAcMilestone().getId());
-
                 DSIRepository dsiRepository = (DSIRepository) getRepository().getDSIObject(); //depended on
-
                 //we will also need the project on the AC side
                 DSIIssue dsiIssue = (DSIIssue) getDSIObject(); /*seen that we are creating based on something
                                                                from GH, we are creating an issue, thus the cast */
@@ -319,7 +316,50 @@ public class GHIssue extends GHIssue_Base {
                 //in this version, let's use the default one always.
                 //TODO use the labels to create the task in various projects GHIssue #10
 
-                ACProject acProject = dsiRepository.getDefaultProject();
+                final ACProject acProject = dsiRepository.getDefaultProject();
+                //now, the harder stuff, Milestones, and Category [aka repository]
+
+                //let's see if the Milestone exists
+                if (getMilestone() != null) {
+
+                    DSIMilestone dsiMilestone = (DSIMilestone) getMilestone().getDSIObject(); //depended on
+                    if (dsiMilestone == null || dsiMilestone.getAcMilestone() == null) {
+                        //we should create it
+                        ACMilestone acMilestoneToCreate = getMilestone().getACCorrespondingPreliminarObject();
+                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
+                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(
+                                        ACMilestone.create(acMilestoneToCreate), true);
+                        if (dsiMilestone == null) {
+                            dsiMilestone = (DSIMilestone) getMilestone().findOrCreateDSIObject();
+                        }
+                        dsiMilestone.setAcMilestone(newMilestone);
+
+                    } else {
+                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestone = dsiMilestone.getAcMilestone();
+                        if (ObjectUtils.equals(acMilestone.getProject(), acProject) == false) {
+                            //then this milestone should be moved,or copied to the new project
+                            //let's see which one we should do
+                            boolean hasOtherTasks = acMilestone.getTasks().isEmpty() == false;
+
+                            if (hasOtherTasks) {
+                                //let's copy it
+                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
+                                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(ACMilestone.copyTo(
+                                                acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId()), true);
+                                dsiMilestone.setAcMilestone(newMilestone);
+                            } else {
+                                //let's move it
+                                ACMilestone.moveTo(acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId());
+                                //let's make the move internally without fuss
+                                acMilestone.setProject(acProject);
+                            }
+
+                        }
+                    }
+                    newAcTask.setMilestoneId((int) dsiMilestone.getAcMilestone().getId());
+                }
+
+
                 ACTaskCategory acTaskCategory = dsiRepository.getACTaskCategoryFor(acProject);
 
 
@@ -338,7 +378,7 @@ public class GHIssue extends GHIssue_Base {
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
                 Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
-                dsiObjectsDependedOn.add(getMilestone().getDSIObject());
+//                dsiObjectsDependedOn.add(getMilestone().getDSIObject());
                 dsiObjectsDependedOn.add(getRepository().getDSIObject());
                 dsiObjectsDependedOn.add(null); //null - means all of the GHLabel's should be synched
                 return dsiObjectsDependedOn;
@@ -358,6 +398,7 @@ public class GHIssue extends GHIssue_Base {
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
                 Set<Class> dependedOnDSIClasses = new HashSet<>();
                 dependedOnDSIClasses.add(DSIMilestone.class);
+                dependedOnDSIClasses.add(DSIProject.class);
                 dependedOnDSIClasses.add(DSIRepository.class);
                 return dependedOnDSIClasses;
             }

@@ -18,6 +18,7 @@ import org.eclipse.egit.github.core.Repository;
 import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
+import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -65,6 +66,14 @@ public class GHMilestone extends GHMilestone_Base {
     @Override
     protected DSIObject getDSIObject() {
         return getDsiObjectMilestone();
+    }
+
+    protected ACMilestone getACCorrespondingPreliminarObject() {
+        ACMilestone acMilestone = new ACMilestone();
+        acMilestone.setName(getTitle());
+        acMilestone.setBody(getDescription());
+        acMilestone.setDueOn(getDueOn().toDateTimeToday().toDate());
+        return acMilestone;
     }
 
     @Override

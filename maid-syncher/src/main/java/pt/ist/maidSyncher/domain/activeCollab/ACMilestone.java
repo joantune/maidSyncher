@@ -43,6 +43,20 @@ public class ACMilestone extends ACMilestone_Base {
         return acMilestone;
     }
 
+    @Service
+    public static ACMilestone process(pt.ist.maidSyncher.api.activeCollab.ACMilestone milestone, boolean skipSync) {
+        checkNotNull(milestone);
+        ACMilestone acMilestone =
+                (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjects(),
+                        skipSync);
+
+        pt.ist.maidSyncher.domain.activeCollab.ACProject acProject =
+                pt.ist.maidSyncher.domain.activeCollab.ACProject.findById(milestone.getProjectId());
+        checkNotNull(acProject);
+        acMilestone.setProject(acProject);
+        return acMilestone;
+    }
+
     public static ACMilestone findById(long id) {
         return (ACMilestone) MiscUtils.findACObjectsById(id, ACMilestone.class);
     }

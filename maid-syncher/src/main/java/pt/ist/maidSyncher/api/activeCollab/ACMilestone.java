@@ -11,6 +11,9 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.api.activeCollab;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
@@ -27,6 +30,7 @@ public class ACMilestone extends ACObject {
 //	private int* _otherAssigneesId;
     private Date _startOn;
     private Date _dueOn;
+    private long projectId;
 
     public ACMilestone()
     {
@@ -63,6 +67,7 @@ public class ACMilestone extends ACObject {
             cal.set(Calendar.SECOND,59);
             _dueOn = cal.getTime();
         }
+        this.setProjectId(JsonRest.getInt(jsonObj, "project_id"));
 
     }
 
@@ -114,6 +119,31 @@ public class ACMilestone extends ACObject {
         _dueOn = dueOn;
     }
 
+    static public ACMilestone copyTo(long milestoneId, long currentProjectId, long newProjectId) throws IOException {
+        String path =
+                ACContext.getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId + "/copy-to-project");
+        StringBuilder postData = new StringBuilder();
+        JsonRest.setString(postData, "copy_to_project_id", String.valueOf(newProjectId));
+        return new ACMilestone(ACContext.processPost(path, postData.toString()));
+
+    }
+
+    static public ACMilestone moveTo(long milestoneId, long currentProjectId, long newProjectId) throws IOException {
+        String path =
+                ACContext.getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId + "/move-to-project");
+        StringBuilder postData = new StringBuilder();
+        JsonRest.setString(postData, "move_to_project_id", String.valueOf(newProjectId));
+        return new ACMilestone(ACContext.processPost(path, postData.toString()));
+
+    }
+
+    public static ACMilestone create(ACMilestone preliminarObject) throws IOException {
+        checkNotNull(preliminarObject);
+        checkArgument(preliminarObject.getId() > 0);
+        String path = ACContext.getBasicUrlForPath("projects/" + preliminarObject.getProjectId() + "/milestones/add");
+        return new ACMilestone(postObject(path, preliminarObject.toJSONString()));
+    }
+
     @Override
     public String toJSONString()
     {
@@ -125,6 +155,14 @@ public class ACMilestone extends ACObject {
         JsonRest.setDate(postData, "task[start_on]", _startOn);
         JsonRest.setDate(postData, "task[due_on]", _dueOn);
         return postData.toString();
+    }
+
+    public long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(long projectId) {
+        this.projectId = projectId;
     }
 
 }
