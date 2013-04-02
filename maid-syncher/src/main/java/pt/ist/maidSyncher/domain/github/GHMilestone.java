@@ -13,6 +13,10 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.joda.time.LocalTime;
@@ -20,6 +24,7 @@ import org.joda.time.LocalTime;
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
@@ -41,18 +46,34 @@ public class GHMilestone extends GHMilestone_Base {
     }
 
     @Service
-    public static GHMilestone process(Milestone milestone, Repository repository) {
+    public static void process(Collection<Milestone> milestones, Repository repository) {
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        GHMilestone ghMilestone = process(milestone);
-
-        //now let's take care of the repository
+        //let's take care of the repository
         GHRepository ghRepository = GHRepository.process(repository);
-        ghMilestone.setRepository(ghRepository);
 
-        //we have no updateAt field, so let's use the current localtime
+        //retrieving the list of current milestones
+        Set<GHMilestone> oldGHMilestones = new HashSet<GHMilestone>(ghRepository.getMilestones());
 
-        return ghMilestone;
+        Set<GHMilestone> newGHMilestones = new HashSet<GHMilestone>();
+
+        for (Milestone newAPIMilestone : milestones) {
+            GHMilestone ghMilestone = process(newAPIMilestone);
+            newGHMilestones.add(ghMilestone);
+        }
+
+        //remove the old ones and set the new ones
+        ghRepository.getMilestones().clear();
+        ghRepository.getMilestones().addAll(newGHMilestones);
+
+        //create the DELETE events
+        oldGHMilestones.removeAll(newGHMilestones);
+
+        for (GHMilestone removedGHMilestone : oldGHMilestones) {
+            SyncEvent.createAndAddADeleteEventWithoutAPIObj(removedGHMilestone);
+
+        }
+
     }
 
     @Override
@@ -62,6 +83,7 @@ public class GHMilestone extends GHMilestone_Base {
          * the date of the last time it was synched] */
         return getLastSynchTime() == null ? getCreatedAt() : getLastSynchTime();
     }
+
 
     @Override
     protected DSIObject getDSIObject() {

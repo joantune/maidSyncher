@@ -25,11 +25,13 @@ import java.util.Set;
 import jvstm.cps.ConsistencyPredicate;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.User;
+import org.eclipse.egit.github.core.service.IssueService;
 import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +57,10 @@ import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAnd
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
+
 public class GHIssue extends GHIssue_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(GHIssue.class);
 
@@ -62,13 +68,14 @@ public class GHIssue extends GHIssue_Base {
     public final static String STATE_OPEN = "open";
 
     //The PropertyDescriptor s of this issue
-    protected final static String DSC_STATE = "state";
-    protected final static String DSC_LABELS = "labels";
-    protected final static String DSC_NUMBER = "number";
-    protected final static String DSC_BODY = "body";
-    protected final static String DSC_TITLE = "title";
-    protected final static String DSC_UPDATED_AT = "updatedAt";
-    protected final static String DSC_HTML_URL = "htmlUrl";
+    public final static String DSC_STATE = "state";
+    public final static String DSC_LABELS = "labels";
+    public final static String DSC_NUMBER = "number";
+    public final static String DSC_BODY = "body";
+    public final static String DSC_TITLE = "title";
+    public final static String DSC_UPDATED_AT = "updatedAt";
+    public final static String DSC_HTML_URL = "htmlUrl";
+    public final static String DSC_MILESTONE = "milestone";
 
     public GHIssue() {
         super();
@@ -234,8 +241,287 @@ public class GHIssue extends GHIssue_Base {
         return syncActionWrapperToReturn;
     }
 
-    private SyncActionWrapper syncUpdateSubTaskEvent(ACSubTask newAcSubTask, DSISubTask dsiSubTask, SyncEvent syncEvent) {
+    /**
+     * Enforces only one Label that corresponds to an ACProject.
+     * <strong>Makes changes to the GH repository</strong>
+     * 
+     * @throws IOException
+     * @{@link Deprecated} - not the behavior used anymore
+     */
+    @Deprecated
+    private void validateAndCorrectLabels() throws IOException {
+        GHLabel labelFound = null;
+        Set<GHLabel> labelsToRemove = new HashSet<>();
+        for (GHLabel ghLabel : getLabels()) {
+            if (ghLabel.getDSIObject() != null) {
+                if (labelFound != null) {
+                    labelsToRemove.add(ghLabel);
+                } else {
+                    labelFound = ghLabel;
+                }
+            }
+        }
+
+        //let us enforce the labels then
+        IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+        Issue issueToRemoveLabelsFrom = issueService.getIssue(getRepository(), getNumber());
+        for (Label currentLabel : issueToRemoveLabelsFrom.getLabels()) {
+            final String currentLabelName = currentLabel.getName();
+            boolean removeThisOne = Iterables.any(labelsToRemove, new Predicate<GHLabel>() {
+                @Override
+                public boolean apply(GHLabel input) {
+                    if (input == null)
+                        return false;
+                    return input.getName().equalsIgnoreCase(currentLabelName);
+
+                }
+
+            });
+            if (removeThisOne) {
+                issueToRemoveLabelsFrom.getLabels().remove(currentLabel);
+            }
+        }
+
+        //let us communicate the changes
+        Issue newlyEditedIssue = issueService.editIssue(getRepository(), issueToRemoveLabelsFrom);
+        try {
+            copyPropertiesFrom(newlyEditedIssue);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new Error(e);
+        }
+
+    }
+
+    private SyncActionWrapper syncUpdateSubTaskEvent(ACSubTask newAcSubTask, DSISubTask dsiSubTask, final SyncEvent syncEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        boolean auxChangedLabels = false;
+        boolean auxChangedState = false;
+        boolean auxChangedBody = false;
+        boolean auxChangedTitle = false;
+        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+            tickedDescriptors.add(changedDescriptor);
+            switch (changedDescriptor.getName()) {
+            case DSC_ID:
+            case DSC_URL:
+            case DSC_HTML_URL:
+            case DSC_CREATED_AT:
+            case DSC_UPDATED_AT:
+            case DSC_NUMBER:
+            case DSC_MILESTONE:
+                //changes to this milestone don't reflect
+                //on the other side, because we are only a subtask
+                break; //the ones above, there'se no sense in changing anything
+            case DSC_LABELS:
+                //seen that we were a subtask, if we edited the project label,
+                //we need to create an ACTask on another ACProject
+                auxChangedLabels = true;
+                break;
+            case DSC_STATE:
+                //we might have to close/open the Task/SubTask on the other side
+                auxChangedState = true;
+                break;
+            case DSC_BODY:
+                //let us change the body on the other side as well
+                auxChangedBody = true;
+                break;
+            case DSC_TITLE:
+                //change the name on the other side
+                auxChangedTitle = true;
+                break;
+            default:
+                tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
+                //cases, let's remove it from the ticked descriptors
+
+            }
+        }
+
+        final boolean changedLabels = auxChangedLabels;
+        final boolean changedState = auxChangedState;
+        final boolean changedBody = auxChangedBody;
+        final boolean changedTitle = auxChangedTitle;
+
+        return new SyncActionWrapper<SynchableObject>() {
+
+            @Override
+            public Collection<SynchableObject> sync() throws IOException {
+                Issue newIssue = null;
+                ACSubTask acSubTaskToEdit = null;
+
+                Set<SynchableObject> synchableObjectsToReturn = new HashSet<>();
+                if (changedLabels) {
+                    //we do nothing here, we only sync if it's the parent that changed
+                }
+                if (changedState) {
+                    //then we need to apply the state to the corresponding ACSubTask
+                    acSubTaskToEdit = getNewPrefilledACSubTask(acSubTaskToEdit);
+                    switch (getState()) {
+                    case STATE_CLOSED:
+                        acSubTaskToEdit.setComplete(true);
+                        break;
+                    case STATE_OPEN:
+                        acSubTaskToEdit.setComplete(false);
+                        break;
+                    }
+
+                }
+                if (changedBody) {
+                    //we are a subtask, we must ensure that we have the relation to the task in the beginning
+                    if (StringUtils.startsWith(getBody(), getSubTaskBodyPrefix()) == false) {
+                        //then we need to correct that!!
+                        String newBody = applySubTaskBodyPrefix(getBody());
+                        newIssue = getNewPrefilledIssue(newIssue);
+                        newIssue.setBody(newBody);
+                    }
+
+                }
+                if (changedTitle) {
+                    //let's update the title on the other end
+                    acSubTaskToEdit = getNewPrefilledACSubTask(acSubTaskToEdit);
+                    acSubTaskToEdit.setName(getTitle());
+                }
+
+                if (newIssue != null) {
+                    //we should apply the changes
+                    IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+                    Issue editedIssue = issueService.editIssue(getRepository(), newIssue);
+                    GHIssue.process(editedIssue, true);
+
+                }
+
+                if (acSubTaskToEdit != null) {
+                    //we should apply the changes
+                    String url = getDsiObjectSubTask().getAcSubTask().getUrl();
+                    ACSubTask newlyUpdatedSubTask = acSubTaskToEdit.update(url);
+                    try {
+                        getDsiObjectSubTask().getAcSubTask().copyPropertiesFrom(newlyUpdatedSubTask);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+                        throw new Error(e);
+                    }
+                }
+
+                return synchableObjectsToReturn;
+            }
+
+
+            @Override
+            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+                return tickedDescriptors;
+            }
+
+            @Override
+            public SyncEvent getOriginatingSyncEvent() {
+                return syncEvent;
+            }
+
+            @Override
+            public Collection<DSIObject> getSyncDependedDSIObjects() {
+                return Collections.singleton(getDSIObject());
+            }
+
+            @Override
+            public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                Set<Class> classesDependedOn = new HashSet<>();
+                classesDependedOn.add(GHLabel.class);
+                classesDependedOn.add(pt.ist.maidSyncher.domain.activeCollab.ACSubTask.class);
+                return classesDependedOn;
+            }
+        };
+    }
+
+    private final static String SUB_TASK_BODY_PREFIX = "Subtask of #";
+    private String getSubTaskBodyPrefix() {
+        DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+        return SUB_TASK_BODY_PREFIX + dsiSubTask.getParentIssue().getGhIssue().getNumber();
+    }
+
+    /**
+     * 
+     * @param body
+     * @return A string with the getSubTaskBodyPrefix in the beginning, and the rest of the body there.
+     *         If we had the subTaskBodyPrefix in any other place of the body, it moves it to the beginning
+     */
+    private String applySubTaskBodyPrefix(String body) {
+        String subTaskBodyPrefixString = getSubTaskBodyPrefix();
+        String newBody = body;
+
+        //let's try to find it
+        if (StringUtils.contains(body, subTaskBodyPrefixString)) {
+            //let's remove it.
+            newBody = StringUtils.remove(body, subTaskBodyPrefixString);
+        }
+
+        newBody = subTaskBodyPrefixString + " " + newBody;
+
+        return newBody;
+    }
+
+    private Issue getNewPrefilledIssue(Issue newIssueToReuse) {
+        if (newIssueToReuse != null)
+            return newIssueToReuse;
+        Issue newIssue = new Issue();
+        try {
+            copyPropertiesTo(newIssue);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+            throw new Error("Error trying to prefill an Issue.", e);
+        }
+        return newIssue;
+    }
+
+    private ACSubTask getNewPrefilledACSubTask(ACSubTask newACSubTaskToReuse) {
+        if (newACSubTaskToReuse != null)
+            return newACSubTaskToReuse;
+        checkNotNull(getDSIObject());
+        DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+        checkNotNull(dsiSubTask);
+        pt.ist.maidSyncher.domain.activeCollab.ACSubTask acSubTask = dsiSubTask.getAcSubTask();
+        checkNotNull(acSubTask);
+        ACSubTask newACSubTask = new ACSubTask();
+        try {
+            acSubTask.copyPropertiesTo(newACSubTask);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+            throw new Error("Error trying to prefill an Issue.", e);
+        }
+        return newACSubTask;
+    }
+
+    //Not used, TODO remove or use it
+//    private void updateSubTaskLabels(Set<SynchableObject> synchableObjectsToReturn) {
+//        //this will take care of incorrect uses of the labels
+//        validateAndCorrectLabels();
+//        //now let's assert if it changed the project label or not
+//        Optional<GHLabel> optionalGHLabel = Iterables.tryFind(getLabels(), new Predicate<GHLabel>() {
+//            @Override
+//            public boolean apply(GHLabel input) {
+//                if (input == null)
+//                    return false;
+//                DSIProject dsiProject = (DSIProject) input.getDSIObject();
+//                if (dsiProject != null && dsiProject.getAcProject() != null)
+//                    return true;
+//                return false;
+//            }
+//        });
+//        //let us check if we changed projects or not
+//
+//        ACProject projectLabelProject = ((DSIProject) projectLabel.getDSIObject()).getAcProject();
+//
+//    }
+
+//    private boolean projectChanged(Optional<GHLabel> optionalGHLabelWithAssociatedProject, ACProject currentProject) {
+//        if (optionalGHLabelWithAssociatedProject.isPresent() == false) {
+//            return ObjectUtils.equals(null, currentProject) == false;
+//        } else {
+//            ACProject acProject = ((DSIProject) optionalGHLabelWithAssociatedProject.get().getDSIObject()).getAcProject();
+//        }
+//
+//    }
+
+    private SyncActionWrapper syncUpdateTaskEvent(ACTask newAcTask, DSIIssue dsiIssue, SyncEvent syncEvent) {
+        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        boolean auxChangedMilestones = false;
+        boolean auxChangedLabels = false;
+        boolean auxChangedState = false;
+        boolean auxChangedBody = false;
+        boolean auxChangedTitle = false;
         for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor.getName()) {
@@ -247,10 +533,27 @@ public class GHIssue extends GHIssue_Base {
             case DSC_NUMBER:
                 break; //the ones above, there'se no sense in changing anything
 
+            case DSC_MILESTONE:
+                //we need to create/change that milestone on the AC side
+                auxChangedMilestones = true;
+
+                break;
             case DSC_LABELS:
+                //seen that we were a subtask, if we edited the project label,
+                //we need to create an ACTask on another ACProject
+                auxChangedLabels = true;
+                break;
             case DSC_STATE:
+                //we might have to close/open the Task/SubTask on the other side
+                auxChangedState = true;
+                break;
             case DSC_BODY:
+                //let us change the body on the other side as well
+                auxChangedBody = true;
+                break;
             case DSC_TITLE:
+                //change the name on the other side
+                auxChangedTitle = true;
                 break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
@@ -258,13 +561,103 @@ public class GHIssue extends GHIssue_Base {
 
             }
         }
+        final boolean changedMilestones = auxChangedMilestones;
+        final boolean changedLabels = auxChangedLabels;
+        final boolean changedState = auxChangedState;
+        final boolean changedBody = auxChangedBody;
+        final boolean changedTitle = auxChangedTitle;
+        return new SyncActionWrapper<SynchableObject>() {
 
-        return null;
+            @Override
+            public Collection<SynchableObject> sync() throws IOException {
+                Set<SynchableObject> synchableObjectsToReturn = new HashSet<>();
+                ACTask acTaskToEdit = null;
+                if (changedMilestones) {
+                    if ( getMilestone() != null) {
+
+                        //let us change the milestone, if it doesn't exist, reuse/create it
+                        DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+
+                        //let's try to find one with the name to use
+                        ACProject acProject = getProjectToUsedBasedOnCurrentLabels();
+                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone milestoneFound =
+                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone
+                                .findMilestone(acProject, getMilestone().getTitle());
+                        if (milestoneFound == null) {
+                            //we have to create it
+                            ACMilestone acMilestoneToCreate = new ACMilestone();
+                            acMilestoneToCreate.setName(getMilestone().getTitle());
+                            acMilestoneToCreate.setBody(getMilestone().getDescription());
+                            acMilestoneToCreate.setDueOn(getMilestone().getDueOn().toDateTimeToday().toDate());
+                            acMilestoneToCreate.setProjectId(acProject.getId());
+                            ACMilestone newlyCreatedMilestone = ACMilestone.create(acMilestoneToCreate);
+                            pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(newlyCreatedMilestone, true);
+                        }
+                    }
+
+                }
+                if (changedLabels) {
+
+                }
+                if (changedState) {
+
+                }
+                if (changedBody) {
+
+                }
+                if (changedTitle) {
+
+                }
+
+                return synchableObjectsToReturn;
+            }
+
+            @Override
+            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public SyncEvent getOriginatingSyncEvent() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Collection<DSIObject> getSyncDependedDSIObjects() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                return Collections.singleton((Class) ACProject.class);
+            }
+        };
     }
 
-    private SyncActionWrapper syncUpdateTaskEvent(ACTask newAcTask, DSIIssue dsiIssue, SyncEvent syncEvent) {
-        // TODO Auto-generated method stub
-        return null;
+    private ACProject getProjectToUsedBasedOnCurrentLabels() {
+
+        Collection<GHLabel> appliableLabels = Collections2.filter(getLabels(), new Predicate<GHLabel>() {
+            @Override
+            public boolean apply(GHLabel input) {
+                if (input == null)
+                    return false;
+                DSIProject dsiProject = (DSIProject) input.getDSIObject();
+                if (dsiProject == null)
+                    return false;
+                if (dsiProject.getAcProject() != null)
+                    return true;
+                return false;
+            }
+        });
+        //let's try to search on the current labels
+        if (appliableLabels.size() != 1) {
+            return ((DSIRepository) getRepository().getDSIObject()).getDefaultProject();
+        }
+        else
+            return ((DSIProject) appliableLabels.iterator().next().getDSIObject()).getAcProject();
     }
 
     private SyncActionWrapper syncCreateEvent(final ACTask newAcTask, final SyncEvent syncEvent) {
@@ -279,6 +672,7 @@ public class GHIssue extends GHIssue_Base {
             case DSC_UPDATED_AT:
             case DSC_NUMBER:
 
+            case DSC_MILESTONE:
             case DSC_LABELS:
             case DSC_STATE:
             case DSC_BODY:
@@ -291,120 +685,124 @@ public class GHIssue extends GHIssue_Base {
             }
         }
 
-        SyncActionWrapper toReturnActionWrapper = new SyncActionWrapper() {
+        //if we have a GHLabel of 'deleted' let's not do anything
+        if (GHLabel.containsDeletedLabel(getLabels())) {
+            return new EmptySyncActionWrapper(syncEvent);
+        } else {
 
-            @Override
-            public Collection<SynchableObject> sync() throws IOException {
+            SyncActionWrapper toReturnActionWrapper = new SyncActionWrapper() {
 
+                @Override
+                public Collection<SynchableObject> sync() throws IOException {
 
-                //let's fill appropriately the newTask
-                newAcTask.setName(getTitle());
-                newAcTask.setBody(getBodyHtml());
-                newAcTask.setVisibility(true);
+                    //let's fill appropriately the newTask
+                    newAcTask.setName(getTitle());
+                    newAcTask.setBody(getBodyHtml());
+                    newAcTask.setVisibility(true);
 
-                if (getState().equals(STATE_CLOSED)) {
-                    newAcTask.setComplete(true);
-                } else if (getState().equals(STATE_OPEN)) {
-                    newAcTask.setComplete(false);
-                }
-
-                DSIRepository dsiRepository = (DSIRepository) getRepository().getDSIObject(); //depended on
-                //we will also need the project on the AC side
-                DSIIssue dsiIssue = (DSIIssue) getDSIObject(); /*seen that we are creating based on something
-                                                               from GH, we are creating an issue, thus the cast */
-                //let's find out which project we should be creating the task on
-                //in this version, let's use the default one always.
-                //TODO use the labels to create the task in various projects GHIssue #10
-
-                final ACProject acProject = dsiRepository.getDefaultProject();
-                //now, the harder stuff, Milestones, and Category [aka repository]
-
-                //let's see if the Milestone exists
-                if (getMilestone() != null) {
-
-                    DSIMilestone dsiMilestone = (DSIMilestone) getMilestone().getDSIObject(); //depended on
-                    if (dsiMilestone == null || dsiMilestone.getAcMilestone() == null) {
-                        //we should create it
-                        ACMilestone acMilestoneToCreate = getMilestone().getACCorrespondingPreliminarObject();
-                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
-                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(
-                                        ACMilestone.create(acMilestoneToCreate), true);
-                        if (dsiMilestone == null) {
-                            dsiMilestone = (DSIMilestone) getMilestone().findOrCreateDSIObject();
-                        }
-                        dsiMilestone.setAcMilestone(newMilestone);
-
-                    } else {
-                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestone = dsiMilestone.getAcMilestone();
-                        if (ObjectUtils.equals(acMilestone.getProject(), acProject) == false) {
-                            //then this milestone should be moved,or copied to the new project
-                            //let's see which one we should do
-                            boolean hasOtherTasks = acMilestone.getTasks().isEmpty() == false;
-
-                            if (hasOtherTasks) {
-                                //let's copy it
-                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
-                                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(ACMilestone.copyTo(
-                                                acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId()), true);
-                                dsiMilestone.setAcMilestone(newMilestone);
-                            } else {
-                                //let's move it
-                                ACMilestone.moveTo(acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId());
-                                //let's make the move internally without fuss
-                                acMilestone.setProject(acProject);
-                            }
-
-                        }
+                    if (getState().equals(STATE_CLOSED)) {
+                        newAcTask.setComplete(true);
+                    } else if (getState().equals(STATE_OPEN)) {
+                        newAcTask.setComplete(false);
                     }
-                    newAcTask.setMilestoneId((int) dsiMilestone.getAcMilestone().getId());
+
+                    DSIRepository dsiRepository = (DSIRepository) getRepository().getDSIObject(); //depended on
+                    //we will also need the project on the AC side
+                    DSIIssue dsiIssue = (DSIIssue) getDSIObject(); /*seen that we are creating based on something
+                                                                   from GH, we are creating an issue, thus the cast */
+                    //let's find out which project we should be creating the task on
+                    //in this version, let's use the default one always.
+                    //TODO use the labels to create the task in various projects GHIssue #10
+
+                    final ACProject acProject = dsiRepository.getDefaultProject();
+                    //now, the harder stuff, Milestones, and Category [aka repository]
+
+                    //let's see if the Milestone exists
+                    if (getMilestone() != null) {
+
+                        DSIMilestone dsiMilestone = (DSIMilestone) getMilestone().getDSIObject(); //depended on
+                        if (dsiMilestone == null || dsiMilestone.getAcMilestone(acProject) == null) {
+                            ACMilestone acMilestoneToCreate = getMilestone().getACCorrespondingPreliminarObject();
+                            pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
+                                    pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(
+                                            ACMilestone.create(acMilestoneToCreate), true);
+                            if (dsiMilestone == null) {
+                                dsiMilestone = (DSIMilestone) getMilestone().findOrCreateDSIObject();
+                            }
+                            dsiMilestone.addAcMilestones(newMilestone);
+
+                        } else {
+                            pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestone =
+                                    dsiMilestone.getAcMilestone(acProject);
+                            //TODO BUG? shouldn't we check if acMilestone == null?!
+                            if (ObjectUtils.equals(acMilestone.getProject(), acProject) == false) {
+                                //then this milestone should be moved,or copied to the new project
+                                //let's see which one we should do
+                                boolean hasOtherTasks = acMilestone.getTasks().isEmpty() == false;
+
+                                if (hasOtherTasks) {
+                                    //let's copy it
+                                    pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
+                                            pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(ACMilestone.copyTo(
+                                                    acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId()),
+                                                    true);
+                                    dsiMilestone.addAcMilestones(newMilestone);
+                                } else {
+                                    //let's move it
+                                    ACMilestone.moveTo(acMilestone.getId(), acMilestone.getProject().getId(), acProject.getId());
+                                    //let's make the move internally without fuss
+                                    acMilestone.setProject(acProject);
+                                }
+
+                            }
+                        }
+                        newAcTask.setMilestoneId((int) dsiMilestone.getAcMilestone(acProject).getId());
+                    }
+
+                    ACTaskCategory acTaskCategory = dsiRepository.getACTaskCategoryFor(acProject);
+
+                    newAcTask.setCategoryId((int) acTaskCategory.getId());
+
+                    ACTask newlyCreatedTask = ACTask.createTask(newAcTask, acProject.getId());
+                    pt.ist.maidSyncher.domain.activeCollab.ACTask newlyCreatedDomainAcTask =
+                            pt.ist.maidSyncher.domain.activeCollab.ACTask.process(newlyCreatedTask, acProject.getId(), true);
+
+                    dsiIssue.setAcTask(newlyCreatedDomainAcTask);
+                    return Collections.singleton((SynchableObject) newlyCreatedDomainAcTask);
+
                 }
 
-
-                ACTaskCategory acTaskCategory = dsiRepository.getACTaskCategoryFor(acProject);
-
-
-                newAcTask.setCategoryId((int) acTaskCategory.getId());
-
-
-                ACTask newlyCreatedTask = ACTask.createTask(newAcTask, acProject.getId());
-                pt.ist.maidSyncher.domain.activeCollab.ACTask newlyCreatedDomainAcTask =
-                        pt.ist.maidSyncher.domain.activeCollab.ACTask.process(newlyCreatedTask, acProject.getId(), true);
-
-                dsiIssue.setAcTask(newlyCreatedDomainAcTask);
-                return Collections.singleton((SynchableObject) newlyCreatedDomainAcTask);
-
-            }
-
-            @Override
-            public Collection<DSIObject> getSyncDependedDSIObjects() {
-                Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
+                @Override
+                public Collection<DSIObject> getSyncDependedDSIObjects() {
+                    Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
 //                dsiObjectsDependedOn.add(getMilestone().getDSIObject());
-                dsiObjectsDependedOn.add(getRepository().getDSIObject());
-                dsiObjectsDependedOn.add(null); //null - means all of the GHLabel's should be synched
-                return dsiObjectsDependedOn;
-            }
+                    dsiObjectsDependedOn.add(getRepository().getDSIObject());
+                    dsiObjectsDependedOn.add(null); //null - means all of the GHLabel's should be synched
+                    return dsiObjectsDependedOn;
+                }
 
-            @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
+                @Override
+                public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+                    return tickedDescriptors;
+                }
 
-            @Override
-            public SyncEvent getOriginatingSyncEvent() {
-                return syncEvent;
-            }
+                @Override
+                public SyncEvent getOriginatingSyncEvent() {
+                    return syncEvent;
+                }
 
-            @Override
-            public Set<Class> getSyncDependedTypesOfDSIObjects() {
-                Set<Class> dependedOnDSIClasses = new HashSet<>();
-                dependedOnDSIClasses.add(DSIMilestone.class);
-                dependedOnDSIClasses.add(DSIProject.class);
-                dependedOnDSIClasses.add(DSIRepository.class);
-                return dependedOnDSIClasses;
-            }
-        };
+                @Override
+                public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                    Set<Class> dependedOnDSIClasses = new HashSet<>();
+                    dependedOnDSIClasses.add(DSIMilestone.class);
+                    dependedOnDSIClasses.add(DSIProject.class);
+                    dependedOnDSIClasses.add(DSIRepository.class);
+                    return dependedOnDSIClasses;
+                }
+            };
+            return toReturnActionWrapper;
+        }
 
-        return toReturnActionWrapper;
     }
 
 }

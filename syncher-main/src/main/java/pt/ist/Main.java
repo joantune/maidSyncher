@@ -82,7 +82,7 @@ public class Main {
                     this.dbPassword = ffProperties.getProperty("db.pass");
                     this.appName = ffProperties.getProperty("app.name");
                     this.errorIfChangingDeletedObject = true;
-                    this.canCreateDomainMetaObjects = true;
+                    this.canCreateDomainMetaObjects = false;
                     this.updateRepositoryStructureIfNeeded = false;
                     this.rootClass = MaidRoot.class;
                     this.errorfIfDeletingObjectNotDisconnected = true;
@@ -306,8 +306,8 @@ public class Main {
                 System.out.println(" Has " + labels.size() + " labels, listing them");
                 for (Label label : labels) {
                     System.out.println("  Label: " + label.getName());
-                    GHLabel.process(label, repository);
                 }
+                GHLabel.process(labels, repository);
 
                 List<Milestone> milestones = new ArrayList<Milestone>(milestoneServiceService.getMilestones(repository, "open"));
 
@@ -317,8 +317,8 @@ public class Main {
                 for (Milestone milestone : milestones) {
                     System.out.println("  Milestone " + milestone.getTitle() + " url: " + milestone.getUrl() + " closed issues: "
                             + milestone.getClosedIssues() + " open issues: " + milestone.getOpenIssues());
-                    GHMilestone.process(milestone, repository);
                 }
+                GHMilestone.process(milestones, repository);
 
 
 
@@ -342,10 +342,11 @@ public class Main {
                     if (comments > 0)
                     {
                         System.out.println("    got " + comments + " comments. Showing them:");
-                        for (Comment comment : issueService.getComments(repository, issue.getNumber())) {
+                        List<Comment> commentsCollection = issueService.getComments(repository, issue.getNumber());
+                        for (Comment comment : commentsCollection) {
                             System.out.println("      Comment " + comment.getId() + " " + comment.getBody());
-                            GHComment.process(comment, issue);
                         }
+                        GHComment.process(commentsCollection, issue);
                     }
                 }
 

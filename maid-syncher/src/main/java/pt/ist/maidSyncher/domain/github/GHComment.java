@@ -12,6 +12,11 @@
 package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import jvstm.cps.ConsistencyPredicate;
 
 import org.eclipse.egit.github.core.Comment;
@@ -20,6 +25,7 @@ import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 public class GHComment extends GHComment_Base {
@@ -29,23 +35,38 @@ public class GHComment extends GHComment_Base {
         MaidRoot.getInstance().addGhComments(this);
     }
 
-    //TODO receive a list of comments, so that we can detect deletions of comments
 
     @Service
-    public static GHComment process(Comment comment, Issue issue) {
-        checkNotNull(comment);
+    public static void process(Collection<Comment> comments, Issue issue) {
+        checkNotNull(comments);
         checkNotNull(issue);
 
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        GHComment ghComment = (GHComment) findOrCreateAndProccess(comment, GHComment.class, maidRoot.getGhComments());
-
-        //now let's attach it to the issue
+        //let us get the issue
         GHIssue ghIssue = GHIssue.process(issue);
 
-        ghIssue.addComments(ghComment);
+        //the old comments
+        Set<GHComment> oldComments = new HashSet<GHComment>(ghIssue.getComments());
 
-        return ghComment;
+        Set<GHComment> newComments = new HashSet<>();
+
+        for (Comment commentToProcess : comments) {
+            GHComment ghComment =
+                    (GHComment) findOrCreateAndProccess(commentToProcess, GHComment.class, maidRoot.getGhComments());
+            newComments.add(ghComment);
+        }
+
+        //remove the old ones
+        ghIssue.getComments().clear();
+        ghIssue.getComments().addAll(newComments);
+
+        //create DELETE SyncEvents for the removed ones
+        oldComments.removeAll(newComments);
+
+        for (GHComment commentToRemove : oldComments) {
+            SyncEvent.createAndAddADeleteEventWithoutAPIObj(commentToRemove);
+        }
     }
 
 

@@ -21,6 +21,10 @@ GitHub        | <-->         | ActiveCollab  |  |
 | <strike> Assignee </strike>|<strike><-/-> </strike>	|<strike> Assignee</strike> | Not yet supported |
 | <strike>Comment</strike>| <strike><-/-></strike> |<strike>	Other Assignees </strike>| Not yet supported
 
+##Limitations
+
+####Issues with multiple ACProject(s) [through Labels]
+One Issue, if annotated with more than one GHLabel that corresponds to an ACProject, only one is chosen, the ACTask is created on the ACProject selected by the chosen one, and the others are removed.
 
 ##License
 Refer to the LICENSE and COPYRIGHT files

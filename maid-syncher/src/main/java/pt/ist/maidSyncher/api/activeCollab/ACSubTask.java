@@ -11,10 +11,13 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.api.activeCollab;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
 
 public class ACSubTask extends ACObject {
@@ -30,6 +33,8 @@ public class ACSubTask extends ACObject {
 
     private boolean archived;
 
+    private boolean complete;
+
     public ACSubTask()
     {
         super();
@@ -43,6 +48,12 @@ public class ACSubTask extends ACObject {
         super(jsonObj);
         init(jsonObj);
 
+    }
+
+    public ACSubTask update(String url) throws IOException {
+        checkArgument(StringUtils.isBlank(url) == false);
+        //let us construct the URL and send an edit
+        return new ACSubTask(ACSubTask.postObject(url, toJSONString()));
     }
 
     @Override
@@ -63,6 +74,7 @@ public class ACSubTask extends ACObject {
         setParentClass(JsonRest.getString(jsonObj, "parent_class"));
         setParentId(JsonRest.getInt(jsonObj, "parent_id"));
         setArchived(JsonRest.getBooleanFromInt(jsonObj, "is_archived"));
+        setComplete(JsonRest.getBooleanFromInt(jsonObj, "is_completed"));
     }
 
     public int getAssigneeId() {
@@ -139,5 +151,13 @@ public class ACSubTask extends ACObject {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    public boolean isComplete() {
+        return complete;
+    }
+
+    public void setComplete(boolean complete) {
+        this.complete = complete;
     }
 }

@@ -9,7 +9,7 @@
  *     Luis Silva - ACGHSync
  *     João Antunes - initial API and implementation
  ******************************************************************************/
-package pt.ist.maidSyncher;
+package pt.ist.maidSyncher.changesBuzz;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -95,6 +95,8 @@ public class ChangesBuzz {
     }
 
     private static void dropTestDatabase(Config config) throws Exception {
+        //just because, let's get all of the system properties
+
         Connection connect = null;
         ResultSet resultSet = null;
         Statement statement = null;

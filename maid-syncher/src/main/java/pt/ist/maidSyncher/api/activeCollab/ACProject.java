@@ -224,7 +224,7 @@ public class ACProject extends ACObject {
 
     public ACProject update() throws IOException {
         //let us construct the URL and send an edit
-        String path = ACContext.getBasicUrlForPath("projects/" + this._id + "/edit");
+        String path = ACContext.getBasicUrlForPath("projects/" + this.getId() + "/edit");
         return new ACProject(postObject(path, toJSONString()));
 
     }

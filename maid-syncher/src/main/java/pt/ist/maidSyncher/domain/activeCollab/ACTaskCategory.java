@@ -77,11 +77,15 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         }
 
         //let's remove all of them
-        for (ACTaskCategory acTaskCategory : acProject.getTaskCategoriesDefined()) {
-            acProject.removeTaskCategoriesDefined(acTaskCategory);
+        acProject.getTaskCategoriesDefined().clear();
+        acProject.getTaskCategoriesDefined().addAll(newTaskCategoriesDefined);
+
+        //let's trigger the DELETE events needed
+        oldTaskCategoriesDefined.removeAll(newTaskCategoriesDefined);
+        for (ACTaskCategory removedTaskCategory : oldTaskCategoriesDefined) {
+            SyncEvent.createAndAddADeleteEventWithoutAPIObj(removedTaskCategory);
         }
-        for (ACTaskCategory acTaskCategory : newTaskCategoriesDefined)
-            acProject.addTaskCategoriesDefined(acTaskCategory);
+
 
     }
 

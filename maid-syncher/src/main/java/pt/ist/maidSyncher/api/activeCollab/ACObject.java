@@ -22,7 +22,7 @@ public abstract class ACObject {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ACObject.class);
 
-    protected long _id;
+    private long _id;
     protected String _url;
     protected Date _createdOn;
     protected long _createdById;
@@ -31,7 +31,7 @@ public abstract class ACObject {
 
     public ACObject()
     {
-        _id = -1;
+        setId(-1);
         _createdById = -1;
         _updatedById = -1;
     }
@@ -45,7 +45,7 @@ public abstract class ACObject {
     protected abstract void init(JSONObject jsonObject) throws IOException;
 
     private void privateInit(JSONObject jsonObj) {
-        _id = JsonRest.getInt(jsonObj, "id");
+        setId(JsonRest.getInt(jsonObj, "id"));
         _url = JsonRest.getString(jsonObj, "permalink");
         _url = _url.replaceFirst("public/index","api");
 
@@ -95,4 +95,8 @@ public abstract class ACObject {
     }
 
     public abstract String toJSONString();
+
+    public void setId(long _id) {
+        this._id = _id;
+    }
 }

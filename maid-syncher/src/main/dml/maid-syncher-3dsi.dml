@@ -50,12 +50,16 @@ class DSIMilestone extends DSIObject {
 }
 
 relation DSIMilestoneACMilestone {
-	.pt.ist.maidSyncher.domain.activeCollab.ACMilestone playsRole acMilestone;
+	.pt.ist.maidSyncher.domain.activeCollab.ACMilestone playsRole acMilestones {
+		multiplicity *;
+	}
 	DSIMilestone playsRole dsiObjectMilestone;
 }
 
 relation DSIMilestoneGHMilestone {
-	.pt.ist.maidSyncher.domain.github.GHMilestone playsRole ghMilestone;
+	.pt.ist.maidSyncher.domain.github.GHMilestone playsRole ghMilestones {
+		multiplicity *;
+	}
 	DSIMilestone playsRole dsiObjectMilestone;
 }
 
@@ -86,6 +90,13 @@ relation DSISubTaskACSubTask {
 relation DSISubTaskGHIssue {
 	.pt.ist.maidSyncher.domain.github.GHIssue playsRole ghIssue;
 	DSISubTask playsRole dsiObjectSubTask;
+}
+
+relation DSISubTaskDSIIssue {
+	DSIIssue playsRole parentIssue;
+	DSISubTask playsRole subtasks {
+		multiplicity *;
+	}
 }
 
 //relation DSISubTaskGHComment {

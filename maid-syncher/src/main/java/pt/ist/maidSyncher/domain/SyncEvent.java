@@ -14,14 +14,20 @@
  */
 package pt.ist.maidSyncher.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.beans.PropertyDescriptor;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.joda.time.LocalTime;
 
+import pt.ist.maidSyncher.domain.activeCollab.ACObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
+import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 
 /**
@@ -37,6 +43,20 @@ public class SyncEvent {
 
     public static enum SyncUniverse {
         ACTIVE_COLLAB, GITHUB;
+
+        /**
+         * 
+         * @param synchOrigin
+         * @return the {@link SyncUniverse}, based on the idea that if the Origin is of one type, the target is the opposite
+         */
+        static public SyncUniverse getTargetSyncUniverse(SynchableObject synchOrigin) {
+            checkNotNull(synchOrigin);
+            if (synchOrigin instanceof ACObject)
+                return GITHUB;
+            if (synchOrigin instanceof GHObject)
+                return ACTIVE_COLLAB;
+            return null;
+        }
     }
 
     /**
@@ -69,6 +89,28 @@ public class SyncEvent {
         this.apiObjectWrapper = apiObjectWrapper;
         this.targetSyncUniverse = targetSyncUniverse;
         this.originObject = origin;
+
+    }
+
+    public static SyncEvent createAndAddADeleteEventWithoutAPIObj(SynchableObject removedObject) {
+        SyncUniverse syncUniverseToUse = SyncUniverse.getTargetSyncUniverse(removedObject);
+        SyncEvent syncEvent =
+                new SyncEvent(removedObject.getUpdatedAtDate(), TypeOfChangeEvent.DELETE,
+                        Collections.<PropertyDescriptor> emptySet(), removedObject.getDSIObject(), new APIObjectWrapper() {
+
+                    @Override
+                    public void validateAPIObject() throws SyncEventOriginObjectChanged {
+                        //we have no APIObject :) it was deleted, there is none
+                        return;
+                    }
+
+                    @Override
+                    public Object getAPIObject() {
+                        return null;
+                    }
+                }, syncUniverseToUse, removedObject);
+        SynchableObject.addSyncEvent(syncEvent);
+        return syncEvent;
 
     }
 

@@ -21,7 +21,7 @@ public abstract class GHObject extends GHObject_Base {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GHObject.class);
 
-    protected static final String DSC_CREATED_AT = "createdAt";
+    public static final String DSC_CREATED_AT = "createdAt";
 
     public GHObject() {
         super();

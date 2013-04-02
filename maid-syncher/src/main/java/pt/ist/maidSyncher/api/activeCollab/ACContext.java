@@ -64,6 +64,18 @@ public class ACContext {
         return JsonRest.processGet(buildUrl(path));
     }
 
+    public static JSONObject processGetSingleJSONObj(String path) throws IOException {
+        JSONObject toReturn = null;
+
+        JSONArray jsonArr = (JSONArray) JsonRest.processGet(buildUrl(path));
+        if (jsonArr != null) {
+            if (jsonArr.size() > 1)
+                throw new Error("Returned too many JSONObjects");
+            return (JSONObject) jsonArr.get(0);
+        }
+        return toReturn;
+    }
+
     public static JSONObject processPost(String postData, String path) throws IOException {
         //let's add the submitted=submitted that makes it work
         String toUse = postData + "&submitted=submitted";

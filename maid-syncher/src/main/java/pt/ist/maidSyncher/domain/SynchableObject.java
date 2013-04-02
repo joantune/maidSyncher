@@ -60,9 +60,9 @@ public abstract class SynchableObject extends SynchableObject_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(SynchableObject.class);
 
     //The fields for operations with PropertyDescriptor s
-    protected static final String DSC_LAST_SYNC_TIME = "lastSynchTime"; //not used
-    protected static final String DSC_ID = "id";
-    protected static final String DSC_URL = "url";
+    public static final String DSC_LAST_SYNC_TIME = "lastSynchTime"; //not used
+    public static final String DSC_ID = "id";
+    public static final String DSC_URL = "url";
 
     public SynchableObject() {
         super();
@@ -327,10 +327,14 @@ public abstract class SynchableObject extends SynchableObject_Base {
                             return apiObject;
                         }
                     }, syncUniverse, originObject);
-            MaidRoot.getInstance().addSyncEvent(syncEvent);
-            logSync(syncEvent);
+            addSyncEvent(syncEvent);
 
         }
+    }
+
+    protected static void addSyncEvent(SyncEvent syncEvent) {
+        MaidRoot.getInstance().addSyncEvent(syncEvent);
+        logSync(syncEvent);
     }
 
     private static void logSync(SyncEvent syncEvent) {

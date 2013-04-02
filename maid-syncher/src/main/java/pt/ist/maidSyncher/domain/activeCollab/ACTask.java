@@ -307,7 +307,8 @@ public class ACTask extends ACTask_Base {
                 //milestone
                 ACMilestone acMilestone = getMilestone();
                 final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
-                final GHMilestone ghMilestone = dsiMilestone.getGhMilestone();
+                //TODO what if there is no miletone on the other side?!
+                final GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
                 MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
                 Milestone milestone = milestoneService.getMilestone(repository, ghMilestone.getNumber());
                 newGHIssue.setMilestone(milestone);

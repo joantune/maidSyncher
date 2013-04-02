@@ -13,6 +13,8 @@ package pt.ist.maidSyncher.domain.github;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.egit.github.core.Label;
@@ -21,14 +23,18 @@ import org.joda.time.LocalTime;
 
 import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 public class GHLabel extends GHLabel_Base {
 
     public final static String PROJECT_PREFIX = "P-";
+
+    public final static String DELETED_LABEL_NAME = "deleted";
 
     public  GHLabel() {
         super();
@@ -56,19 +62,45 @@ public class GHLabel extends GHLabel_Base {
 
     }
 
+    public static boolean containsDeletedLabel(Collection<GHLabel> labelsToSearch) {
+        return Iterables.any(labelsToSearch, new Predicate<GHLabel>() {
+            @Override
+            public boolean apply(GHLabel ghLabel) {
+                if (ghLabel == null)
+                    return false;
+                return ghLabel.getName().equalsIgnoreCase(DELETED_LABEL_NAME);
+
+            }
+        });
+    }
+
     @Service
-    public static GHLabel process(Label label, Repository repository) {
-        checkNotNull(label);
+    public static void process(Collection<Label> labels, Repository repository) {
+        checkNotNull(labels);
 
         //each label belongs to a given repository
 
-        //let's get a label first
-        GHLabel ghLabel = process(label);
-
         //now the rep
         GHRepository ghRepository = GHRepository.process(repository);
-        ghLabel.setRepository(ghRepository);
-        return ghLabel;
+
+        //let's get the old ones
+        Set<GHLabel> oldGhLabels = new HashSet<GHLabel>(ghRepository.getLabelsDefined());
+
+        Set<GHLabel> newGhLabels = new HashSet<GHLabel>();
+
+        for (Label labelToProcess : labels) {
+            newGhLabels.add(process(labelToProcess));
+        }
+
+        //let us remove the old relations
+        ghRepository.getLabelsDefined().clear();
+        //add the new ones
+        ghRepository.getLabelsDefined().addAll(newGhLabels);
+        //And make sync DELETEd events for the removed ones
+        oldGhLabels.removeAll(newGhLabels);
+        for (GHLabel removedGHLabel : oldGhLabels) {
+            SyncEvent.createAndAddADeleteEventWithoutAPIObj(removedGHLabel);
+        }
     }
 
     @Service
@@ -104,6 +136,7 @@ public class GHLabel extends GHLabel_Base {
 
     @Override
     protected DSIObject getDSIObject() {
+
         return getDsiObjectProject();
     }
 
@@ -112,7 +145,10 @@ public class GHLabel extends GHLabel_Base {
     public DSIObject findOrCreateDSIObject() {
         //let us always return null, the relation
         //with a DSIObject must be filled by a sync
-        //action
+        //action, because we must see if this label
+        //relates to an ACProject [depended on the name]
+        //and that must be done when both parts are synched, not
+        //meanwhile Issue #12 GH
         return null;
     }
 

@@ -45,7 +45,7 @@ public class ACCategory extends ACObject {
         checkArgument(categoryId > 0);
         checkArgument(projectId > 0);
         checkNotNull(name);
-        this._id = categoryId;
+        this.setId(categoryId);
         this.setProjectId(projectId);
         this.name = name;
     }
@@ -81,7 +81,7 @@ public class ACCategory extends ACObject {
 
     public ACCategory update() throws IOException {
         //let us construct the URL and send an edit
-        String path = ACContext.getBasicUrlForPath("projects/" + this.getProjectId() + "/tasks/categories/" + this._id + "/edit");
+        String path = ACContext.getBasicUrlForPath("projects/" + this.getProjectId() + "/tasks/categories/" + this.getId() + "/edit");
         return new ACCategory(ACCategory.postObject(path, toJSONString()));
 
     }
