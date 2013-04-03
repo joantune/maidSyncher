@@ -138,8 +138,9 @@ public class Main {
         Properties acConfigurationProperties = new Properties();
         acConfigurationProperties.load(Main.class.getResourceAsStream("/configuration.properties"));
 
-        ACContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
-        ACContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
+        ACContext acContext = ACContext.getInstance();
+        acContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
+        acContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
 
         ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();
         pt.ist.maidSyncher.domain.activeCollab.ACInstance.process(instanceForDSI);
@@ -153,19 +154,19 @@ public class Main {
 
 
         //let's proccess all of the project labels
-        for (ACProjectLabel acProjectLabel : ACContext.getACProjectLabels()) {
+        for (ACProjectLabel acProjectLabel : acContext.getACProjectLabels()) {
             System.out.println("ACProjectLabel: " + acProjectLabel.getName());
             pt.ist.maidSyncher.domain.activeCollab.ACProjectLabel.process(acProjectLabel);
         }
 
         //let's proccess all of the task assignment labels
-        for (ACTaskLabel acTaskLabel : ACContext.getACTaskLabels()) {
+        for (ACTaskLabel acTaskLabel : acContext.getACTaskLabels()) {
             System.out.println("ACTaskLabel: " + acTaskLabel.getName());
             pt.ist.maidSyncher.domain.activeCollab.ACTaskLabel.process(acTaskLabel);
         }
 
         // load ActiveCollab project
-        List<ACProject> acProjects = ACContext.getProjects();
+        List<ACProject> acProjects = acContext.getProjects();
         Iterator<ACProject> it = acProjects.iterator();
         while(it.hasNext()) {
             ACProject project = it.next();

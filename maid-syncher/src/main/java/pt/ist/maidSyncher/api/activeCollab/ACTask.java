@@ -113,8 +113,8 @@ public class ACTask extends ACObject {
     }
 
     public static ACTask createTask(ACTask preliminarObject, long projectId) throws IOException {
-        String path = ACContext.getBasicUrlForPath("projects/" + projectId + "/tasks/add");
-        return new ACTask(postObject(path, preliminarObject.toJSONString()));
+        String path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/add");
+        return new ACTask(postObject(path, preliminarObject));
 
     }
 
@@ -193,7 +193,7 @@ public class ACTask extends ACObject {
     public Set<ACSubTask> getSubTasks() throws IOException
     {
         Set<ACSubTask> subtasks = new HashSet<ACSubTask>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/subtasks");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/subtasks");
         if(jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
@@ -205,7 +205,7 @@ public class ACTask extends ACObject {
 
     public Set<ACComment> getComments() throws IOException {
         Set<ACComment> comments = new HashSet<ACComment>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/comments");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/comments");
         //this URL has the
 
         if (jsonArr != null) {
@@ -224,7 +224,7 @@ public class ACTask extends ACObject {
         String decodedUrl = URLDecoder.decode(_url, "UTF-8");
         int lastIndexOfSlash = StringUtils.lastIndexOf(decodedUrl, "/");
         String urlToUse = StringUtils.substring(decodedUrl, 0, lastIndexOfSlash);
-        return new ACCategory((JSONObject) ACContext.processGet(urlToUse + "/categories/" + _categoryId));
+        return new ACCategory((JSONObject) getRequestProcessor().processGet(urlToUse + "/categories/" + _categoryId));
 
     }
 

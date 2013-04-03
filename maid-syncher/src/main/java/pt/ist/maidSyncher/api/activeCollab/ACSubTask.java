@@ -53,7 +53,7 @@ public class ACSubTask extends ACObject {
     public ACSubTask update(String url) throws IOException {
         checkArgument(StringUtils.isBlank(url) == false);
         //let us construct the URL and send an edit
-        return new ACSubTask(ACSubTask.postObject(url, toJSONString()));
+        return new ACSubTask(ACSubTask.postObject(url, this));
     }
 
     @Override

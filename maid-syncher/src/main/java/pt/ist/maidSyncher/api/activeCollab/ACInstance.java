@@ -40,7 +40,9 @@ public class ACInstance extends ACObject {
 
     public static ACInstance getInstanceForCompanyName() throws IOException {
 
-        JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + ACContext.getServer() + "/ac/api.php?path_info=people");
+        JSONArray jsonArr =
+                (JSONArray) getRequestProcessor().processGet("https://" + ACContext.getInstance().getServer()
+                        + "/ac/api.php?path_info=people");
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObj = (JSONObject) object;
@@ -63,7 +65,7 @@ public class ACInstance extends ACObject {
 
     public List<ACUser> getUsers() throws IOException {
         List<ACUser> users = new ArrayList<ACUser>();
-        JSONArray jsonArray = (JSONArray) ACContext.processGet(_url + "/users");
+        JSONArray jsonArray = (JSONArray) getRequestProcessor().processGet(_url + "/users");
         for (Object object : jsonArray) {
             JSONObject jsonObj = (JSONObject) object;
             users.add(new ACUser(jsonObj));

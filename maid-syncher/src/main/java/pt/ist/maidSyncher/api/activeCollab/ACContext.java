@@ -20,8 +20,9 @@ import java.util.Set;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
 
-public class ACContext {
+public class ACContext implements RequestProcessor {
 
     private static String server;
     private static String token;
@@ -35,21 +36,21 @@ public class ACContext {
         return instance;
     }
 
-    public static void setServer(String server)
+    public void setServer(String server)
     {
         ACContext.server = server;
     }
 
-    public static void setToken(String token)
+    public void setToken(String token)
     {
         ACContext.token = token;
     }
 
-    private static String buildUrl(String path) {
+    private String buildUrl(String path) {
         return buildUrl(path, true);
     }
 
-    private static String buildUrl(String path, boolean json) {
+    private String buildUrl(String path, boolean json) {
         String url;
         if (json) {
             url = path + "&auth_api_token=" + token + "&format=json";
@@ -59,12 +60,13 @@ public class ACContext {
         return url;
     }
 
-    public static Object processGet(String path) throws IOException
+    @Override
+    public Object processGet(String path) throws IOException
     {
         return JsonRest.processGet(buildUrl(path));
     }
 
-    public static JSONObject processGetSingleJSONObj(String path) throws IOException {
+    public JSONObject processGetSingleJSONObj(String path) throws IOException {
         JSONObject toReturn = null;
 
         JSONArray jsonArr = (JSONArray) JsonRest.processGet(buildUrl(path));
@@ -76,9 +78,17 @@ public class ACContext {
         return toReturn;
     }
 
-    public static JSONObject processPost(String postData, String path) throws IOException {
+    @Override
+    public JSONObject processPost(ACObject postObject, String path) throws IOException {
         //let's add the submitted=submitted that makes it work
-        String toUse = postData + "&submitted=submitted";
+        String toUse = postObject.toJSONString() + "&submitted=submitted";
+        return (JSONObject) JsonRest.processPost(toUse, buildUrl(path));
+    }
+
+    @Override
+    public JSONObject processPost(String content, String path) throws IOException {
+        //let's add the submitted=submitted that makes it work
+        String toUse = content + "&submitted=submitted";
         return (JSONObject) JsonRest.processPost(toUse, buildUrl(path));
     }
 
@@ -86,14 +96,15 @@ public class ACContext {
      * 
      * @return a basic string with: schema://servername/appropriatePath/api.php?path_info=pathToAppend
      */
-    public static String getBasicUrlForPath(String pathToAppend) {
+    @Override
+    public String getBasicUrlForPath(String pathToAppend) {
         return "https://" + server + "/ac/api.php?path_info=" + pathToAppend;
 
     }
 
-    public static Set<ACProjectLabel> getACProjectLabels() throws IOException {
+    public Set<ACProjectLabel> getACProjectLabels() throws IOException {
         Set<ACProjectLabel> projectLabels = new HashSet<ACProjectLabel>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=info/labels/project");
+        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=info/labels/project");
         for (Object object : jsonArr) {
             JSONObject jsonObj = (JSONObject) object;
             projectLabels.add(new ACProjectLabel(jsonObj));
@@ -102,10 +113,10 @@ public class ACContext {
 
     }
 
-    public static Set<ACTaskLabel> getACTaskLabels() throws IOException {
+    public Set<ACTaskLabel> getACTaskLabels() throws IOException {
         Set<ACTaskLabel> taskLabels = new HashSet<ACTaskLabel>();
         JSONArray jsonArr =
-                (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=info/labels/assignment");
+                (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=info/labels/assignment");
         for (Object object : jsonArr) {
             JSONObject jsonObj = (JSONObject) object;
             taskLabels.add(new ACTaskLabel(jsonObj));
@@ -114,9 +125,9 @@ public class ACContext {
 
     }
 
-    public static List<ACProject> getActiveProjects() throws IOException {
+    public List<ACProject> getActiveProjects() throws IOException {
         List<ACProject> projects = new ArrayList<ACProject>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=projects");
+        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=projects");
         if (jsonArr != null) {
             for (int i = 0; i < jsonArr.size(); i++)
                 projects.add(new ACProject((JSONObject) jsonArr.get(i)));
@@ -125,9 +136,9 @@ public class ACContext {
 
     }
 
-    public static List<ACProject> getArchivedProjects() throws IOException {
+    public List<ACProject> getArchivedProjects() throws IOException {
         List<ACProject> projects = new ArrayList<ACProject>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet("https://" + server + "/ac/api.php?path_info=projects/archive");
+        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=projects/archive");
         if (jsonArr != null) {
             for (int i = 0; i < jsonArr.size(); i++)
                 projects.add(new ACProject((JSONObject) jsonArr.get(i)));
@@ -141,7 +152,7 @@ public class ACContext {
      * @return the 'projects' and the 'projects/archived' projects
      * @throws IOException
      */
-    public static List<ACProject> getProjects() throws IOException
+    public List<ACProject> getProjects() throws IOException
     {
         List<ACProject> allProjects = new ArrayList<>();
         allProjects.addAll(getActiveProjects());

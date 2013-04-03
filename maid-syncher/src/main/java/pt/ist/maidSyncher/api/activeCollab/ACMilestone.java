@@ -121,27 +121,29 @@ public class ACMilestone extends ACObject {
 
     static public ACMilestone copyTo(long milestoneId, long currentProjectId, long newProjectId) throws IOException {
         String path =
-                ACContext.getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId + "/copy-to-project");
+                getRequestProcessor().getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId
+                        + "/copy-to-project");
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "copy_to_project_id", String.valueOf(newProjectId));
-        return new ACMilestone(ACContext.processPost(path, postData.toString()));
+        return new ACMilestone(getRequestProcessor().processPost(path, postData.toString()));
 
     }
 
     static public ACMilestone moveTo(long milestoneId, long currentProjectId, long newProjectId) throws IOException {
         String path =
-                ACContext.getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId + "/move-to-project");
+                getRequestProcessor().getBasicUrlForPath("projects/" + currentProjectId + "/milestones/" + milestoneId
+                        + "/move-to-project");
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "move_to_project_id", String.valueOf(newProjectId));
-        return new ACMilestone(ACContext.processPost(path, postData.toString()));
+        return new ACMilestone(getRequestProcessor().processPost(path, postData.toString()));
 
     }
 
     public static ACMilestone create(ACMilestone preliminarObject) throws IOException {
         checkNotNull(preliminarObject);
         checkArgument(preliminarObject.getId() > 0);
-        String path = ACContext.getBasicUrlForPath("projects/" + preliminarObject.getProjectId() + "/milestones/add");
-        return new ACMilestone(postObject(path, preliminarObject.toJSONString()));
+        String path = getRequestProcessor().getBasicUrlForPath("projects/" + preliminarObject.getProjectId() + "/milestones/add");
+        return new ACMilestone(postObject(path, preliminarObject));
     }
 
     @Override

@@ -18,6 +18,8 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
+
 public abstract class ACObject {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ACObject.class);
@@ -58,15 +60,18 @@ public abstract class ACObject {
 
     }
 
+
     protected final void updateFromPermalink() throws IOException {
         //let's use the permalink to get all of the information
-        JSONObject jsonObject = (JSONObject) ACContext.processGet(_url);
+        JSONObject jsonObject = (JSONObject) getRequestProcessor().processGet(_url);
         init(jsonObject);
 
     }
 
-    protected static JSONObject postObject(String relativePath, String content) throws IOException {
-        return ACContext.processPost(content, relativePath);
+    private static RequestProcessor requestProcessor = ACContext.getInstance();
+
+    protected static JSONObject postObject(String relativePath, ACObject acObject) throws IOException {
+        return getRequestProcessor().processPost(acObject, relativePath);
 
     }
 
@@ -98,5 +103,13 @@ public abstract class ACObject {
 
     public void setId(long _id) {
         this._id = _id;
+    }
+
+    public static RequestProcessor getRequestProcessor() {
+        return requestProcessor;
+    }
+
+    public static void setRequestProcessor(RequestProcessor requestProcessor) {
+        ACObject.requestProcessor = requestProcessor;
     }
 }

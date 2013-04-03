@@ -98,6 +98,7 @@
 			<version>1.9.5</version>
 			<scope>test</scope>
 		</dependency>
+<!--
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-junit4</artifactId>
@@ -110,6 +111,7 @@
 			<version>${powermock.version}</version>
 			<scope>test</scope>
 		</dependency>
+-->
 		<dependency>
 			<groupId>pt.ist</groupId>
 			<artifactId>fenix-web-framework</artifactId>

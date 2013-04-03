@@ -5,15 +5,12 @@ package pt.ist.maidSyncher.changesBuzz.sync;
 
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 
 import jvstm.TransactionalCommand;
@@ -21,15 +18,12 @@ import jvstm.TransactionalCommand;
 import org.joda.time.LocalTime;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
 
 import pt.ist.fenixframework.pstm.Transaction;
-import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
+import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
+import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
 import pt.ist.maidSyncher.changesBuzz.ChangesBuzz;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -50,8 +44,6 @@ import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
  * 
  *         Tests the behaviour of synching a GHIssue
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ACTask.class, ACMilestone.class })
 public class GHIssueSyncTests extends ChangesBuzz {
 
 //    private static Set<PropertyDescriptor> possiblePropertyDescriptor = new HashSet();
@@ -109,30 +101,24 @@ public class GHIssueSyncTests extends ChangesBuzz {
     }
 
     @Test
-    public void createGHIssueWithoutMilestone() {
+    public void createGHIssueWithoutMilestone() throws IOException {
         initMockGHIssue();
 
-        mockStatic(ACMilestone.class, new Answer<ACMilestone>() {
+        RequestProcessor mockRequestProcessor = mock(RequestProcessor.class);
+//        when(mockRequestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString()), new Answer<JSONObject>() {
+//
+//            @Override
+//            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+//                ACObject preliminarObject = (ACObject) invocation.getArguments()[0];
+//                preliminarObject.setId(new Random().nextInt());
+//                JSONObject jsonObjectToReturn = new JSONObject();
+//                jsonObjectToReturn.
+//
+//                return null;
+//            }
+//        };
 
-            @Override
-            public ACMilestone answer(InvocationOnMock invocation) throws Throwable {
-                Method method = invocation.getMethod();
-                if (method.getName().equalsIgnoreCase("create")) {
-                    return (ACMilestone) invocation.getArguments()[0];
-                }
-                return null;
-            }
-        });
-
-        mockStatic(ACTask.class, new Answer<ACTask>() {
-
-            @Override
-            public ACTask answer(InvocationOnMock invocation) throws Throwable {
-                ACTask acTask = (ACTask) invocation.getArguments()[0];
-                acTask.setId(123);
-                return acTask;
-            }
-        });
+        ACObject.setRequestProcessor(mockRequestProcessor);
 
         Assert.assertEquals(mockGHRepository, ghIssueToUse.getRepository());
 
@@ -151,17 +137,23 @@ public class GHIssueSyncTests extends ChangesBuzz {
                     }
                 }, SyncUniverse.ACTIVE_COLLAB, ghIssueToUse);
 
-        SyncActionWrapper sync = ghIssueToUse.sync(syncEvent);
+        final SyncActionWrapper sync = ghIssueToUse.sync(syncEvent);
 
-        try {
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
+        Transaction.withTransaction(new TransactionalCommand() {
 
-        verify(ACMilestone.class, never());
+            @Override
+            public void doIt() {
+                try {
+                    sync.sync();
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
 
-        verify(ACTask.class, atMost(1));
+            }
+        });
+
+        //making sure we tried to create the ACTask at least once
+        verify(mockRequestProcessor, atMost(1)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
 
 
     }

@@ -135,14 +135,14 @@ public class ACProject extends ACObject {
     }
 
     public static ACProject create(ACProject preliminarProject) throws IOException {
-        String path = ACContext.getBasicUrlForPath("projects/add");
-        return new ACProject(postObject(path, preliminarProject.toJSONString()));
+        String path = getRequestProcessor().getBasicUrlForPath("projects/add");
+        return new ACProject(postObject(path, preliminarProject));
 
     }
 
     public List<ACMilestone> getMilestones() throws IOException {
         List<ACMilestone> milestones = new ArrayList<ACMilestone>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/milestones");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/milestones");
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
@@ -196,7 +196,7 @@ public class ACProject extends ACObject {
 
     public Set<ACCategory> getTaskCategories() throws IOException {
         Set<ACCategory> taskCategories = new HashSet<ACCategory>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/tasks/categories");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/tasks/categories");
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
@@ -209,7 +209,7 @@ public class ACProject extends ACObject {
 
     public List<ACLoggedTime> getLoggedTimes() throws IOException {
         List<ACLoggedTime> loggedTimes = new ArrayList<ACLoggedTime>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/tracking&dont_limit_result=1");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/tracking&dont_limit_result=1");
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
@@ -224,15 +224,15 @@ public class ACProject extends ACObject {
 
     public ACProject update() throws IOException {
         //let us construct the URL and send an edit
-        String path = ACContext.getBasicUrlForPath("projects/" + this.getId() + "/edit");
-        return new ACProject(postObject(path, toJSONString()));
+        String path = getRequestProcessor().getBasicUrlForPath("projects/" + this.getId() + "/edit");
+        return new ACProject(postObject(path, this));
 
     }
 
     public List<ACTask> getTasks() throws IOException
     {
         List<ACTask> tasks = new ArrayList<ACTask>();
-        JSONArray jsonArr = (JSONArray) ACContext.processGet(_url + "/tasks");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/tasks");
         if(jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;

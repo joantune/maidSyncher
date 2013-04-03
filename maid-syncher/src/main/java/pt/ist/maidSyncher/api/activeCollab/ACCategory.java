@@ -81,8 +81,10 @@ public class ACCategory extends ACObject {
 
     public ACCategory update() throws IOException {
         //let us construct the URL and send an edit
-        String path = ACContext.getBasicUrlForPath("projects/" + this.getProjectId() + "/tasks/categories/" + this.getId() + "/edit");
-        return new ACCategory(ACCategory.postObject(path, toJSONString()));
+        String path =
+                getRequestProcessor().getBasicUrlForPath("projects/" + this.getProjectId() + "/tasks/categories/" + this.getId()
+                        + "/edit");
+        return new ACCategory(postObject(path, this));
 
     }
 
@@ -104,13 +106,13 @@ public class ACCategory extends ACObject {
                 "currently we don't support creation of other categories, only ACTaskCategory");
         String path = null;
         if (ACTaskCategory.class.equals(clazz)) {
-            path = ACContext.getBasicUrlForPath("projects/" + projectId + "/tasks/categories");
+            path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/categories");
 
         }
         else
             return null;
 
-        return new ACCategory(postObject(path, acCategoryToCreate.toJSONString()));
+        return new ACCategory(postObject(path, acCategoryToCreate));
     }
 
     public void setName(String name) {

@@ -33,7 +33,7 @@ public class ACComment extends ACObject {
         String commentBody = JsonRest.getString(jsonObj, "body");
         if (commentBody == null && StringUtils.equalsIgnoreCase(JsonRest.getString(jsonObj, "parent_class"), "Task")) {
             //we have only the reference, we should make a new request to get the content
-            jsonObjToConsider = (JSONObject) ACContext.processGet(_url);
+            jsonObjToConsider = (JSONObject) getRequestProcessor().processGet(_url);
 
         } else
             jsonObjToConsider = jsonObj;

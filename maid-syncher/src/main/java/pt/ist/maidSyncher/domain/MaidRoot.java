@@ -61,10 +61,11 @@ public class MaidRoot extends MaidRoot_Base {
         if (configurationProperties == null || configurationProperties.isEmpty()) {
             initProperties();
         }
+        ACContext acContext = ACContext.getInstance();
 
-        if (ACContext.getServer() == null || StringUtils.isBlank(ACContext.getServer())) {
-            ACContext.setServer(configurationProperties.getProperty("ac.server.host"));
-            ACContext.setToken(configurationProperties.getProperty("ac.server.token"));
+        if (acContext.getServer() == null || StringUtils.isBlank(acContext.getServer())) {
+            acContext.setServer(configurationProperties.getProperty("ac.server.host"));
+            acContext.setToken(configurationProperties.getProperty("ac.server.token"));
         }
         if (gitHubClient == null) {
             //let's try to connect to the GH Account

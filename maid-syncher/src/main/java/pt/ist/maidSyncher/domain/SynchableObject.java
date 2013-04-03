@@ -40,6 +40,7 @@ import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.pstm.IllegalWriteException;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
+import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
@@ -245,6 +246,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
 
     }
 
+    private static RequestProcessor acRequestProcessor = ACContext.getInstance();
+
     private static void generateSyncEvent(final SynchableObject toProccessAndReturn,
             final Collection<PropertyDescriptor> changedDescriptors, final Object apiObject) throws SyncEventIllegalConflict {
         final SynchableObject originObject = toProccessAndReturn;
@@ -286,7 +289,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                                     Constructor<? extends Object> constructor = null;
                                     JSONObject jsonObject = null;
 
-                                    jsonObject = (JSONObject) ACContext.processGet(acObject.getUrl());
+                                    jsonObject = (JSONObject) acRequestProcessor.processGet(acObject.getUrl());
                                     constructor = apiObject.getClass().getConstructor(JSONObject.class);
                                     currentAPIObject = constructor.newInstance(jsonObject);
 
