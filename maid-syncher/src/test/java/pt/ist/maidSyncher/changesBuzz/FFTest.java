@@ -39,10 +39,11 @@ public class FFTest {
 
     private static List<URL> urls = null;
 
+    protected static Config config;
     @BeforeClass
     public static void initTestFFramework() throws Exception {
         final Properties ffProperties = new Properties();
-        Config config = null;
+        config = null;
         try {
             InputStream resourceAsStream = FFTest.class.getResourceAsStream("/configuration.properties");
             org.junit.Assert.assertNotNull("no configuration for the test was found", resourceAsStream);
@@ -94,7 +95,7 @@ public class FFTest {
         FenixFramework.initialize();
     }
 
-    private static void dropTestDatabase(Config config) throws Exception {
+    protected static void dropTestDatabase(Config config) throws Exception {
         //just because, let's get all of the system properties
 
         Connection connect = null;

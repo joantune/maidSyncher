@@ -32,6 +32,7 @@
 						<goals>
 							<goal>generate-domain</goal>
 							<goal>post-compile</goal>
+							<goal>test-post-compile</goal>
 						</goals>
 					</execution>
 				</executions>

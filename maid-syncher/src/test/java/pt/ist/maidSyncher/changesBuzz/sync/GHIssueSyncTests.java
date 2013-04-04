@@ -3,7 +3,9 @@
  */
 package pt.ist.maidSyncher.changesBuzz.sync;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,8 +18,11 @@ import jvstm.TransactionalCommand;
 
 import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.pstm.Transaction;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
@@ -28,12 +33,14 @@ import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHIssue;
+import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
@@ -73,122 +80,82 @@ public class GHIssueSyncTests extends FFTest {
     private static DSIIssue mockDSIIssue;
 
     private static ACProject mockACProject;
+    private static RequestProcessor requestProcessor;
 
+    private static SyncEvent createSyncEvent;
+    private static SyncEvent updateSyncEvent;
+
+    @Before
     public void initMockGHIssue() {
         Transaction.withTransaction(new TransactionalCommand() {
 
             @Override
             public void doIt() {
-                if (ghIssueToUse == null) {
-                    //let's create a usable GHRepository
-                    mockGHRepository = new GHRepository();
-                    GHUser ghUser = new GHUser();
-                    mockGHRepository.setOwner(ghUser);
-                    ghUser.setOrganization(MaidRoot.getInstance().getGhOrganization());
+                requestProcessor = mock(RequestProcessor.class);
+                //let's create a usable GHRepository
+                mockGHRepository = new GHRepository();
+                GHUser ghUser = new GHUser();
+                mockGHRepository.setOwner(ghUser);
+                ghUser.setOrganization(MaidRoot.getInstance().getGhOrganization());
 
-                    mockDSIRepository = new DSIRepository();
-                    mockDSIIssue = new DSIIssue();
-                    mockACProject = new ACProject();
+                mockDSIRepository = new DSIRepository();
+                mockDSIIssue = new DSIIssue();
+                mockACProject = new ACProject();
 
-                    ghIssueToUse = new GHIssue();
-                    ghIssueToUse.setRepository(mockGHRepository);
-                    //when(ghIssueToUse.getRepository()).thenReturn(mockGHRepository);
+                ghIssueToUse = new GHIssue();
+                ghIssueToUse.setRepository(mockGHRepository);
+                //when(ghIssueToUse.getRepository()).thenReturn(mockGHRepository);
 
-                    mockGHRepository.setDsiObjectRepository(mockDSIRepository);
-                    ghIssueToUse.setDsiObjectIssue(mockDSIIssue);
-                    mockDSIRepository.setDefaultProject(mockACProject);
+                mockGHRepository.setDsiObjectRepository(mockDSIRepository);
+                ghIssueToUse.setDsiObjectIssue(mockDSIIssue);
+                mockDSIRepository.setDefaultProject(mockACProject);
 
-                    ACTaskCategory acTaskCategory = new ACTaskCategory();
-                    acTaskCategory.setId(123);
+                ACTaskCategory acTaskCategory = new ACTaskCategory();
+                acTaskCategory.setId(123);
 
-                    mockACProject.addTaskCategoriesDefined(acTaskCategory);
-                    mockDSIRepository.addAcTaskCategories(acTaskCategory);
+                mockACProject.addTaskCategoriesDefined(acTaskCategory);
+                mockDSIRepository.addAcTaskCategories(acTaskCategory);
 
-                }
+                createSyncEvent = syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
+                updateSyncEvent = syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
 
             }
         });
     }
 
-//    @PrepareForTest({ ACTask.class })
+    private SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject) {
+        return new SyncEvent(new LocalTime(), typeOfChangeEvent, Collections.<PropertyDescriptor> emptySet(), null,
+                new APIObjectWrapper() {
+
+            @Override
+            public void validateAPIObject() throws SyncEventOriginObjectChanged {
+                return;
+            }
+
+            @Override
+            public Object getAPIObject() {
+                return null;
+            }
+        }, SyncUniverse.getTargetSyncUniverse(originObject), originObject);
+    }
+
     @Test
     public void createOpenGHIssueWithoutMilestone() throws Exception {
-        initMockGHIssue();
 
-//        ACObject.setRequestProcessor(new RequestProcessor() {
-//
-//            @Override
-//            public JSONObject processPost(String path, String string) throws IOException {
-//                return mock(JSONObject.class);
-//            }
-//
-//            @Override
-//            public JSONObject processPost(ACObject acObject, String relativePath) throws IOException {
-//                return mock(JSONObject.class);
-//            }
-//
-//            @Override
-//            public Object processGet(String _url) throws IOException {
-//                return mock(Object.class);
-//            }
-//
-//            @Override
-//            public String getBasicUrlForPath(String string) {
-//                return null;
-//            }
-//        });
+        final String ghIssueTitle = "Test issue";
+        final String ghDescription = "Test on the description, this must be the same";
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
 
-//        whenNew(ACTask.class).withAnyArguments().thenReturn(new ACTask());
-
-        RequestProcessor requestProcessor = mock(RequestProcessor.class);
-        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).thenReturn(new JSONObject());
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACTask acTask = (ACTask) invocation.getArguments()[0];
+                //Verify that the name is the same
+                assertEquals(acTask.getName(), ghIssueTitle);
+                assertEquals(acTask.getBody(), ghDescription);
+                return new JSONObject();
+            }
+        });
         ACObject.setRequestProcessor(requestProcessor);
-//        mockStatic(ACTask.class);
-//        mockStatic(JsonRest.class);
-//        when(JsonRest.getInt(new JSONObject(), null)).thenReturn(0);
-//        when(JsonRest.getBooleanFromInt(Mockito.any(JSONObject.class), Mockito.anyString())).thenReturn(Boolean.FALSE);
-
-//        when(ACTask.createTask(Mockito.any(ACTask.class), Mockito.anyLong())).then(new Answer<ACTask>() {
-
-//        @Override
-//        public ACTask answer(InvocationOnMock invocation) throws Throwable {
-//            ACTask acTaskToReturn = (ACTask) invocation.getArguments()[0];
-//            acTaskToReturn.setId(123);
-//            return acTaskToReturn;
-//        }
-//    });
-
-//        when(mockRequestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString()), new Answer<JSONObject>() {
-//
-//            @Override
-//            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
-//                ACObject preliminarObject = (ACObject) invocation.getArguments()[0];
-//                preliminarObject.setId(new Random().nextInt());
-//                JSONObject jsonObjectToReturn = new JSONObject();
-//                jsonObjectToReturn.
-//
-//                return null;
-//            }
-//        };
-
-//        ACObject.setRequestProcessor(mockRequestProcessor);
-
-//        Assert.assertEquals(mockGHRepository, ghIssueToUse.getRepository());
-
-        final SyncEvent syncEvent =
-                new SyncEvent(new LocalTime(), TypeOfChangeEvent.CREATE, Collections.<PropertyDescriptor> emptySet(), null,
-                        new APIObjectWrapper() {
-
-                    @Override
-                    public void validateAPIObject() throws SyncEventOriginObjectChanged {
-                        return;
-                    }
-
-                    @Override
-                    public Object getAPIObject() {
-                        return null;
-                    }
-                }, SyncUniverse.ACTIVE_COLLAB, ghIssueToUse);
 
         Transaction.withTransaction(new TransactionalCommand() {
 
@@ -196,8 +163,12 @@ public class GHIssueSyncTests extends FFTest {
             public void doIt() {
                 //let us say that the issue is open
                 ghIssueToUse.setState(GHIssue.STATE_OPEN);
+                ghIssueToUse.setTitle(ghIssueTitle);
+                ghIssueToUse.setBodyHtml(ghDescription);
+
+                //let us use a custom name
                 try {
-                    final SyncActionWrapper sync = ghIssueToUse.sync(syncEvent);
+                    final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
                     sync.sync();
                 } catch (IOException e) {
                     throw new Error(e);
@@ -208,6 +179,47 @@ public class GHIssueSyncTests extends FFTest {
 
         //making sure we tried to create the ACTask at least once
         verify(requestProcessor, times(1)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
+    }
 
+    @Test
+    public void checkThatNoSyncTakesPlaceIfDeleted() throws IOException {
+        Transaction.withTransaction(new TransactionalCommand() {
+
+            @Override
+            public void doIt() {
+                //let's put it with the deleted label
+                GHLabel deletedGhLabel = new GHLabel();
+                deletedGhLabel.setRepository(mockGHRepository);
+                deletedGhLabel.setName(GHLabel.DELETED_LABEL_NAME);
+                ghIssueToUse.addLabels(deletedGhLabel);
+
+                try {
+                    ghIssueToUse.sync(createSyncEvent).sync();
+                    //making sure we never tried to create an ACTask
+                    verify(requestProcessor, never()).processPost(Mockito.any(ACTask.class), Mockito.anyString());
+
+                    //in the update we must already have an ACTask associated
+                    initACTaskAssociatedWithGHIssue();
+
+                    ghIssueToUse.sync(updateSyncEvent).sync();
+                    //making sure we never tried to create an ACTask
+                    verify(requestProcessor, never()).processPost(Mockito.any(ACTask.class), Mockito.anyString());
+
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
+
+            }
+        });
+
+    }
+
+    private static pt.ist.maidSyncher.domain.activeCollab.ACTask acTask;
+    private static pt.ist.maidSyncher.domain.activeCollab.ACProject acProject;
+    final private void initACTaskAssociatedWithGHIssue() {
+        acTask = new pt.ist.maidSyncher.domain.activeCollab.ACTask();
+        acTask.setDsiObjectIssue(mockDSIIssue);
+        acProject = new ACProject();
+        acTask.setProject(acProject);
     }
 }
