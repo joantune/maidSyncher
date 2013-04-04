@@ -3,9 +3,8 @@
  */
 package pt.ist.maidSyncher.changesBuzz.sync;
 
-import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,7 +15,7 @@ import java.util.Collections;
 import jvstm.TransactionalCommand;
 
 import org.joda.time.LocalTime;
-import org.junit.Assert;
+import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -24,12 +23,13 @@ import pt.ist.fenixframework.pstm.Transaction;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
-import pt.ist.maidSyncher.changesBuzz.ChangesBuzz;
+import pt.ist.maidSyncher.changesBuzz.FFTest;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
+import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
@@ -44,7 +44,7 @@ import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
  * 
  *         Tests the behaviour of synching a GHIssue
  */
-public class GHIssueSyncTests extends ChangesBuzz {
+public class GHIssueSyncTests extends FFTest {
 
 //    private static Set<PropertyDescriptor> possiblePropertyDescriptor = new HashSet();
 //
@@ -67,32 +67,42 @@ public class GHIssueSyncTests extends ChangesBuzz {
 //    }
 
     private static GHIssue ghIssueToUse;
-    private static GHRepository mockGHRepository = mock(GHRepository.class);
-    private static DSIRepository mockDSIRepository = mock(DSIRepository.class);
+    private static GHRepository mockGHRepository;
+    private static DSIRepository mockDSIRepository;
 
-    private static DSIIssue mockDSIIssue = mock(DSIIssue.class);
+    private static DSIIssue mockDSIIssue;
 
-    private static ACProject mockACProject = mock(ACProject.class);
+    private static ACProject mockACProject;
 
     public void initMockGHIssue() {
         Transaction.withTransaction(new TransactionalCommand() {
 
             @Override
             public void doIt() {
-                if (ghIssueToUse == null)
-                {
+                if (ghIssueToUse == null) {
                     //let's create a usable GHRepository
-                    GHRepository ghRepository = new GHRepository();
+                    mockGHRepository = new GHRepository();
                     GHUser ghUser = new GHUser();
-                    ghRepository.setOwner(ghUser);
+                    mockGHRepository.setOwner(ghUser);
                     ghUser.setOrganization(MaidRoot.getInstance().getGhOrganization());
 
-                    ghIssueToUse = spy(new GHIssue());
-                    ghIssueToUse.setRepository(ghRepository);
-                    when(ghIssueToUse.getRepository()).thenReturn(mockGHRepository);
-                    when(mockGHRepository.getDsiObjectRepository()).thenReturn(mockDSIRepository);
-                    when(ghIssueToUse.getDsiObjectIssue()).thenReturn(mockDSIIssue);
-                    when(mockDSIRepository.getDefaultProject()).thenReturn(mockACProject);
+                    mockDSIRepository = new DSIRepository();
+                    mockDSIIssue = new DSIIssue();
+                    mockACProject = new ACProject();
+
+                    ghIssueToUse = new GHIssue();
+                    ghIssueToUse.setRepository(mockGHRepository);
+                    //when(ghIssueToUse.getRepository()).thenReturn(mockGHRepository);
+
+                    mockGHRepository.setDsiObjectRepository(mockDSIRepository);
+                    ghIssueToUse.setDsiObjectIssue(mockDSIIssue);
+                    mockDSIRepository.setDefaultProject(mockACProject);
+
+                    ACTaskCategory acTaskCategory = new ACTaskCategory();
+                    acTaskCategory.setId(123);
+
+                    mockACProject.addTaskCategoriesDefined(acTaskCategory);
+                    mockDSIRepository.addAcTaskCategories(acTaskCategory);
 
                 }
 
@@ -100,11 +110,54 @@ public class GHIssueSyncTests extends ChangesBuzz {
         });
     }
 
+//    @PrepareForTest({ ACTask.class })
     @Test
-    public void createGHIssueWithoutMilestone() throws IOException {
+    public void createOpenGHIssueWithoutMilestone() throws Exception {
         initMockGHIssue();
 
-        RequestProcessor mockRequestProcessor = mock(RequestProcessor.class);
+//        ACObject.setRequestProcessor(new RequestProcessor() {
+//
+//            @Override
+//            public JSONObject processPost(String path, String string) throws IOException {
+//                return mock(JSONObject.class);
+//            }
+//
+//            @Override
+//            public JSONObject processPost(ACObject acObject, String relativePath) throws IOException {
+//                return mock(JSONObject.class);
+//            }
+//
+//            @Override
+//            public Object processGet(String _url) throws IOException {
+//                return mock(Object.class);
+//            }
+//
+//            @Override
+//            public String getBasicUrlForPath(String string) {
+//                return null;
+//            }
+//        });
+
+//        whenNew(ACTask.class).withAnyArguments().thenReturn(new ACTask());
+
+        RequestProcessor requestProcessor = mock(RequestProcessor.class);
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).thenReturn(new JSONObject());
+        ACObject.setRequestProcessor(requestProcessor);
+//        mockStatic(ACTask.class);
+//        mockStatic(JsonRest.class);
+//        when(JsonRest.getInt(new JSONObject(), null)).thenReturn(0);
+//        when(JsonRest.getBooleanFromInt(Mockito.any(JSONObject.class), Mockito.anyString())).thenReturn(Boolean.FALSE);
+
+//        when(ACTask.createTask(Mockito.any(ACTask.class), Mockito.anyLong())).then(new Answer<ACTask>() {
+
+//        @Override
+//        public ACTask answer(InvocationOnMock invocation) throws Throwable {
+//            ACTask acTaskToReturn = (ACTask) invocation.getArguments()[0];
+//            acTaskToReturn.setId(123);
+//            return acTaskToReturn;
+//        }
+//    });
+
 //        when(mockRequestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString()), new Answer<JSONObject>() {
 //
 //            @Override
@@ -118,11 +171,11 @@ public class GHIssueSyncTests extends ChangesBuzz {
 //            }
 //        };
 
-        ACObject.setRequestProcessor(mockRequestProcessor);
+//        ACObject.setRequestProcessor(mockRequestProcessor);
 
-        Assert.assertEquals(mockGHRepository, ghIssueToUse.getRepository());
+//        Assert.assertEquals(mockGHRepository, ghIssueToUse.getRepository());
 
-        SyncEvent syncEvent =
+        final SyncEvent syncEvent =
                 new SyncEvent(new LocalTime(), TypeOfChangeEvent.CREATE, Collections.<PropertyDescriptor> emptySet(), null,
                         new APIObjectWrapper() {
 
@@ -137,13 +190,14 @@ public class GHIssueSyncTests extends ChangesBuzz {
                     }
                 }, SyncUniverse.ACTIVE_COLLAB, ghIssueToUse);
 
-        final SyncActionWrapper sync = ghIssueToUse.sync(syncEvent);
-
         Transaction.withTransaction(new TransactionalCommand() {
 
             @Override
             public void doIt() {
+                //let us say that the issue is open
+                ghIssueToUse.setState(GHIssue.STATE_OPEN);
                 try {
+                    final SyncActionWrapper sync = ghIssueToUse.sync(syncEvent);
                     sync.sync();
                 } catch (IOException e) {
                     throw new Error(e);
@@ -153,8 +207,7 @@ public class GHIssueSyncTests extends ChangesBuzz {
         });
 
         //making sure we tried to create the ACTask at least once
-        verify(mockRequestProcessor, atMost(1)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
-
+        verify(requestProcessor, times(1)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
 
     }
 }

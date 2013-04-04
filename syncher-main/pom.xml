@@ -8,12 +8,11 @@
 	<packaging>jar</packaging>
 
 	<name>syncher-main</name>
-
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
-
+  
 	<build>
 		<plugins>
 			<plugin>
@@ -27,7 +26,7 @@
 			<plugin>
 				<groupId>dml</groupId>
 				<artifactId>dml-maven-plugin</artifactId>
-				<version>1.1.4</version>
+				<version>1.1.6</version>
 				<executions>
 					<execution>
 						<goals>

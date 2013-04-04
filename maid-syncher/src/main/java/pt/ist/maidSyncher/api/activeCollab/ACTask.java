@@ -58,7 +58,8 @@ public class ACTask extends ACObject {
     protected void init(JSONObject jsonObj) throws IOException {
         _name = JsonRest.getString(jsonObj, "name");
         _body = JsonRest.getString(jsonObj, "body");
-        _visibility = JsonRest.getBooleanFromInt(jsonObj, "visibility");
+        Boolean visibilityFromInt = JsonRest.getBooleanFromInt(jsonObj, "visibility");
+        _visibility = visibilityFromInt == null ? false : visibilityFromInt;
         _categoryId = JsonRest.getInt(jsonObj, "category_id");
         _labelId = JsonRest.getInt(jsonObj, "label_id");
         _milestoneId = JsonRest.getInt(jsonObj, "milestone_id");
@@ -86,7 +87,8 @@ public class ACTask extends ACObject {
             }
         }
 
-        setArchived(JsonRest.getBooleanFromInt(jsonObj, "is_archived"));
+        Boolean archivedBoolean = JsonRest.getBooleanFromInt(jsonObj, "is_archived");
+        setArchived(archivedBoolean == null ? false : archivedBoolean);
 
 
 

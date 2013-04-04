@@ -12,7 +12,6 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<version.fenixframework>1.2-SNAPSHOT</version.fenixframework>
 		<powermock.version>1.5</powermock.version>
 	</properties>
 
@@ -21,7 +20,7 @@
 			<plugin>
 				<groupId>dml</groupId>
 				<artifactId>dml-maven-plugin</artifactId>
-				<version>${version.fenixframework}</version>
+				<version>1.1.6</version>
 				<executions>
 					<execution>
 						<goals>
@@ -77,12 +76,16 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<dependencies>
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>3.17.1-GA</version>
+		</dependency>
 		<dependency>
 			<groupId>pt.ist</groupId>
 			<artifactId>fenix-framework-core</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>1.1.6</version>
 			<!-- <exclusions> <exclusion> <groupId>log4j</groupId> <artifactId>log4j</artifactId> 
 				</exclusion> </exclusions> -->
 		</dependency>
@@ -98,7 +101,6 @@
 			<version>1.9.5</version>
 			<scope>test</scope>
 		</dependency>
-<!--
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-junit4</artifactId>
@@ -111,7 +113,6 @@
 			<version>${powermock.version}</version>
 			<scope>test</scope>
 		</dependency>
--->
 		<dependency>
 			<groupId>pt.ist</groupId>
 			<artifactId>fenix-web-framework</artifactId>

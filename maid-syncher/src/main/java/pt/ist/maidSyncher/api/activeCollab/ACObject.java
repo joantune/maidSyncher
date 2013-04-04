@@ -49,7 +49,8 @@ public abstract class ACObject {
     private void privateInit(JSONObject jsonObj) {
         setId(JsonRest.getInt(jsonObj, "id"));
         _url = JsonRest.getString(jsonObj, "permalink");
-        _url = _url.replaceFirst("public/index","api");
+        if (_url != null)
+            _url = _url.replaceFirst("public/index","api");
 
         LOGGER.trace("URL:" + _url);
 

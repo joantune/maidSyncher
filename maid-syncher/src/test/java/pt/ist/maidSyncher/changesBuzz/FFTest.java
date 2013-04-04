@@ -35,7 +35,7 @@ import pt.ist.fenixframework.project.DmlFile;
 import pt.ist.fenixframework.project.exception.FenixFrameworkProjectException;
 import pt.ist.maidSyncher.domain.MaidRoot;
 
-public class ChangesBuzz {
+public class FFTest {
 
     private static List<URL> urls = null;
 
@@ -44,7 +44,7 @@ public class ChangesBuzz {
         final Properties ffProperties = new Properties();
         Config config = null;
         try {
-            InputStream resourceAsStream = ChangesBuzz.class.getResourceAsStream("/configuration.properties");
+            InputStream resourceAsStream = FFTest.class.getResourceAsStream("/configuration.properties");
             org.junit.Assert.assertNotNull("no configuration for the test was found", resourceAsStream);
             ffProperties.load(resourceAsStream);
             config = new Config() {
@@ -57,7 +57,7 @@ public class ChangesBuzz {
 
                     this.appName = ffProperties.getProperty("app.name");
                     this.errorIfChangingDeletedObject = true;
-                    this.canCreateDomainMetaObjects = false;
+//                    this.canCreateDomainMetaObjects = false;
                     this.updateRepositoryStructureIfNeeded = true;
                     this.rootClass = MaidRoot.class;
                     this.errorfIfDeletingObjectNotDisconnected = true;
