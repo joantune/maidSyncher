@@ -11,6 +11,7 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.domain.github;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
@@ -90,11 +91,13 @@ public class GHMilestone extends GHMilestone_Base {
         return getDsiObjectMilestone();
     }
 
-    protected ACMilestone getACCorrespondingPreliminarObject() {
+    protected ACMilestone getACCorrespondingPreliminarObject(long projectId) {
+        checkArgument(projectId > 0);
         ACMilestone acMilestone = new ACMilestone();
         acMilestone.setName(getTitle());
         acMilestone.setBody(getDescription());
         acMilestone.setDueOn(getDueOn().toDateTimeToday().toDate());
+        acMilestone.setProjectId(projectId);
         return acMilestone;
     }
 

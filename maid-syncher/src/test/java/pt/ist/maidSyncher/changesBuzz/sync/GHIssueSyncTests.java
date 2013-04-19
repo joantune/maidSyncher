@@ -13,9 +13,11 @@ import static org.mockito.Mockito.when;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 
 import jvstm.TransactionalCommand;
 
+import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
 import org.junit.Before;
@@ -25,6 +27,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.pstm.Transaction;
+import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
@@ -37,10 +40,12 @@ import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
+import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
+import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
@@ -101,6 +106,7 @@ public class GHIssueSyncTests extends FFTest {
                 mockDSIRepository = new DSIRepository();
                 mockDSIIssue = new DSIIssue();
                 mockACProject = new ACProject();
+                mockACProject.setId(123);
 
                 ghIssueToUse = new GHIssue();
                 ghIssueToUse.setRepository(mockGHRepository);
@@ -118,6 +124,7 @@ public class GHIssueSyncTests extends FFTest {
 
                 createSyncEvent = syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
                 updateSyncEvent = syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
+
 
             }
         });
@@ -182,6 +189,84 @@ public class GHIssueSyncTests extends FFTest {
     }
 
     @Test
+    public void createOpenGHIssueWithMilestone() throws Exception {
+
+        final String ghIssueTitle = "Test issue";
+        final String ghDescription = "Test on the description, this must be the same";
+
+        final String ghMilestoneTitle = "testMilestone1";
+        final Date ghMilestoneDueOn = new LocalDate().toDateMidnight().toDate();
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACObject argumentOne = (ACObject) invocation.getArguments()[0];
+                if (argumentOne instanceof ACTask) {
+                    ACTask acTask = (ACTask) argumentOne;
+                    //Verify that the name is the same
+                    assertEquals(acTask.getName(), ghIssueTitle);
+                    assertEquals(acTask.getBody(), ghDescription);
+                } else if (argumentOne instanceof ACMilestone) {
+                    ACMilestone acMilestone = (ACMilestone) argumentOne;
+                    assertEquals(acMilestone.getName(), ghMilestoneTitle);
+                    assertEquals(acMilestone.getDueOn(), ghMilestoneDueOn);
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("id", 123l);
+                    jsonObject.put("project_id", mockACProject.getId());
+                    return jsonObject;
+                }
+                return new JSONObject();
+            }
+        });
+        ACObject.setRequestProcessor(requestProcessor);
+
+        //let's init the milestone
+        initMilestone(ghMilestoneTitle, ghMilestoneDueOn);
+
+        Transaction.withTransaction(new TransactionalCommand() {
+
+            @Override
+            public void doIt() {
+                //let us say that the issue is open
+                ghIssueToUse.setState(GHIssue.STATE_OPEN);
+                ghIssueToUse.setTitle(ghIssueTitle);
+                ghIssueToUse.setBodyHtml(ghDescription);
+
+
+                //let us use a custom name
+                try {
+                    final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
+                    sync.sync();
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
+
+            }
+        });
+
+        //making sure we tried to create the ACTask at least once
+        verify(requestProcessor, times(2)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
+    }
+
+    private void initMilestone(final String milestoneTitle, final Date dueDate ) {
+        Transaction.withTransaction(new TransactionalCommand() {
+
+            @Override
+            public void doIt() {
+                GHMilestone ghMilestone = new GHMilestone();
+                ghMilestone.setTitle(milestoneTitle);
+                ghMilestone.setDueOn(new LocalTime(dueDate));
+                ghMilestone.setRepository(mockGHRepository);
+                DSIMilestone dsiMilestone = new DSIMilestone();
+                ghMilestone.setDsiObjectMilestone(dsiMilestone);
+                ghIssueToUse.setMilestone(ghMilestone);
+
+            }
+        });
+
+    }
+
+    @Test
     public void checkThatNoSyncTakesPlaceIfDeleted() throws IOException {
         Transaction.withTransaction(new TransactionalCommand() {
 
@@ -220,6 +305,7 @@ public class GHIssueSyncTests extends FFTest {
         acTask = new pt.ist.maidSyncher.domain.activeCollab.ACTask();
         acTask.setDsiObjectIssue(mockDSIIssue);
         acProject = new ACProject();
+        acProject.setId(12);
         acTask.setProject(acProject);
     }
 }

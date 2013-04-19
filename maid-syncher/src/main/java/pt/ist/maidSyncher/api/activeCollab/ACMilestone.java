@@ -141,7 +141,7 @@ public class ACMilestone extends ACObject {
 
     public static ACMilestone create(ACMilestone preliminarObject) throws IOException {
         checkNotNull(preliminarObject);
-        checkArgument(preliminarObject.getId() > 0);
+        checkArgument(preliminarObject.getProjectId() > 0);
         String path = getRequestProcessor().getBasicUrlForPath("projects/" + preliminarObject.getProjectId() + "/milestones/add");
         return new ACMilestone(postObject(path, preliminarObject));
     }

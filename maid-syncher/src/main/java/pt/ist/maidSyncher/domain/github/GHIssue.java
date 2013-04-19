@@ -722,7 +722,8 @@ public class GHIssue extends GHIssue_Base {
 
                         DSIMilestone dsiMilestone = (DSIMilestone) getMilestone().getDSIObject(); //depended on
                         if (dsiMilestone == null || dsiMilestone.getAcMilestone(acProject) == null) {
-                            ACMilestone acMilestoneToCreate = getMilestone().getACCorrespondingPreliminarObject();
+                            ACMilestone acMilestoneToCreate =
+                                    getMilestone().getACCorrespondingPreliminarObject(acProject.getId());
                             pt.ist.maidSyncher.domain.activeCollab.ACMilestone newMilestone =
                                     pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(
                                             ACMilestone.create(acMilestoneToCreate), true);
@@ -756,7 +757,9 @@ public class GHIssue extends GHIssue_Base {
 
                             }
                         }
-                        newAcTask.setMilestoneId((int) dsiMilestone.getAcMilestone(acProject).getId());
+                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestone = dsiMilestone.getAcMilestone(acProject);
+                        long id = acMilestone.getId();
+                        newAcTask.setMilestoneId((int) id);
                     }
 
                     ACTaskCategory acTaskCategory = dsiRepository.getACTaskCategoryFor(acProject);
