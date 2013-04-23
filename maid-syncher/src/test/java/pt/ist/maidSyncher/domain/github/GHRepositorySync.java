@@ -1,9 +1,8 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.changesBuzz.sync;
+package pt.ist.maidSyncher.domain.github;
 
-import pt.ist.maidSyncher.changesBuzz.FFTest;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 4 de Abr de 2013

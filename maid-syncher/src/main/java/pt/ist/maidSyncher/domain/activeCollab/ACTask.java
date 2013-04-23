@@ -33,7 +33,6 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -153,12 +152,10 @@ public class ACTask extends ACTask_Base {
                 .singleton(getPropertyDescriptorAndCheckItExists(acTask, "categoryId")) : Collections.EMPTY_SET;
     }
 
-    @Service
     static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) throws TaskNotVisibleException {
         return process(acTask, false);
     }
 
-    @Service
     static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask acTask, boolean skipSync) throws TaskNotVisibleException {
         checkNotNull(acTask);
         //let's check on the visibility
@@ -167,7 +164,6 @@ public class ACTask extends ACTask_Base {
         return (ACTask) findOrCreateAndProccess(acTask, ACTask.class, MaidRoot.getInstance().getAcObjects(), skipSync);
     }
 
-    @Service
     public static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask task, ACProject project) {
         checkNotNull(project);
 
@@ -185,7 +181,6 @@ public class ACTask extends ACTask_Base {
         return acDomainTask;
     }
 
-    @Service
     public static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask task, long projectId, boolean skipSync) {
         checkNotNull(task);
 

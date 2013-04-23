@@ -12,7 +12,6 @@
 package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -27,7 +26,6 @@ public class ACTaskLabel extends ACTaskLabel_Base {
     }
 
 
-    @Service
     public static ACTaskLabel process(pt.ist.maidSyncher.api.activeCollab.ACTaskLabel acTaskLabel) {
         checkNotNull(acTaskLabel);
 

@@ -9,7 +9,7 @@
  *     Luis Silva - ACGHSync
  *     João Antunes - initial API and implementation
  ******************************************************************************/
-package pt.ist.maidSyncher.changesBuzz;
+package pt.ist.maidSyncher.domain.github;
 
 import java.io.IOException;
 import java.io.InputStream;

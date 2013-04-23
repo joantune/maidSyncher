@@ -19,7 +19,6 @@ import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.fenixframework.pstm.IllegalWriteException;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -42,7 +41,6 @@ public class ACInstance extends ACInstance_Base {
         maidRoot.addAcObjects(this);
     }
 
-    @Service
     public static ACInstance process(pt.ist.maidSyncher.api.activeCollab.ACInstance acInstance) {
         checkNotNull(acInstance);
         ACInstance instance = MaidRoot.getInstance().getAcInstance();

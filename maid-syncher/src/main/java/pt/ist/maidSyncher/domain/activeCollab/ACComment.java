@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
@@ -57,7 +56,6 @@ public class ACComment extends ACComment_Base {
         return changedDescriptorsToReturn;
     }
 
-    @Service
     public static void process(Set<pt.ist.maidSyncher.api.activeCollab.ACComment> acComments, ACTask acTask) {
         pt.ist.maidSyncher.domain.activeCollab.ACTask task;
         try {

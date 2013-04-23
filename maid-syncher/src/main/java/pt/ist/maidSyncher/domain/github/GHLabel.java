@@ -21,7 +21,6 @@ import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Repository;
 import org.joda.time.LocalTime;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -74,7 +73,6 @@ public class GHLabel extends GHLabel_Base {
         });
     }
 
-    @Service
     public static void process(Collection<Label> labels, Repository repository) {
         checkNotNull(labels);
 
@@ -103,7 +101,6 @@ public class GHLabel extends GHLabel_Base {
         }
     }
 
-    @Service
     public static GHLabel process(Label label, long repositoryId, boolean skipSync) {
         checkNotNull(label);
 

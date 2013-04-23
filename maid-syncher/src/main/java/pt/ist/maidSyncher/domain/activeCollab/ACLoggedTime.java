@@ -22,7 +22,6 @@ import jvstm.cps.ConsistencyPredicate;
 
 import org.apache.commons.lang.ObjectUtils;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -79,7 +78,6 @@ public class ACLoggedTime extends ACLoggedTime_Base {
         return hasProject() || hasTask();
     }
 
-    @Service
     public static ACLoggedTime process(pt.ist.maidSyncher.api.activeCollab.ACLoggedTime acLoggedTime) {
         checkNotNull(acLoggedTime);
         if (isProccessable(acLoggedTime) == false)

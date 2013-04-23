@@ -73,8 +73,12 @@ public class ACSubTask extends ACObject {
         }
         setParentClass(JsonRest.getString(jsonObj, "parent_class"));
         setParentId(JsonRest.getInt(jsonObj, "parent_id"));
-        setArchived(JsonRest.getBooleanFromInt(jsonObj, "is_archived"));
-        setComplete(JsonRest.getBooleanFromInt(jsonObj, "is_completed"));
+        Boolean isArchived = JsonRest.getBooleanFromInt(jsonObj, "is_archived");
+        if (isArchived != null)
+            setArchived(isArchived);
+        Boolean isCompleted = JsonRest.getBooleanFromInt(jsonObj, "is_completed");
+        if (isCompleted != null)
+            setComplete(isCompleted);
     }
 
     public int getAssigneeId() {

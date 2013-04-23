@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -47,7 +46,6 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         return (ACTaskCategory) findOrCreateAndProccess(category, ACTaskCategory.class, MaidRoot.getInstance().getAcObjects());
     }
 
-    @Service
     public static ACTaskCategory process(ACCategory category, long projectId, boolean skipSync) {
         checkNotNull(category);
         ACTaskCategory newlyCreatedOrRetrievedACTaskCategory =
@@ -60,7 +58,6 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 
     }
 
-    @Service
     public static void process(Set<ACCategory> categories, ACProject project) {
         checkNotNull(project);
         //let's get the project

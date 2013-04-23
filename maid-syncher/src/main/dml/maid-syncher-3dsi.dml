@@ -92,12 +92,6 @@ relation DSISubTaskGHIssue {
 	DSISubTask playsRole dsiObjectSubTask;
 }
 
-relation DSISubTaskDSIIssue {
-	DSIIssue playsRole parentIssue;
-	DSISubTask playsRole subtasks {
-		multiplicity *;
-	}
-}
 
 //relation DSISubTaskGHComment {
 //	.pt.ist.maidSyncher.domain.github.GHComment playsRole ghComment;
@@ -221,7 +215,7 @@ relation DSIIssueDSIUserOtherAssignees {
 }
 
 relation DSIIssueDSISubTask{
-	DSIIssue playsRole issue {
+	DSIIssue playsRole parentIssue {
 		multiplicity 1..1;
 	}
 	DSISubTask playsRole subTasks {

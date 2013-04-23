@@ -22,7 +22,6 @@ import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.joda.time.LocalTime;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -46,7 +45,6 @@ public class GHMilestone extends GHMilestone_Base {
         return ghMilestone;
     }
 
-    @Service
     public static void process(Collection<Milestone> milestones, Repository repository) {
         MaidRoot maidRoot = MaidRoot.getInstance();
 

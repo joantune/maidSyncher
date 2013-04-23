@@ -23,7 +23,6 @@ import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
 import org.joda.time.LocalTime;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -36,7 +35,6 @@ public class GHComment extends GHComment_Base {
     }
 
 
-    @Service
     public static void process(Collection<Comment> comments, Issue issue) {
         checkNotNull(comments);
         checkNotNull(issue);

@@ -21,7 +21,6 @@ import jvstm.cps.ConsistencyPredicate;
 import org.eclipse.egit.github.core.User;
 import org.joda.time.LocalTime;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -36,7 +35,6 @@ public class GHUser extends GHUser_Base {
             MaidRoot.getInstance().addGhUsers(this);
     }
 
-    @Service
     public static GHUser process(User user) {
         checkNotNull(user);
         checkArgument(user.getType().equals(User.TYPE_USER),

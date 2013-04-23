@@ -36,7 +36,6 @@ import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
@@ -92,13 +91,11 @@ public class GHIssue extends GHIssue_Base {
         return (GHIssue) findOrCreateAndProccess(issue, GHIssue.class, maidRoot.getGhIssues(), skipSync);
     }
 
-    @Service
     public static GHIssue process(Issue issue, Repository repository) {
         return process(issue, repository, false);
 
     }
 
-    @Service
     public static GHIssue process(Issue issue, Repository repository, boolean skipSync) {
         checkNotNull(repository);
         //let's first take care of the issue, and then assign it the repository
@@ -440,7 +437,7 @@ public class GHIssue extends GHIssue_Base {
      * @return A string with the getSubTaskBodyPrefix in the beginning, and the rest of the body there.
      *         If we had the subTaskBodyPrefix in any other place of the body, it moves it to the beginning
      */
-    private String applySubTaskBodyPrefix(String body) {
+    String applySubTaskBodyPrefix(String body) {
         String subTaskBodyPrefixString = getSubTaskBodyPrefix();
         String newBody = body;
 

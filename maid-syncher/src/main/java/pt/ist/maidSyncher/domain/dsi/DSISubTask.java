@@ -17,7 +17,7 @@ public class DSISubTask extends DSISubTask_Base {
 
     public DSISubTask(DSIIssue parentIssue) {
         super();
-        setIssue(parentIssue);
+        setParentIssue(parentIssue);
     }
 
 }

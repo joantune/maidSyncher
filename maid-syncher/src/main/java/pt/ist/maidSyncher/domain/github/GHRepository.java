@@ -31,7 +31,6 @@ import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -104,14 +103,12 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
         return changedPropertyDescriptors;
     }
 
-    @Service
     public static GHRepository process(Repository repository, boolean skipSync) {
         checkNotNull(repository);
         MaidRoot maidRoot = MaidRoot.getInstance();
         return (GHRepository) findOrCreateAndProccess(repository, GHRepository.class, maidRoot.getGhRepositories(), skipSync);
     }
 
-    @Service
     public static GHRepository process(Repository repository) {
         return process(repository, false);
     }

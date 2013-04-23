@@ -14,13 +14,16 @@ package pt.ist.maidSyncher.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.beans.IndexedPropertyDescriptor;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -35,9 +38,9 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.pstm.IllegalWriteException;
+import pt.ist.fenixframework.pstm.RelationList;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
@@ -50,6 +53,7 @@ import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.utils.MiscUtils;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
@@ -176,7 +180,6 @@ public abstract class SynchableObject extends SynchableObject_Base {
 
     }
 
-    @Service
     protected static SynchableObject findOrCreateAndProccess(Object object, Class<? extends SynchableObject> clazz,
             Iterable iterable, boolean skipGenerateSyncEvent, ObjectFindStrategy... optionalObjectFindStrategy)
                     throws SyncEventIllegalConflict {
@@ -239,7 +242,6 @@ public abstract class SynchableObject extends SynchableObject_Base {
      * @throws SyncEventIllegalConflict
      * @throws TaskNotVisibleException
      */
-    @Service
     protected static SynchableObject findOrCreateAndProccess(Object object, Class<? extends SynchableObject> clazz,
             Iterable iterable, ObjectFindStrategy... optionalObjectFindStrategy) throws SyncEventIllegalConflict {
         return findOrCreateAndProccess(object, clazz, iterable, false, optionalObjectFindStrategy);
@@ -424,14 +426,34 @@ public abstract class SynchableObject extends SynchableObject_Base {
         for (PropertyDescriptor origDescriptor : origDescriptors) {
             String name = origDescriptor.getName();
             if (PropertyUtils.isReadable(orig, name)) {
-                if (PropertyUtils.isWriteable(dest, name)) {
+                PropertyDescriptor destDescriptor = PropertyUtils.getPropertyDescriptor(dest, origDescriptor.getName());
+                if (PropertyUtils.isWriteable(dest, name)
+                        || (destDescriptor != null && MiscUtils.getWriteMethodIncludingFlowStyle(destDescriptor, dest.getClass()) != null)) {
                     Object valueDest = PropertyUtils.getSimpleProperty(dest, name);
                     Object valueOrigin = PropertyUtils.getSimpleProperty(orig, name);
 
+                    LOGGER.debug("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
+                    System.out.println("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
                     //let's ignore the properties were the values are our domain packages
                     if (valueOrigin != null
-                            && SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))
+                            && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()) || RelationList.class
+                                    .isAssignableFrom(valueOrigin.getClass()))) {
+                        System.out.println("Skipping");
                         continue; //let's skip these properties
+                    }
+                    if (SynchableObject.class.isAssignableFrom(origDescriptor.getPropertyType())) {
+                        System.out.println("Skipping");
+                        continue;
+                    }
+                    if (origDescriptor instanceof IndexedPropertyDescriptor) {
+                        IndexedPropertyDescriptor indexedPropertyDescriptor = (IndexedPropertyDescriptor) origDescriptor;
+                        System.out.println("OrigDescriptor IndexedPropertyDescriptor: " + indexedPropertyDescriptor.getName());
+                        if (SynchableObject.class.isAssignableFrom(indexedPropertyDescriptor.getIndexedPropertyType())) {
+                            System.out.println("Skipping");
+                            continue;
+                        }
+
+                    }
 
                     //let's ignore all of the dates - as they should be filled by
                     //the system
@@ -440,14 +462,29 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     if (Objects.equal(valueDest, valueOrigin) == false)
                         propertyDescriptorsThatChanged.add(origDescriptor);
                     try {
-                        PropertyUtils.setSimpleProperty(dest, name, valueOrigin);
+                        if (PropertyUtils.isWriteable(dest, name) == false) {
+                            //let's use the flow version
+                            Class<?> origPropertyType = origDescriptor.getPropertyType();
+                            Method writeMethodIncludingFlowStyle =
+                                    MiscUtils.getWriteMethodIncludingFlowStyle(destDescriptor, dest.getClass());
+                            if (Arrays.asList(writeMethodIncludingFlowStyle.getParameterTypes()).contains(origPropertyType)) {
+                                writeMethodIncludingFlowStyle.invoke(dest, valueOrigin);
+                            } else {
+                                continue;
+                            }
+
+                        } else {
+                            PropertyUtils.setSimpleProperty(dest, name, valueOrigin);
+
+                        }
                     } catch (IllegalArgumentException ex) {
-                        throw new Error("setSimpleProperty returned an exception, dest: " + dest.getClass().getName() + " oid: "
-                                + ((DomainObject) dest).getExternalId() + " name : " + name + " valueOrig: " + valueOrigin, ex);
+                        throw new Error("setSimpleProperty returned an exception, dest: " + dest.getClass().getName()
+                                + " name : " + name + " valueOrig: " + valueOrigin, ex);
                     }
                     LOGGER.trace("Copied property " + name + " from " + orig.getClass().getName() + " object to a "
                             + dest.getClass().getName() + " oid: " + getExternalId());
                 }
+                System.out.println("--");
             }
         }
 

@@ -1,9 +1,11 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.changesBuzz.sync;
+package pt.ist.maidSyncher.domain.github;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -12,11 +14,21 @@ import static org.mockito.Mockito.when;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import jvstm.TransactionalCommand;
 
+import org.apache.commons.beanutils.PropertyUtils;
+import org.eclipse.egit.github.core.Issue;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.client.GitHubResponse;
+import org.eclipse.egit.github.core.service.IssueService;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
@@ -29,9 +41,9 @@ import org.mockito.stubbing.Answer;
 import pt.ist.fenixframework.pstm.Transaction;
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
+import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
-import pt.ist.maidSyncher.changesBuzz.FFTest;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
@@ -42,12 +54,8 @@ import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
+import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
-import pt.ist.maidSyncher.domain.github.GHIssue;
-import pt.ist.maidSyncher.domain.github.GHLabel;
-import pt.ist.maidSyncher.domain.github.GHMilestone;
-import pt.ist.maidSyncher.domain.github.GHRepository;
-import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 
@@ -99,9 +107,13 @@ public class GHIssueSyncTests extends FFTest {
                 requestProcessor = mock(RequestProcessor.class);
                 //let's create a usable GHRepository
                 mockGHRepository = new GHRepository();
+                mockGHRepository.setName("test_repository");
                 GHUser ghUser = new GHUser();
                 mockGHRepository.setOwner(ghUser);
                 ghUser.setOrganization(MaidRoot.getInstance().getGhOrganization());
+                ghUser.setName("test_user");
+                ghUser.setLogin("test_user");
+                mockGHRepository.setName("test_repository");
 
                 mockDSIRepository = new DSIRepository();
                 mockDSIIssue = new DSIIssue();
@@ -125,14 +137,17 @@ public class GHIssueSyncTests extends FFTest {
                 createSyncEvent = syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
                 updateSyncEvent = syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
 
-
             }
         });
     }
 
     private SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject) {
-        return new SyncEvent(new LocalTime(), typeOfChangeEvent, Collections.<PropertyDescriptor> emptySet(), null,
-                new APIObjectWrapper() {
+        return syncEventGenerator(typeOfChangeEvent, originObject, Collections.<PropertyDescriptor> emptySet());
+    }
+
+    private SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject,
+            Collection<PropertyDescriptor> changedDescriptors) {
+        return new SyncEvent(new LocalTime(), typeOfChangeEvent, changedDescriptors, null, new APIObjectWrapper() {
 
             @Override
             public void validateAPIObject() throws SyncEventOriginObjectChanged {
@@ -232,7 +247,6 @@ public class GHIssueSyncTests extends FFTest {
                 ghIssueToUse.setTitle(ghIssueTitle);
                 ghIssueToUse.setBodyHtml(ghDescription);
 
-
                 //let us use a custom name
                 try {
                     final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
@@ -248,7 +262,7 @@ public class GHIssueSyncTests extends FFTest {
         verify(requestProcessor, times(2)).processPost(Mockito.any(ACTask.class), Mockito.anyString());
     }
 
-    private void initMilestone(final String milestoneTitle, final Date dueDate ) {
+    private void initMilestone(final String milestoneTitle, final Date dueDate) {
         Transaction.withTransaction(new TransactionalCommand() {
 
             @Override
@@ -301,11 +315,128 @@ public class GHIssueSyncTests extends FFTest {
 
     private static pt.ist.maidSyncher.domain.activeCollab.ACTask acTask;
     private static pt.ist.maidSyncher.domain.activeCollab.ACProject acProject;
+
     final private void initACTaskAssociatedWithGHIssue() {
         acTask = new pt.ist.maidSyncher.domain.activeCollab.ACTask();
         acTask.setDsiObjectIssue(mockDSIIssue);
         acProject = new ACProject();
         acProject.setId(12);
         acTask.setProject(acProject);
+    }
+
+    DSISubTask dsiSubTask;
+
+    private static final String GHISSUE_SUBTASK_BODY = "Body without the prefix";
+    private static final String GHISSUE_SUBTASK_TITLE = "subtask title :)";
+
+    private static GHIssue parentGHIssue;
+
+    TransactionalCommand initIssueAsSubTask = new TransactionalCommand() {
+
+        @Override
+        public void doIt() {
+            parentGHIssue = new GHIssue();
+            parentGHIssue.setRepository(mockGHRepository);
+            parentGHIssue.setNumber(3);
+
+            dsiSubTask = new DSISubTask(mockDSIIssue);
+            mockDSIIssue.setGhIssue(parentGHIssue);
+            pt.ist.maidSyncher.domain.activeCollab.ACSubTask acSubTask = new pt.ist.maidSyncher.domain.activeCollab.ACSubTask();
+            acSubTask.setComplete(false);
+            acSubTask.setName("blahBlah");
+            acSubTask.setId(3);
+            acSubTask.setTask(acTask);
+            acSubTask.setUrl("xpto");
+
+            acTask.setId(3);
+            dsiSubTask.setAcSubTask(acSubTask);
+
+            ghIssueToUse.removeDsiObjectIssue();
+            ghIssueToUse.setDsiObjectSubTask(dsiSubTask);
+            ghIssueToUse.setState(GHIssue.STATE_CLOSED);
+            ghIssueToUse.setBody(GHISSUE_SUBTASK_BODY);
+            ghIssueToUse.setTitle(GHISSUE_SUBTASK_TITLE);
+            ghIssueToUse.setId(123);
+
+            //just for fun, let's put some labels here
+            GHLabel ghLabel = new GHLabel();
+            ghLabel.setName("blahblah");
+            ghLabel.setRepository(mockGHRepository);
+            ghIssueToUse.addLabels(ghLabel);
+
+
+        }
+    };
+
+    @Test
+    public void updateAsSubTask() throws IOException {
+        //setup the issue to be a subtask
+        Transaction.withTransaction(initIssueAsSubTask);
+
+        //the changed descriptors will be all of the descriptors
+        PropertyDescriptor[] propertyDescriptors = PropertyUtils.getPropertyDescriptors(new Issue());
+
+        final SyncEvent updateSubTaskSyncEvent =
+                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, Arrays.asList(propertyDescriptors));
+
+        //let's set up the mocks
+
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACSubTask acSubTask = (ACSubTask) invocation.getArguments()[0];
+                //Verify that the name is the same
+                assertEquals(acSubTask.getName(), GHISSUE_SUBTASK_TITLE);
+                assertTrue(acSubTask.isComplete());
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("parent_class", ACTask.CLASS_VALUE);
+                jsonObject.put("parent_id", 3);
+                return jsonObject;
+            }
+        });
+        ACObject.setRequestProcessor(requestProcessor);
+
+        final GitHubClient mockGHClient = mock(GitHubClient.class);
+        GitHubResponse mockGHresponse = mock(GitHubResponse.class);
+//        doReturn(mockGHresponse).when(mockGHClient).get(Mockito.any(GitHubRequest.class));
+        when(mockGHClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class))).then(
+                new Answer<Issue>() {
+
+                    @Override
+                    public Issue answer(InvocationOnMock invocation) throws Throwable {
+                        Issue issue = mock(Issue.class);
+                        doReturn(123l).when(issue).getId();
+                        return issue;
+                    }
+                });
+
+        Transaction.withTransaction(new TransactionalCommand() {
+
+            @Override
+            public void doIt() {
+
+                MaidRoot.getInstance().setGitHubClient(mockGHClient);
+                final SyncActionWrapper sync = ghIssueToUse.sync(updateSubTaskSyncEvent);
+
+                //verify the issueservice calls and the number of calls to the requestProcessor
+
+                try {
+                    sync.sync();
+                    verify(requestProcessor, times(1)).processPost(Mockito.any(ACSubTask.class), Mockito.anyString());
+                    Map<String, String> params = new HashMap();
+                    params.put(IssueService.FIELD_BODY, ghIssueToUse.applySubTaskBodyPrefix(GHISSUE_SUBTASK_BODY));
+                    params.put(IssueService.FIELD_TITLE, GHISSUE_SUBTASK_TITLE);
+                    params.put(IssueService.FILTER_STATE, GHIssue.STATE_CLOSED);
+
+                    verify(mockGHClient).post("/repos/test_user/test_repository/issues/0", params, Issue.class);
+                    verify(mockGHClient, times(1)).post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class));
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
+
+            }
+        });
+
     }
 }

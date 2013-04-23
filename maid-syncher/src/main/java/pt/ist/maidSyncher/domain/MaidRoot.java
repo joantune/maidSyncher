@@ -67,14 +67,14 @@ public class MaidRoot extends MaidRoot_Base {
             acContext.setServer(configurationProperties.getProperty("ac.server.host"));
             acContext.setToken(configurationProperties.getProperty("ac.server.token"));
         }
-        if (gitHubClient == null) {
+        if (getGitHubClient() == null) {
             //let's try to connect to the GH Account
 
             //let's try to authenticate and get the user and repository list
-            gitHubClient = new GitHubClient();
+            setGitHubClient(new GitHubClient());
 
             String oauth2Token = configurationProperties.getProperty("github.oauth2.token");
-            gitHubClient.setOAuth2Token(oauth2Token);
+            getGitHubClient().setOAuth2Token(oauth2Token);
         }
     }
 
@@ -327,6 +327,10 @@ public class MaidRoot extends MaidRoot_Base {
 //        checkArgument(repository.getType().equals(User.TYPE_ORG), "You must provide a repository");
 //
 //    }
+
+    public static void setGitHubClient(GitHubClient gitHubClient) {
+        MaidRoot.gitHubClient = gitHubClient;
+    }
 
 //TODO make a getter for the ChangesBuzz
 

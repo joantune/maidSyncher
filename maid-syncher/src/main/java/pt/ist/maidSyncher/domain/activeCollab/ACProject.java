@@ -29,7 +29,6 @@ import org.eclipse.egit.github.core.service.LabelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -70,7 +69,6 @@ public class ACProject extends ACProject_Base {
         return process(acProject, false);
     }
 
-    @Service
     public static ACProject process(pt.ist.maidSyncher.api.activeCollab.ACProject acProject, boolean skipSync) {
         checkNotNull(acProject);
         ACProject projectToReturn =

@@ -16,7 +16,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -39,7 +38,6 @@ public class ACMilestone extends ACMilestone_Base {
 //        return (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjects());
 //    }
 
-    @Service
     public static ACMilestone process(pt.ist.maidSyncher.api.activeCollab.ACMilestone milestone, ACProject project) {
         checkNotNull(milestone);
         ACMilestone acMilestone =
@@ -50,7 +48,6 @@ public class ACMilestone extends ACMilestone_Base {
         return acMilestone;
     }
 
-    @Service
     public static ACMilestone process(pt.ist.maidSyncher.api.activeCollab.ACMilestone milestone, boolean skipSync) {
         checkNotNull(milestone);
         ACMilestone acMilestone =

@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
 
-import pt.ist.fenixWebFramework.services.Service;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
@@ -37,7 +36,6 @@ public class ACSubTask extends ACSubTask_Base {
         super();
     }
 
-    @Service
     private static ACSubTask process(pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask) {
         checkNotNull(acSubTask);
         return (ACSubTask) findOrCreateAndProccess(acSubTask, ACSubTask.class, MaidRoot.getInstance().getAcObjects());
@@ -61,7 +59,6 @@ public class ACSubTask extends ACSubTask_Base {
         return propertyDescriptorsToReturn;
     }
 
-    @Service
     public static void process(Set<pt.ist.maidSyncher.api.activeCollab.ACSubTask> acSubTasks, ACTask acTask) {
         pt.ist.maidSyncher.domain.activeCollab.ACTask acDomainTask;
         try {
