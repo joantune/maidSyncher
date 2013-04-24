@@ -34,6 +34,7 @@ import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -58,6 +59,9 @@ import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 2 de Abr de 2013
@@ -123,6 +127,8 @@ public class GHIssueSyncTests extends FFTest {
                 ghIssueToUse = new GHIssue();
                 ghIssueToUse.setRepository(mockGHRepository);
                 //when(ghIssueToUse.getRepository()).thenReturn(mockGHRepository);
+                ghIssueToUse.setTitle(GHISSUE_TITLE);
+                ghIssueToUse.setBodyHtml(GHISSUE_DESCRIPTION);
 
                 mockGHRepository.setDsiObjectRepository(mockDSIRepository);
                 ghIssueToUse.setDsiObjectIssue(mockDSIIssue);
@@ -161,19 +167,19 @@ public class GHIssueSyncTests extends FFTest {
         }, SyncUniverse.getTargetSyncUniverse(originObject), originObject);
     }
 
+    private final static String GHISSUE_TITLE = "Test issue";
+    private final static String GHISSUE_DESCRIPTION = "Test on the description, this must be the same";
     @Test
     public void createOpenGHIssueWithoutMilestone() throws Exception {
 
-        final String ghIssueTitle = "Test issue";
-        final String ghDescription = "Test on the description, this must be the same";
         when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
 
             @Override
             public JSONObject answer(InvocationOnMock invocation) throws Throwable {
                 ACTask acTask = (ACTask) invocation.getArguments()[0];
                 //Verify that the name is the same
-                assertEquals(acTask.getName(), ghIssueTitle);
-                assertEquals(acTask.getBody(), ghDescription);
+                assertEquals(acTask.getName(), GHISSUE_TITLE);
+                assertEquals(acTask.getBody(), GHISSUE_DESCRIPTION);
                 return new JSONObject();
             }
         });
@@ -185,8 +191,7 @@ public class GHIssueSyncTests extends FFTest {
             public void doIt() {
                 //let us say that the issue is open
                 ghIssueToUse.setState(GHIssue.STATE_OPEN);
-                ghIssueToUse.setTitle(ghIssueTitle);
-                ghIssueToUse.setBodyHtml(ghDescription);
+
 
                 //let us use a custom name
                 try {
@@ -206,8 +211,6 @@ public class GHIssueSyncTests extends FFTest {
     @Test
     public void createOpenGHIssueWithMilestone() throws Exception {
 
-        final String ghIssueTitle = "Test issue";
-        final String ghDescription = "Test on the description, this must be the same";
 
         final String ghMilestoneTitle = "testMilestone1";
         final Date ghMilestoneDueOn = new LocalDate().toDateMidnight().toDate();
@@ -219,8 +222,8 @@ public class GHIssueSyncTests extends FFTest {
                 if (argumentOne instanceof ACTask) {
                     ACTask acTask = (ACTask) argumentOne;
                     //Verify that the name is the same
-                    assertEquals(acTask.getName(), ghIssueTitle);
-                    assertEquals(acTask.getBody(), ghDescription);
+                    assertEquals(acTask.getName(), GHISSUE_TITLE);
+                    assertEquals(acTask.getBody(), GHISSUE_DESCRIPTION);
                 } else if (argumentOne instanceof ACMilestone) {
                     ACMilestone acMilestone = (ACMilestone) argumentOne;
                     assertEquals(acMilestone.getName(), ghMilestoneTitle);
@@ -244,8 +247,6 @@ public class GHIssueSyncTests extends FFTest {
             public void doIt() {
                 //let us say that the issue is open
                 ghIssueToUse.setState(GHIssue.STATE_OPEN);
-                ghIssueToUse.setTitle(ghIssueTitle);
-                ghIssueToUse.setBodyHtml(ghDescription);
 
                 //let us use a custom name
                 try {
@@ -437,6 +438,42 @@ public class GHIssueSyncTests extends FFTest {
 
             }
         });
+
+    }
+
+    public void updateSimpleWithoutLabelOrMilestoneChange() throws IOException {
+
+        //the changed descriptors will be all of the descriptors ...
+        // ... minus the label and milestone
+        Collection<PropertyDescriptor> propertyDescriptorsToUse = Collections2.filter(Arrays.asList(PropertyUtils.getPropertyDescriptors(new Issue())), new Predicate<PropertyDescriptor>() {
+            @Override
+            public boolean apply(PropertyDescriptor input)
+            {
+                if (input == null)
+                    return false;
+                if (input.getName().equals(GHIssue.DSC_MILESTONE) || input.getName().equals(GHIssue.DSC_LABELS)) {
+                    return false;
+                }
+                return true;
+            }
+        });
+        final SyncEvent updateTaskSyncEvent =
+                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
+
+        //setting up the mocks
+        JSONObject mockACTaskJsonObjectPostResult = mock(JSONObject.class);
+        when(requestProcessor.processPost(Mockito.any(ACTask.class), Mockito.anyString())).thenReturn(
+                mockACTaskJsonObjectPostResult);
+        ACObject.setRequestProcessor(requestProcessor);
+
+
+        //yep, this is the way I should verify things, the code in the above tests is ugly
+        //and are usages of mockito as it shouldn't be used. this is the way to go:) Issue #15
+        ArgumentCaptor<ACTask> acTaskGenerated = ArgumentCaptor.forClass(ACTask.class);
+        verify(requestProcessor).processPost(acTaskGenerated.capture(), Mockito.anyString());
+//        asser
+
+
 
     }
 }
