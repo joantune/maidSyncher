@@ -34,9 +34,11 @@ import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.pstm.Transaction;
@@ -68,6 +70,7 @@ import com.google.common.collect.Collections2;
  * 
  *         Tests the behaviour of synching a GHIssue
  */
+@RunWith(MockitoJUnitRunner.class)
 public class GHIssueSyncTests extends FFTest {
 
 //    private static Set<PropertyDescriptor> possiblePropertyDescriptor = new HashSet();
