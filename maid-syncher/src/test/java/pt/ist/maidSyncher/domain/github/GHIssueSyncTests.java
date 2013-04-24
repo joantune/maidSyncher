@@ -420,10 +420,10 @@ public class GHIssueSyncTests extends FFTest {
                 MaidRoot.getInstance().setGitHubClient(mockGHClient);
                 final SyncActionWrapper sync = ghIssueToUse.sync(updateSubTaskSyncEvent);
 
-                //verify the issueservice calls and the number of calls to the requestProcessor
 
                 try {
                     sync.sync();
+                    //verify the issueservice calls and the number of calls to the requestProcessor
                     verify(requestProcessor, times(1)).processPost(Mockito.any(ACSubTask.class), Mockito.anyString());
                     Map<String, String> params = new HashMap();
                     params.put(IssueService.FIELD_BODY, ghIssueToUse.applySubTaskBodyPrefix(GHISSUE_SUBTASK_BODY));
@@ -441,6 +441,7 @@ public class GHIssueSyncTests extends FFTest {
 
     }
 
+    @Test
     public void updateSimpleWithoutLabelOrMilestoneChange() throws IOException {
 
         //the changed descriptors will be all of the descriptors ...
@@ -460,6 +461,7 @@ public class GHIssueSyncTests extends FFTest {
         final SyncEvent updateTaskSyncEvent =
                 syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
 
+
         //setting up the mocks
         JSONObject mockACTaskJsonObjectPostResult = mock(JSONObject.class);
         when(requestProcessor.processPost(Mockito.any(ACTask.class), Mockito.anyString())).thenReturn(
@@ -467,11 +469,34 @@ public class GHIssueSyncTests extends FFTest {
         ACObject.setRequestProcessor(requestProcessor);
 
 
+        //executing the 'deed' and initing the ACTask
+        Transaction.withTransaction(new TransactionalCommand() {
+
+            @Override
+            public void doIt() {
+                //we need to have an ACTask on the other side
+                initACTaskAssociatedWithGHIssue();
+
+                SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
+
+                try {
+                    sync.sync();
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
+
+
+            }
+        });
+
+
         //yep, this is the way I should verify things, the code in the above tests is ugly
         //and are usages of mockito as it shouldn't be used. this is the way to go:) Issue #15
         ArgumentCaptor<ACTask> acTaskGenerated = ArgumentCaptor.forClass(ACTask.class);
         verify(requestProcessor).processPost(acTaskGenerated.capture(), Mockito.anyString());
-//        asser
+        assertEquals(acTaskGenerated.getValue().getName(), GHISSUE_TITLE);
+        assertEquals(acTaskGenerated.getValue().getBody(), GHISSUE_DESCRIPTION);
+        assertEquals(acTaskGenerated.getValue().getComplete(), Boolean.TRUE);
 
 
 
