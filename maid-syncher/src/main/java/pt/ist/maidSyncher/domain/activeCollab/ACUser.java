@@ -27,7 +27,7 @@ public class ACUser extends ACUser_Base {
 
     public static ACUser process(pt.ist.maidSyncher.api.activeCollab.ACUser acUser) {
         checkNotNull(acUser);
-        return (ACUser) findOrCreateAndProccess(acUser, ACUser.class, MaidRoot.getInstance().getAcObjects());
+        return (ACUser) findOrCreateAndProccess(acUser, ACUser.class, MaidRoot.getInstance().getAcObjectsSet());
     }
 
     public static ACUser findById(long id) {

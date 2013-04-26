@@ -30,7 +30,7 @@ public class ACTaskLabel extends ACTaskLabel_Base {
         checkNotNull(acTaskLabel);
 
         MaidRoot instance = MaidRoot.getInstance();
-        return (ACTaskLabel) findOrCreateAndProccess(acTaskLabel, ACTaskLabel.class, instance.getAcObjects());
+        return (ACTaskLabel) findOrCreateAndProccess(acTaskLabel, ACTaskLabel.class, instance.getAcObjectsSet());
     }
 
     public static ACTaskLabel findById(long id) {

@@ -82,7 +82,7 @@ public class GHLabel extends GHLabel_Base {
         GHRepository ghRepository = GHRepository.process(repository);
 
         //let's get the old ones
-        Set<GHLabel> oldGhLabels = new HashSet<GHLabel>(ghRepository.getLabelsDefined());
+        Set<GHLabel> oldGhLabels = new HashSet<GHLabel>(ghRepository.getLabelsDefinedSet());
 
         Set<GHLabel> newGhLabels = new HashSet<GHLabel>();
 
@@ -91,9 +91,9 @@ public class GHLabel extends GHLabel_Base {
         }
 
         //let us remove the old relations
-        ghRepository.getLabelsDefined().clear();
+        ghRepository.getLabelsDefinedSet().clear();
         //add the new ones
-        ghRepository.getLabelsDefined().addAll(newGhLabels);
+        ghRepository.getLabelsDefinedSet().addAll(newGhLabels);
         //And make sync DELETEd events for the removed ones
         oldGhLabels.removeAll(newGhLabels);
         for (GHLabel removedGHLabel : oldGhLabels) {
@@ -119,7 +119,7 @@ public class GHLabel extends GHLabel_Base {
         checkNotNull(label);
         MaidRoot maidRoot = MaidRoot.getInstance();
         GHLabel ghLabel =
-                (GHLabel) findOrCreateAndProccess(label, GHLabel.class, maidRoot.getGhLabels(), ObjectFindStrategy.FIND_BY_URL);
+                (GHLabel) findOrCreateAndProccess(label, GHLabel.class, maidRoot.getGhLabelsSet(), ObjectFindStrategy.FIND_BY_URL);
         return ghLabel;
     }
 
@@ -151,10 +151,10 @@ public class GHLabel extends GHLabel_Base {
 
     public void delete() {
         //let us remove all of the issues, and rep
-        removeRepository();
-        removeDsiObjectProject();
-        removeMaidRootFromLabel();
-        for (GHIssue issue : getIssues()) {
+        setRepository(null);
+        setDsiObjectProject(null);
+        setMaidRootFromLabel(null);
+        for (GHIssue issue : getIssuesSet()) {
             removeIssues(issue);
         }
         deleteDomainObject();

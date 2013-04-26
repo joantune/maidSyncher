@@ -14,7 +14,7 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.List;
+import java.util.Set;
 
 import jvstm.cps.ConsistencyPredicate;
 
@@ -39,7 +39,7 @@ public class GHUser extends GHUser_Base {
         checkNotNull(user);
         checkArgument(user.getType().equals(User.TYPE_USER),
                 "provided user must be of type user, and it is of type: " + user.getType());
-        List<GHUser> ghUsers = MaidRoot.getInstance().getGhUsers();
+        Set<GHUser> ghUsers = MaidRoot.getInstance().getGhUsersSet();
         return (GHUser) findOrCreateAndProccess(user, GHUser.class, ghUsers);
 
     }
@@ -49,7 +49,7 @@ public class GHUser extends GHUser_Base {
         if (this instanceof GHOrganization)
             return true;
         else {
-            return hasOrganization();
+            return getOrganization() != null;
         }
 
     }
@@ -58,9 +58,9 @@ public class GHUser extends GHUser_Base {
     @ConsistencyPredicate
     protected boolean checkHasRelationWithMaidRoot() {
         if (this instanceof GHOrganization) {
-            return ((GHOrganization) this).hasMaidRootFromOrg();
+            return ((GHOrganization) this).getMaidRootFromOrg() != null;
         } else {
-            return hasMaidRootFromUser();
+            return getMaidRootFromUser() != null;
         }
     }
 

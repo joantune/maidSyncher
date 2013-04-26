@@ -133,6 +133,11 @@ class GHComment extends GHObject {
 
 //relations with the root
 
+relation MaidRootDomainRoot {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot;
+	.pt.ist.fenixframework.DomainRoot playsRole domainRoot;
+}
+
 relation MaidRootGHOrganization {
 	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromOrg {
 		multiplicity 1..1;

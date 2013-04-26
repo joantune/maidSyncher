@@ -19,7 +19,7 @@ import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.fenixframework.pstm.IllegalWriteException;
+import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -50,8 +50,8 @@ public class ACInstance extends ACInstance_Base {
                 return instance;
             }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            if (e.getCause() instanceof IllegalWriteException)
-                throw (IllegalWriteException) e.getCause();
+            if (e.getCause() instanceof WriteOnReadError)
+                throw (WriteOnReadError) e.getCause();
             LOGGER.error("error copying properties for ACInstance, creating a new one", e);
         }
         return (ACInstance) findOrCreateAndProccess(acInstance, ACInstance.class,

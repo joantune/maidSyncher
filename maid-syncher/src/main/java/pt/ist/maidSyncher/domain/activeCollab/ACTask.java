@@ -89,7 +89,7 @@ public class ACTask extends ACTask_Base {
         }
 
         //now, let's substitute
-        for (ACUser user : getOtherAssignees()) {
+        for (ACUser user : getOtherAssigneesSet()) {
             removeOtherAssignees(user);
         }
 
@@ -161,7 +161,7 @@ public class ACTask extends ACTask_Base {
         //let's check on the visibility
         if (acTask.getVisibility() == false)
             throw new TaskNotVisibleException();
-        return (ACTask) findOrCreateAndProccess(acTask, ACTask.class, MaidRoot.getInstance().getAcObjects(), skipSync);
+        return (ACTask) findOrCreateAndProccess(acTask, ACTask.class, MaidRoot.getInstance().getAcObjectsSet(), skipSync);
     }
 
     public static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask task, ACProject project) {
@@ -200,7 +200,7 @@ public class ACTask extends ACTask_Base {
 
     public Set<ACUser> getAssignees() {
         HashSet<ACUser> toReturn = new HashSet<ACUser>();
-        toReturn.addAll(getOtherAssignees());
+        toReturn.addAll(getOtherAssigneesSet());
         toReturn.add(getMainAssignee());
 
         return toReturn;

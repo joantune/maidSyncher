@@ -23,7 +23,7 @@ public class DSIProject extends DSIProject_Base {
     }
 
     public GHLabel getGitHubLabelFor(GHRepository ghRepository) {
-        for (GHLabel ghLabel : getGitHubLabels()) {
+        for (GHLabel ghLabel : getGitHubLabelsSet()) {
             if (ObjectUtils.equals(ghLabel.getRepository(), ghRepository)) {
                 return ghLabel;
             }

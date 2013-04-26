@@ -45,19 +45,19 @@ public class GHComment extends GHComment_Base {
         GHIssue ghIssue = GHIssue.process(issue);
 
         //the old comments
-        Set<GHComment> oldComments = new HashSet<GHComment>(ghIssue.getComments());
+        Set<GHComment> oldComments = new HashSet<GHComment>(ghIssue.getCommentsSet());
 
         Set<GHComment> newComments = new HashSet<>();
 
         for (Comment commentToProcess : comments) {
             GHComment ghComment =
-                    (GHComment) findOrCreateAndProccess(commentToProcess, GHComment.class, maidRoot.getGhComments());
+                    (GHComment) findOrCreateAndProccess(commentToProcess, GHComment.class, maidRoot.getGhCommentsSet());
             newComments.add(ghComment);
         }
 
         //remove the old ones
-        ghIssue.getComments().clear();
-        ghIssue.getComments().addAll(newComments);
+        ghIssue.getCommentsSet().clear();
+        ghIssue.getCommentsSet().addAll(newComments);
 
         //create DELETE SyncEvents for the removed ones
         oldComments.removeAll(newComments);
@@ -73,9 +73,9 @@ public class GHComment extends GHComment_Base {
 
         //we must have only one of them (because this is either a comment, logged time, or sub task) or zero
         boolean hasDsiObject = false;
-        if (hasDsiObjectComment())
+        if (getDsiObjectComment() != null)
             hasDsiObject = true;
-        if (hasDsiObjectLoggedTime()) {
+        if (getDsiObjectLoggedTime() != null) {
             if (hasDsiObject)
                 return false;
             hasDsiObject = true;
@@ -85,9 +85,9 @@ public class GHComment extends GHComment_Base {
 
     @Override
     protected DSIObject getDSIObject() {
-        if (hasDsiObjectComment())
+        if (getDsiObjectComment() != null)
             return getDsiObjectComment();
-        if (hasDsiObjectLoggedTime())
+        if (getDsiObjectLoggedTime() != null)
             return getDsiObjectLoggedTime();
         return null;
     }

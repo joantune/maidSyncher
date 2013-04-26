@@ -39,8 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.DomainObject;
-import pt.ist.fenixframework.pstm.IllegalWriteException;
-import pt.ist.fenixframework.pstm.RelationList;
+import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
@@ -205,8 +204,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
                 toProccessAndReturn = clazz.getConstructor().newInstance();
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                     | NoSuchMethodException | SecurityException e) {
-                if (e.getCause() instanceof IllegalWriteException)
-                    throw (IllegalWriteException) e.getCause();
+                if (e.getCause() instanceof WriteOnReadError)
+                    throw (WriteOnReadError) e.getCause();
                 throw new UnsupportedOperationException("Class: " + clazz.getName()
                         + " has no usable, simple, e.g. Constructor() constructor", e);
             }
@@ -217,8 +216,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
         try {
             changedDescriptors.addAll(toProccessAndReturn.copyPropertiesFrom(object));
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            if (e.getCause() instanceof IllegalWriteException)
-                throw ((IllegalWriteException) e.getCause());
+            if (e.getCause() instanceof WriteOnReadError)
+                throw ((WriteOnReadError) e.getCause());
             throw new IllegalArgumentException("There were problems copying properties from object of class "
                     + object.getClass().getName() + " to " + toProccessAndReturn.getClass().getName() + " oid: "
                     + toProccessAndReturn.getExternalId(), e);
@@ -436,8 +435,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     System.out.println("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
                     //let's ignore the properties were the values are our domain packages
                     if (valueOrigin != null
-                            && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()) || RelationList.class
-                                    .isAssignableFrom(valueOrigin.getClass()))) {
+ && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))) {
                         System.out.println("Skipping");
                         continue; //let's skip these properties
                     }

@@ -40,7 +40,7 @@ public class GHMilestone extends GHMilestone_Base {
         MaidRoot maidRoot = MaidRoot.getInstance();
 
         GHMilestone ghMilestone =
-                (GHMilestone) findOrCreateAndProccess(milestone, GHMilestone.class, maidRoot.getGhMilestones(),
+                (GHMilestone) findOrCreateAndProccess(milestone, GHMilestone.class, maidRoot.getGhMilestonesSet(),
                         ObjectFindStrategy.FIND_BY_URL);
         return ghMilestone;
     }
@@ -52,7 +52,7 @@ public class GHMilestone extends GHMilestone_Base {
         GHRepository ghRepository = GHRepository.process(repository);
 
         //retrieving the list of current milestones
-        Set<GHMilestone> oldGHMilestones = new HashSet<GHMilestone>(ghRepository.getMilestones());
+        Set<GHMilestone> oldGHMilestones = new HashSet<GHMilestone>(ghRepository.getMilestonesSet());
 
         Set<GHMilestone> newGHMilestones = new HashSet<GHMilestone>();
 
@@ -62,8 +62,8 @@ public class GHMilestone extends GHMilestone_Base {
         }
 
         //remove the old ones and set the new ones
-        ghRepository.getMilestones().clear();
-        ghRepository.getMilestones().addAll(newGHMilestones);
+        ghRepository.getMilestonesSet().clear();
+        ghRepository.getMilestonesSet().addAll(newGHMilestones);
 
         //create the DELETE events
         oldGHMilestones.removeAll(newGHMilestones);

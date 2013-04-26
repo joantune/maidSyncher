@@ -23,6 +23,8 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.egit.github.core.client.GitHubClient;
 
+import pt.ist.fenixframework.Atomic;
+import pt.ist.fenixframework.DomainRoot;
 import pt.ist.fenixframework.FenixFramework;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
@@ -79,11 +81,22 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
     public static MaidRoot getInstance() {
-        return FenixFramework.getRoot();
+        if (FenixFramework.getDomainRoot().getMaidRoot() == null) {
+            initialize();
+        }
+        return FenixFramework.getDomainRoot().getMaidRoot();
     }
 
-    public MaidRoot() {
+    @Atomic
+    private static void initialize() {
+        if (FenixFramework.getDomainRoot().getMaidRoot() == null) {
+            FenixFramework.getDomainRoot().setMaidRoot(new MaidRoot(FenixFramework.getDomainRoot()));
+        }
+    }
+
+    public MaidRoot(DomainRoot domainRoot) {
         super();
+        domainRoot.setMaidRoot(this);
         checkIfIsSingleton();
         init();
     }
@@ -99,8 +112,8 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
     private void checkIfIsSingleton() {
-        if (FenixFramework.getRoot() != null && FenixFramework.getRoot() != this) {
-            throw new Error("There can only be one! (instance of MyOrg)");
+        if (FenixFramework.getDomainRoot().getMaidRoot() != null && FenixFramework.getDomainRoot().getMaidRoot() != this) {
+            throw new Error("There can only be one! (instance of MyOrg [aka MaidRoot])");
         }
     }
 

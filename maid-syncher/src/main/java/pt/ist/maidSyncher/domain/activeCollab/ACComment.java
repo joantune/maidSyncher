@@ -36,7 +36,7 @@ public class ACComment extends ACComment_Base {
 
     private static ACComment process(pt.ist.maidSyncher.api.activeCollab.ACComment acComment) {
         checkNotNull(acComment);
-        return (ACComment) findOrCreateAndProccess(acComment, ACComment.class, MaidRoot.getInstance().getAcObjects());
+        return (ACComment) findOrCreateAndProccess(acComment, ACComment.class, MaidRoot.getInstance().getAcObjectsSet());
     }
 
     @Override
@@ -66,7 +66,7 @@ public class ACComment extends ACComment_Base {
 
         //let's proccess all of the comments now
 
-        Set<ACComment> acOldComments = new HashSet<ACComment>(task.getComments());
+        Set<ACComment> acOldComments = new HashSet<ACComment>(task.getCommentsSet());
 
         Set<ACComment> acNewComments = new HashSet<ACComment>();
         for (pt.ist.maidSyncher.api.activeCollab.ACComment acComment : acComments) {
@@ -75,7 +75,7 @@ public class ACComment extends ACComment_Base {
 
         //TODO check, and sync, if there were deleted comments
 
-        for (ACComment acComment : task.getComments()) {
+        for (ACComment acComment : task.getCommentsSet()) {
             task.removeComments(acComment);
         }
 

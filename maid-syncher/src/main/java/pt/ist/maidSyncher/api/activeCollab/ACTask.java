@@ -11,6 +11,8 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.api.activeCollab;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.Calendar;
@@ -118,6 +120,19 @@ public class ACTask extends ACObject {
         String path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/add");
         return new ACTask(postObject(path, preliminarObject));
 
+    }
+
+    /**
+     * 
+     * @param url the base url of the object to update
+     * @return
+     * @throws IOException
+     */
+    public ACTask update(String url) throws IOException {
+        checkArgument(StringUtils.isBlank(url) == false);
+        //let us construct the URL and send an edit
+        url += "/edit";
+        return new ACTask(ACTask.postObject(url, this));
     }
 
     public String getName() {

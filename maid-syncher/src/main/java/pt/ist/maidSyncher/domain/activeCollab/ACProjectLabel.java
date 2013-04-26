@@ -29,7 +29,7 @@ public class ACProjectLabel extends ACProjectLabel_Base {
         checkNotNull(acProjectLabel);
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        return (ACProjectLabel) findOrCreateAndProccess(acProjectLabel, ACProjectLabel.class, maidRoot.getAcObjects());
+        return (ACProjectLabel) findOrCreateAndProccess(acProjectLabel, ACProjectLabel.class, maidRoot.getAcObjectsSet());
     }
 
 

@@ -43,13 +43,14 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 
     private static ACTaskCategory process(ACCategory category) {
         checkNotNull(category);
-        return (ACTaskCategory) findOrCreateAndProccess(category, ACTaskCategory.class, MaidRoot.getInstance().getAcObjects());
+        return (ACTaskCategory) findOrCreateAndProccess(category, ACTaskCategory.class, MaidRoot.getInstance().getAcObjectsSet());
     }
 
     public static ACTaskCategory process(ACCategory category, long projectId, boolean skipSync) {
         checkNotNull(category);
         ACTaskCategory newlyCreatedOrRetrievedACTaskCategory =
-                (ACTaskCategory) findOrCreateAndProccess(category, ACTaskCategory.class, MaidRoot.getInstance().getAcObjects(),
+                (ACTaskCategory) findOrCreateAndProccess(category, ACTaskCategory.class,
+                        MaidRoot.getInstance().getAcObjectsSet(),
                         skipSync);
         pt.ist.maidSyncher.domain.activeCollab.ACProject acProject =
                 pt.ist.maidSyncher.domain.activeCollab.ACProject.findById(projectId);
@@ -65,7 +66,7 @@ public class ACTaskCategory extends ACTaskCategory_Base {
                 pt.ist.maidSyncher.domain.activeCollab.ACProject.process(project);
 
         //let's take care of each category
-        Set<ACTaskCategory> oldTaskCategoriesDefined = new HashSet<ACTaskCategory>(acProject.getTaskCategoriesDefined());
+        Set<ACTaskCategory> oldTaskCategoriesDefined = new HashSet<ACTaskCategory>(acProject.getTaskCategoriesDefinedSet());
         Set<ACTaskCategory> newTaskCategoriesDefined = new HashSet<ACTaskCategory>();
 
         for (ACCategory category : categories) {
@@ -74,8 +75,8 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         }
 
         //let's remove all of them
-        acProject.getTaskCategoriesDefined().clear();
-        acProject.getTaskCategoriesDefined().addAll(newTaskCategoriesDefined);
+        acProject.getTaskCategoriesDefinedSet().clear();
+        acProject.getTaskCategoriesDefinedSet().addAll(newTaskCategoriesDefined);
 
         //let's trigger the DELETE events needed
         oldTaskCategoriesDefined.removeAll(newTaskCategoriesDefined);
@@ -96,7 +97,7 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         checkArgument(StringUtils.isBlank(name) == false, "Name mustn't be blank");
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        Collection<ACObject> acTaskCategories = Collections2.filter(maidRoot.getAcObjects(), new Predicate<ACObject>() {
+        Collection<ACObject> acTaskCategories = Collections2.filter(maidRoot.getAcObjectsSet(), new Predicate<ACObject>() {
             @Override
             public boolean apply(ACObject input) {
                 if (input instanceof ACTaskCategory) {

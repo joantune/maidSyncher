@@ -20,7 +20,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -72,7 +71,8 @@ public class ACProject extends ACProject_Base {
     public static ACProject process(pt.ist.maidSyncher.api.activeCollab.ACProject acProject, boolean skipSync) {
         checkNotNull(acProject);
         ACProject projectToReturn =
-                (ACProject) findOrCreateAndProccess(acProject, ACProject.class, MaidRoot.getInstance().getAcObjects(), skipSync);
+                (ACProject) findOrCreateAndProccess(acProject, ACProject.class, MaidRoot.getInstance().getAcObjectsSet(),
+                        skipSync);
         return projectToReturn;
     }
 
@@ -84,7 +84,7 @@ public class ACProject extends ACProject_Base {
         checkArgument(StringUtils.isBlank(name) == false, "Name mustn't be blank");
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        Optional<ACObject> optional = Iterables.tryFind(maidRoot.getAcObjects(), new Predicate<ACObject>() {
+        Optional<ACObject> optional = Iterables.tryFind(maidRoot.getAcObjectsSet(), new Predicate<ACObject>() {
             @Override
             public boolean apply(ACObject input) {
                 if (input instanceof ACProject) {
@@ -98,7 +98,7 @@ public class ACProject extends ACProject_Base {
     }
 
     public static Set<ACProject> getActiveProjects() {
-        List<ACObject> acObjects = MaidRoot.getInstance().getAcObjects();
+        Set<ACObject> acObjects = MaidRoot.getInstance().getAcObjectsSet();
         return new HashSet(Collections2.filter(acObjects, new Predicate<ACObject>() {
             @Override
             public boolean apply(ACObject input) {
@@ -200,12 +200,12 @@ public class ACProject extends ACProject_Base {
 
                 if (isNowArchived) {
                     //let us get all the labels, and delete them
-                    for (GHLabel ghLabel : dsiProject.getGitHubLabels()) {
+                    for (GHLabel ghLabel : dsiProject.getGitHubLabelsSet()) {
                         labelService.deleteLabel(ghLabel.getRepository(), ghLabel.getName());
                         //remove them
                         ghLabel.delete();
                     }
-                    dsiProject.getGitHubLabels().clear();
+                    dsiProject.getGitHubLabelsSet().clear();
                     return Collections.emptySet();
 
                 } else if (nameChanged) {
@@ -243,8 +243,8 @@ public class ACProject extends ACProject_Base {
                         }
                     }
                     //now let us associate the GHLabel with this DSIProject
-                    dsiProject.getGitHubLabels().clear();
-                    dsiProject.getGitHubLabels().addAll(labelsToBeEdited);
+                    dsiProject.getGitHubLabelsSet().clear();
+                    dsiProject.getGitHubLabelsSet().addAll(labelsToBeEdited);
                     syncObjectsAltered.addAll(labelsToBeEdited);
 
 
@@ -311,7 +311,8 @@ public class ACProject extends ACProject_Base {
                     return Collections.emptyList();
                 Set<GHLabel> labelsToAssignToDSIProject = new HashSet<GHLabel>();
                 //let us get all of the repositories we need to create a label for
-                Set<GHRepository> repositoriesWeNeedToCreateLabelsFor = new HashSet(MaidRoot.getInstance().getGhRepositories());
+                Set<GHRepository> repositoriesWeNeedToCreateLabelsFor =
+                        new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
 
                 for (GHLabel ghLabel : appliableAndAlreadyExistingLabels) {
                     repositoriesWeNeedToCreateLabelsFor.remove(ghLabel.getRepository());
@@ -330,13 +331,13 @@ public class ACProject extends ACProject_Base {
                 //let us remove the old labels and set the new ones on
                 //the appropriate DSIProject relation
                 DSIProject dsiProject = (DSIProject) getDSIObject();
-                dsiProject.getGitHubLabels().clear();
-                dsiProject.getGitHubLabels().addAll(labelsToAssignToDSIProject);
+                dsiProject.getGitHubLabelsSet().clear();
+                dsiProject.getGitHubLabelsSet().addAll(labelsToAssignToDSIProject);
 
                 synchableObjectsToReturn.addAll(labelsToAssignToDSIProject);
                 //now let's take care of the TaskCategory, i.e., we created a new ACProject
                 //thus we need to create a taskcategory for each repository
-                List<ACTaskCategory> taskCategoriesDefined = getTaskCategoriesDefined();
+                Set<ACTaskCategory> taskCategoriesDefined = getTaskCategoriesDefinedSet();
                 Set<String> taskCategoriesNames =
                         new HashSet<>(Collections2.transform(taskCategoriesDefined, new Function<ACTaskCategory, String>() {
 
@@ -350,7 +351,8 @@ public class ACProject extends ACProject_Base {
 
                         Set<ACCategory> taskCategoriesToCreate = new HashSet<>();
 
-                        Set<GHRepository> repositoriesToCreateTaskCategoriesFor = new HashSet(MaidRoot.getInstance().getGhRepositories());
+                        Set<GHRepository> repositoriesToCreateTaskCategoriesFor =
+                                new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
                         //let's see if any of them are appropriate to be used
                         for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {
                             String taskCategoryName = StringUtils.lowerCase(ACTaskCategory.REPOSITORY_PREFIX + ghRepository.getName());

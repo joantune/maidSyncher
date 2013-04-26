@@ -20,7 +20,8 @@ import static java.util.Locale.ENGLISH;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SynchableObject;
@@ -34,7 +35,7 @@ import com.google.common.collect.Iterables;
  * 
  */
 public class MiscUtils {
-    private static final Logger LOGGER = Logger.getLogger(MiscUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MiscUtils.class);
 
     public static SynchableObject findACObjectsById(long id, Class<? extends SynchableObject> clazz) {
         checkNotNull(clazz);
@@ -43,7 +44,7 @@ public class MiscUtils {
         MaidRoot maidRoot = MaidRoot.getInstance();
         PredicateFindGHObjectByClassAndId predicateFindGHObjectByClassAndId =
                 new SynchableObject.ObjectFindStrategy.PredicateFindGHObjectByClassAndId(clazz, id);
-        return Iterables.tryFind(maidRoot.getAcObjects(), predicateFindGHObjectByClassAndId).get();
+        return Iterables.tryFind(maidRoot.getAcObjectsSet(), predicateFindGHObjectByClassAndId).get();
 
     }
 

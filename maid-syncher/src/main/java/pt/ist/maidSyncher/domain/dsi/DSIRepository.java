@@ -26,7 +26,7 @@ public class DSIRepository extends DSIRepository_Base {
 
     public ACTaskCategory getACTaskCategoryFor(ACProject acProject) {
         checkNotNull(acProject);
-        for (ACTaskCategory acTaskCategory : getAcTaskCategories()) {
+        for (ACTaskCategory acTaskCategory : getAcTaskCategoriesSet()) {
             if (ObjectUtils.equals(acTaskCategory.getProject(), acProject))
                 return acTaskCategory;
 

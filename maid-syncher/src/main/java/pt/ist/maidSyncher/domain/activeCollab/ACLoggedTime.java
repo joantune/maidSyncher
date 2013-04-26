@@ -75,7 +75,7 @@ public class ACLoggedTime extends ACLoggedTime_Base {
 
     @ConsistencyPredicate
     private boolean checkHasParent() {
-        return hasProject() || hasTask();
+        return getProject() != null || getTask() != null;
     }
 
     public static ACLoggedTime process(pt.ist.maidSyncher.api.activeCollab.ACLoggedTime acLoggedTime) {
@@ -84,7 +84,7 @@ public class ACLoggedTime extends ACLoggedTime_Base {
             return null;
         ACLoggedTime acDomainLoggedTime = null;
         acDomainLoggedTime =
-                (ACLoggedTime) findOrCreateAndProccess(acLoggedTime, ACLoggedTime.class, MaidRoot.getInstance().getAcObjects());
+                (ACLoggedTime) findOrCreateAndProccess(acLoggedTime, ACLoggedTime.class, MaidRoot.getInstance().getAcObjectsSet());
         return acDomainLoggedTime;
     }
 

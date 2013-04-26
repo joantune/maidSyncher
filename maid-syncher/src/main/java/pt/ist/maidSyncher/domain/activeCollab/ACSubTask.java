@@ -38,7 +38,7 @@ public class ACSubTask extends ACSubTask_Base {
 
     private static ACSubTask process(pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask) {
         checkNotNull(acSubTask);
-        return (ACSubTask) findOrCreateAndProccess(acSubTask, ACSubTask.class, MaidRoot.getInstance().getAcObjects());
+        return (ACSubTask) findOrCreateAndProccess(acSubTask, ACSubTask.class, MaidRoot.getInstance().getAcObjectsSet());
     }
 
     @Override
@@ -70,14 +70,14 @@ public class ACSubTask extends ACSubTask_Base {
         //let's get all of the sub tasks
         Set<ACSubTask> newSubTaskSet = new HashSet<>();
 
-        Set<ACSubTask> oldSubTaskSet = new HashSet<>(acDomainTask.getSubTasks());
+        Set<ACSubTask> oldSubTaskSet = new HashSet<>(acDomainTask.getSubTasksSet());
         for (pt.ist.maidSyncher.api.activeCollab.ACSubTask subTask : acSubTasks) {
             ACSubTask domainSubTask = process(subTask);
             newSubTaskSet.add(domainSubTask);
         }
 
         //ok, now let's remove all of the old ones and add the new ones TODO sync if changes were made
-        for (ACSubTask oldSubTask : acDomainTask.getSubTasks()) {
+        for (ACSubTask oldSubTask : acDomainTask.getSubTasksSet()) {
             acDomainTask.removeSubTasks(oldSubTask);
         }
 

@@ -88,7 +88,7 @@ public class GHIssue extends GHIssue_Base {
     static GHIssue process(Issue issue, boolean skipSync) {
         checkNotNull(issue);
         MaidRoot maidRoot = MaidRoot.getInstance();
-        return (GHIssue) findOrCreateAndProccess(issue, GHIssue.class, maidRoot.getGhIssues(), skipSync);
+        return (GHIssue) findOrCreateAndProccess(issue, GHIssue.class, maidRoot.getGhIssuesSet(), skipSync);
     }
 
     public static GHIssue process(Issue issue, Repository repository) {
@@ -127,7 +127,7 @@ public class GHIssue extends GHIssue_Base {
             setMilestone(ghMilestone);
         }
 
-        Set<GHLabel> ghOldLabels = new HashSet<GHLabel>(getLabels());
+        Set<GHLabel> ghOldLabels = new HashSet<GHLabel>(getLabelsSet());
         Set<GHLabel> newGHLabels = new HashSet<GHLabel>();
         for (Label label : issue.getLabels()) {
             GHLabel ghLabel = GHLabel.process(label);
@@ -135,7 +135,7 @@ public class GHIssue extends GHIssue_Base {
         }
         if (!ObjectUtils.equals(ghOldLabels, newGHLabels))
             changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
-        for (GHLabel ghLabel : getLabels()) {
+        for (GHLabel ghLabel : getLabelsSet()) {
             removeLabels(ghLabel);
         }
         for (GHLabel ghLabel : newGHLabels) {
@@ -161,14 +161,15 @@ public class GHIssue extends GHIssue_Base {
     @ConsistencyPredicate
     private boolean checkDSIObjectMultiplicity() {
         //we cannot be both an issue and a subtask
-        if (hasDsiObjectIssue() && hasDsiObjectSubTask())
+        if (getDsiObjectIssue() != null && getDsiObjectSubTask() != null)
+
             return false;
         return true;
     }
 
     @Override
     protected DSIObject getDSIObject() {
-        if (hasDsiObjectIssue())
+        if (getDsiObjectIssue() != null)
             return getDsiObjectIssue();
         else
             return getDsiObjectSubTask();
@@ -249,7 +250,7 @@ public class GHIssue extends GHIssue_Base {
     private void validateAndCorrectLabels() throws IOException {
         GHLabel labelFound = null;
         Set<GHLabel> labelsToRemove = new HashSet<>();
-        for (GHLabel ghLabel : getLabels()) {
+        for (GHLabel ghLabel : getLabelsSet()) {
             if (ghLabel.getDSIObject() != null) {
                 if (labelFound != null) {
                     labelsToRemove.add(ghLabel);
@@ -437,7 +438,7 @@ public class GHIssue extends GHIssue_Base {
      * @return A string with the getSubTaskBodyPrefix in the beginning, and the rest of the body there.
      *         If we had the subTaskBodyPrefix in any other place of the body, it moves it to the beginning
      */
-    String applySubTaskBodyPrefix(String body) {
+    public String applySubTaskBodyPrefix(String body) {
         String subTaskBodyPrefixString = getSubTaskBodyPrefix();
         String newBody = body;
 
@@ -462,6 +463,29 @@ public class GHIssue extends GHIssue_Base {
             throw new Error("Error trying to prefill an Issue.", e);
         }
         return newIssue;
+    }
+
+    /**
+     * 
+     * @param newACTaskToReuse
+     * @return the newACTaskToReuse if it isn't null, or a newly prefilled one from the dsiIssue.getAcTask()
+     */
+    private ACTask getNewPrefilledACTask(ACTask newACTaskToReuse) {
+        if (newACTaskToReuse != null)
+            return newACTaskToReuse;
+        checkNotNull(getDSIObject());
+        DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+        checkNotNull(dsiIssue);
+        pt.ist.maidSyncher.domain.activeCollab.ACTask domainAcTask = dsiIssue.getAcTask();
+        checkNotNull(domainAcTask);
+        ACTask newAcTask = new ACTask();
+        try {
+            domainAcTask.copyPropertiesTo(newAcTask);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+            throw new Error("Error trying to prefill an Issue.", e);
+        }
+        return newAcTask;
+
     }
 
     private ACSubTask getNewPrefilledACSubTask(ACSubTask newACSubTaskToReuse) {
@@ -572,7 +596,8 @@ public class GHIssue extends GHIssue_Base {
                 if (changedMilestones) {
                     if ( getMilestone() != null) {
 
-                        //let us change the milestone, if it doesn't exist, reuse/create it
+                        //let us change the milestone on the other side.
+                        //if the corresponding ACMilestone doesn't exist, reuse/create it
                         DSIIssue dsiIssue = (DSIIssue) getDSIObject();
 
                         //let's try to find one with the name to use
@@ -594,15 +619,38 @@ public class GHIssue extends GHIssue_Base {
 
                 }
                 if (changedLabels) {
+                    //let's assert the project label - if none is found, or more than one is found, let's assume the default project is to be used
+
+                    //use the /move-to-project on the AC side
 
                 }
                 if (changedState) {
+                    //update the state on the other side
+                    acTaskToEdit = getNewPrefilledACTask(acTaskToEdit);
+                    acTaskToEdit.setComplete(getState().equalsIgnoreCase(STATE_CLOSED));
 
                 }
                 if (changedBody) {
+                    //update the body on the other side
+                    acTaskToEdit = getNewPrefilledACTask(acTaskToEdit);
+                    acTaskToEdit.setBody(getBodyHtml());
 
                 }
                 if (changedTitle) {
+                    //update the title on the other side
+                    acTaskToEdit = getNewPrefilledACTask(acTaskToEdit);
+                    acTaskToEdit.setName(getTitle());
+
+                }
+
+                if (acTaskToEdit != null) {
+                    //let's edit it
+
+                    //get the base url
+                    DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+                    pt.ist.maidSyncher.domain.activeCollab.ACTask acTask = dsiIssue.getAcTask();
+                    ACTask updatedAcTask = acTaskToEdit.update(acTask.getUrl());
+                    pt.ist.maidSyncher.domain.activeCollab.ACTask.process(updatedAcTask, acTask.getProject().getId(), true);
 
                 }
 
@@ -636,7 +684,7 @@ public class GHIssue extends GHIssue_Base {
 
     private ACProject getProjectToUsedBasedOnCurrentLabels() {
 
-        Collection<GHLabel> appliableLabels = Collections2.filter(getLabels(), new Predicate<GHLabel>() {
+        Collection<GHLabel> appliableLabels = Collections2.filter(getLabelsSet(), new Predicate<GHLabel>() {
             @Override
             public boolean apply(GHLabel input) {
                 if (input == null)
@@ -683,7 +731,7 @@ public class GHIssue extends GHIssue_Base {
         }
 
         //if we have a GHLabel of 'deleted' let's not do anything
-        if (GHLabel.containsDeletedLabel(getLabels())) {
+        if (GHLabel.containsDeletedLabel(getLabelsSet())) {
             return new EmptySyncActionWrapper(syncEvent);
         } else {
 
@@ -736,7 +784,7 @@ public class GHIssue extends GHIssue_Base {
                             if (ObjectUtils.equals(acMilestone.getProject(), acProject) == false) {
                                 //then this milestone should be moved,or copied to the new project
                                 //let's see which one we should do
-                                boolean hasOtherTasks = acMilestone.getTasks().isEmpty() == false;
+                                boolean hasOtherTasks = acMilestone.getTasksSet().isEmpty() == false;
 
                                 if (hasOtherTasks) {
                                     //let's copy it

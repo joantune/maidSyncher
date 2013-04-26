@@ -106,7 +106,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     public static GHRepository process(Repository repository, boolean skipSync) {
         checkNotNull(repository);
         MaidRoot maidRoot = MaidRoot.getInstance();
-        return (GHRepository) findOrCreateAndProccess(repository, GHRepository.class, maidRoot.getGhRepositories(), skipSync);
+        return (GHRepository) findOrCreateAndProccess(repository, GHRepository.class, maidRoot.getGhRepositoriesSet(), skipSync);
     }
 
     public static GHRepository process(Repository repository) {
@@ -155,7 +155,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
         } else if (syncEvent.getTypeOfChangeEvent().equals(SyncEvent.TypeOfChangeEvent.UPDATE)) {
             //let's retrieve the default project, and the task category:
             DSIRepository dsiRepository = (DSIRepository) getDSIObject();
-            Collection<ACTaskCategory> acTaskCategories = dsiRepository.getAcTaskCategories();
+            Collection<ACTaskCategory> acTaskCategories = dsiRepository.getAcTaskCategoriesSet();
             pt.ist.maidSyncher.domain.activeCollab.ACProject defaultACProject = dsiRepository.getDefaultProject();
 
             syncActionWrapperToReturn = syncUpdateEvent(defaultACProject, acTaskCategories, syncEvent);
@@ -213,7 +213,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                 //then we must change the name of the default project, and of all of the acTaskCategories
                 acProjectAux = preFillProjectIfNeeded(defaultACProject, acProjectAux);
                 //let's take care of the categories
-                for (ACTaskCategory acTaskCategory : dsiRepository.getAcTaskCategories()) {
+                for (ACTaskCategory acTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
                     acCategoriesToEdit.add(new ACCategory(acTaskCategory.getId(), acTaskCategory.getProject().getId(),
                             ACTaskCategory.REPOSITORY_PREFIX + getName()));
                 }
@@ -259,7 +259,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                     //let's set the new task categories
 
                     //remove the old ones
-                    for (ACTaskCategory oldAcTaskCategory : dsiRepository.getAcTaskCategories()) {
+                    for (ACTaskCategory oldAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
                         dsiRepository.removeAcTaskCategories(oldAcTaskCategory);
                     }
 
@@ -399,7 +399,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                         }
 
                         //now, let's remove the old ones, and add the new ones
-                        for (ACTaskCategory existingAcTaskCategory : dsiRepository.getAcTaskCategories()) {
+                for (ACTaskCategory existingAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
                             dsiRepository.removeAcTaskCategories(existingAcTaskCategory);
                         }
                         for (ACTaskCategory acTaskCategory : acTaskCategoriesToAssign) {
@@ -408,7 +408,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
 
                         ArrayList<SynchableObject> synchedObjects = new ArrayList<SynchableObject>();
                         synchedObjects.add(acProjectToReturn);
-                        synchedObjects.addAll(dsiRepository.getAcTaskCategories());
+                synchedObjects.addAll(dsiRepository.getAcTaskCategoriesSet());
 
                         return synchedObjects;
             }
@@ -438,7 +438,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     protected static GHRepository findById(final long id) {
         checkArgument(id > 0);
         Optional<GHRepository> optionalGHRepository =
-                Iterables.tryFind(MaidRoot.getInstance().getGhRepositories(), new Predicate<GHRepository>() {
+                Iterables.tryFind(MaidRoot.getInstance().getGhRepositoriesSet(), new Predicate<GHRepository>() {
                     @Override
                     public boolean apply(GHRepository ghRepository) {
                         if (ghRepository == null)

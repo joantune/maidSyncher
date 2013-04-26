@@ -41,7 +41,7 @@ public class ACMilestone extends ACMilestone_Base {
     public static ACMilestone process(pt.ist.maidSyncher.api.activeCollab.ACMilestone milestone, ACProject project) {
         checkNotNull(milestone);
         ACMilestone acMilestone =
-                (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjects());
+                (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjectsSet());
         pt.ist.maidSyncher.domain.activeCollab.ACProject acProject =
                 pt.ist.maidSyncher.domain.activeCollab.ACProject.process(project);
         acMilestone.setProject(acProject);
@@ -51,7 +51,7 @@ public class ACMilestone extends ACMilestone_Base {
     public static ACMilestone process(pt.ist.maidSyncher.api.activeCollab.ACMilestone milestone, boolean skipSync) {
         checkNotNull(milestone);
         ACMilestone acMilestone =
-                (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjects(),
+                (ACMilestone) findOrCreateAndProccess(milestone, ACMilestone.class, MaidRoot.getInstance().getAcObjectsSet(),
                         skipSync);
 
         pt.ist.maidSyncher.domain.activeCollab.ACProject acProject =
@@ -63,7 +63,7 @@ public class ACMilestone extends ACMilestone_Base {
 
     public static ACMilestone findMilestone(final pt.ist.maidSyncher.domain.activeCollab.ACProject acProject,
             final String milestoneName) {
-        return (ACMilestone) Iterables.tryFind(MaidRoot.getInstance().getAcObjects(), new Predicate<ACObject>() {
+        return (ACMilestone) Iterables.tryFind(MaidRoot.getInstance().getAcObjectsSet(), new Predicate<ACObject>() {
             @Override
             public boolean apply(ACObject input) {
                 if (input == null)

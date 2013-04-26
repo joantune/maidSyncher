@@ -29,7 +29,7 @@ public class DSIMilestone extends DSIMilestone_Base {
     }
 
     public ACMilestone getAcMilestone(final ACProject acProject) {
-        Optional<ACMilestone> optionalMilestone = Iterables.tryFind(getAcMilestones(), new Predicate<ACMilestone>() {
+        Optional<ACMilestone> optionalMilestone = Iterables.tryFind(getAcMilestonesSet(), new Predicate<ACMilestone>() {
             @Override
             public boolean apply(ACMilestone input) {
                 if(input == null)
@@ -41,7 +41,7 @@ public class DSIMilestone extends DSIMilestone_Base {
     }
 
     public GHMilestone getGhMilestone(final GHRepository ghRepository) {
-        Optional<GHMilestone> optionalMilestone = Iterables.tryFind(getGhMilestones(), new Predicate<GHMilestone>() {
+        Optional<GHMilestone> optionalMilestone = Iterables.tryFind(getGhMilestonesSet(), new Predicate<GHMilestone>() {
             @Override
             public boolean apply(GHMilestone input) {
                 if (input == null)
