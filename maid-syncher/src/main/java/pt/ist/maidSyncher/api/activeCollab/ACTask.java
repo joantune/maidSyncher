@@ -96,6 +96,16 @@ public class ACTask extends ACObject {
 
     }
 
+    static public ACTask moveTo(long taskId, long currentProjectId, long newProjectId) throws IOException {
+        String path =
+                getRequestProcessor()
+                        .getBasicUrlForPath("projects/" + currentProjectId + "/tasks/" + taskId + "/move-to-project");
+        StringBuilder postData = new StringBuilder();
+        JsonRest.setString(postData, "move_to_project_id", String.valueOf(newProjectId));
+        return new ACTask(getRequestProcessor().processPost(path, postData.toString()));
+
+    }
+
     @Override
     public String toJSONString()
     {

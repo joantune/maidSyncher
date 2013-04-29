@@ -593,19 +593,34 @@ public class GHIssue extends GHIssue_Base {
             public Collection<SynchableObject> sync() throws IOException {
                 Set<SynchableObject> synchableObjectsToReturn = new HashSet<>();
                 ACTask acTaskToEdit = null;
+                DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+                if (changedLabels) {
+                    //let's assert the project label - if none is found, or more than one is found, let's assume the default project is to be used
+                    ACProject acProject = getProjectToUsedBasedOnCurrentLabels();
+                    ACProject currentACProject = dsiIssue.getAcTask().getProject();
+                    if (ObjectUtils.notEqual(currentACProject, acProject)) {
+                        //let's use the /move-to-project on the AC side
+                        ACTask.moveTo(dsiIssue.getAcTask().getId(), currentACProject.getId(), acProject.getId());
+                        //assuming all went well, we need to update this ACTask's projectId
+                        dsiIssue.getAcTask().setProject(acProject);
+                        DSIProject dsiProject = acProject.getDsiObjectProject();
+                        dsiIssue.setProject(dsiProject);
+
+                    }
+
+                }
                 if (changedMilestones) {
                     if ( getMilestone() != null) {
 
                         //let us change the milestone on the other side.
                         //if the corresponding ACMilestone doesn't exist, reuse/create it
-                        DSIIssue dsiIssue = (DSIIssue) getDSIObject();
 
                         //let's try to find one with the name to use
                         ACProject acProject = getProjectToUsedBasedOnCurrentLabels();
-                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone milestoneFound =
+                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone milestoneToUse =
                                 pt.ist.maidSyncher.domain.activeCollab.ACMilestone
                                 .findMilestone(acProject, getMilestone().getTitle());
-                        if (milestoneFound == null) {
+                        if (milestoneToUse == null) {
                             //we have to create it
                             ACMilestone acMilestoneToCreate = new ACMilestone();
                             acMilestoneToCreate.setName(getMilestone().getTitle());
@@ -613,15 +628,14 @@ public class GHIssue extends GHIssue_Base {
                             acMilestoneToCreate.setDueOn(getMilestone().getDueOn().toDateTimeToday().toDate());
                             acMilestoneToCreate.setProjectId(acProject.getId());
                             ACMilestone newlyCreatedMilestone = ACMilestone.create(acMilestoneToCreate);
-                            pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(newlyCreatedMilestone, true);
+                            milestoneToUse =
+                                    pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(newlyCreatedMilestone, true);
                         }
+
+                        acTaskToEdit = getNewPrefilledACTask(acTaskToEdit);
+                        acTaskToEdit.setMilestoneId((int) milestoneToUse.getId());
+
                     }
-
-                }
-                if (changedLabels) {
-                    //let's assert the project label - if none is found, or more than one is found, let's assume the default project is to be used
-
-                    //use the /move-to-project on the AC side
 
                 }
                 if (changedState) {
@@ -647,7 +661,6 @@ public class GHIssue extends GHIssue_Base {
                     //let's edit it
 
                     //get the base url
-                    DSIIssue dsiIssue = (DSIIssue) getDSIObject();
                     pt.ist.maidSyncher.domain.activeCollab.ACTask acTask = dsiIssue.getAcTask();
                     ACTask updatedAcTask = acTaskToEdit.update(acTask.getUrl());
                     pt.ist.maidSyncher.domain.activeCollab.ACTask.process(updatedAcTask, acTask.getProject().getId(), true);
@@ -677,6 +690,11 @@ public class GHIssue extends GHIssue_Base {
 
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                Set<Class> classesDependedOn = new HashSet();
+                classesDependedOn.add(ACProject.class);
+                classesDependedOn.add(ACMilestone.class);
+                classesDependedOn.add(GHMilestone.class);
+                classesDependedOn.add(GHLabel.class);
                 return Collections.singleton((Class) ACProject.class);
             }
         };

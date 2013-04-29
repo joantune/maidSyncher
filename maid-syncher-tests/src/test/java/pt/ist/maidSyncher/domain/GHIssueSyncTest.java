@@ -5,6 +5,7 @@ package pt.ist.maidSyncher.domain;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,8 +22,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.GitHubResponse;
@@ -54,6 +57,7 @@ import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
+import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
@@ -291,7 +295,7 @@ public class GHIssueSyncTest {
 
     }
 
-    private void initMilestone(final String milestoneTitle, final Date dueDate) {
+    private GHMilestone initMilestone(final String milestoneTitle, final Date dueDate) {
 
         GHMilestone ghMilestone = new GHMilestone();
         ghMilestone.setTitle(milestoneTitle);
@@ -300,6 +304,7 @@ public class GHIssueSyncTest {
         DSIMilestone dsiMilestone = new DSIMilestone();
         ghMilestone.setDsiObjectMilestone(dsiMilestone);
         ghIssueToUse.setMilestone(ghMilestone);
+        return ghMilestone;
 
     }
 
@@ -331,15 +336,12 @@ public class GHIssueSyncTest {
     }
 
     private static pt.ist.maidSyncher.domain.activeCollab.ACTask acTask;
-    private static pt.ist.maidSyncher.domain.activeCollab.ACProject acProject;
 
     final private void initACTaskAssociatedWithGHIssue() {
         acTask = new pt.ist.maidSyncher.domain.activeCollab.ACTask();
         acTask.setDsiObjectIssue(mockDSIIssue);
         acTask.setUrl("http://phonyUrl");
-        acProject = new ACProject();
-        acProject.setId(12);
-        acTask.setProject(acProject);
+        acTask.setProject(mockACProject);
     }
 
     DSISubTask dsiSubTask;
@@ -483,14 +485,17 @@ public class GHIssueSyncTest {
         //yep, this is the way I should verify things, the code in the above tests is ugly
         //and are usages of mockito as it shouldn't be used. this is the way to go:) Issue #15
         verify(requestProcessor).processPost(apiAcTaskCaptor.capture(), Mockito.anyString());
-        assertEquals(apiAcTaskCaptor.getValue().getName(), GHISSUE_TITLE);
-        assertEquals(apiAcTaskCaptor.getValue().getBody(), GHISSUE_DESCRIPTION);
-        assertEquals(apiAcTaskCaptor.getValue().getComplete(), Boolean.TRUE);
+
+        assertEquals(GHISSUE_TITLE, apiAcTaskCaptor.getValue().getName());
+        assertEquals(GHISSUE_DESCRIPTION, apiAcTaskCaptor.getValue().getBody());
+        assertEquals(Boolean.TRUE, apiAcTaskCaptor.getValue().getComplete());
 
     }
 
     private static final String GHMILESTONE_TITLE = "Milestone title";
 
+    @Test
+    @Atomic(mode = TxMode.WRITE)
     public void updateTaskWithExistingMilestoneAndNoLabelChange() throws IOException {
         //the changed descriptors will be all of the descriptors ...
         // ... minus the label
@@ -520,7 +525,16 @@ public class GHIssueSyncTest {
         //we need to have an ACTask on the other side
         initACTaskAssociatedWithGHIssue();
         //we should take care of the milestone as well
-        initMilestone(GHMILESTONE_TITLE, new Date());
+        Date milestoneDueDate = new Date();
+        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate);
+
+        //we should have the milestone on the AC side
+        pt.ist.maidSyncher.domain.activeCollab.ACMilestone mockAcMilestone =
+                new pt.ist.maidSyncher.domain.activeCollab.ACMilestone();
+//                mock(pt.ist.maidSyncher.domain.activeCollab.ACMilestone.class); TODO we can't have mocks with objects that aren't mocks
+        mockAcMilestone.setName(GHMILESTONE_TITLE);
+        mockAcMilestone.setId(321l);
+        mockACProject.addMilestones(mockAcMilestone);
 
         SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
 
@@ -530,9 +544,134 @@ public class GHIssueSyncTest {
             throw new Error(e);
         }
 
+        verify(requestProcessor).processPost(apiAcTaskCaptor.capture(), Mockito.anyString());
+
+        assertEquals(321l, apiAcTaskCaptor.getValue().getMilestoneId());
+
     }
 
-    public void updateTaskWithLabelAndNonExistingMilestoneChange() {
+    @Test
+    @Atomic
+    public void updateTaskWithLabelAndNonExistingMilestoneChange() throws IOException {
+        //the changed descriptors will be all of the descriptors
+        final SyncEvent updateTaskSyncEvent =
+                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(new Issue())));
 
+        when(requestProcessor.getBasicUrlForPath(Mockito.anyString())).then(new Answer<String>() {
+
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                String argumentOne = (String) invocation.getArguments()[0];
+                return "https://baseString/" + argumentOne;
+            }
+        });
+
+        //setting up the mocks
+        final JSONObject mockACTaskJsonObjectPostResult = mock(JSONObject.class);
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+            //let's craft the JSONObject to return
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                Object argumentOne = invocation.getArguments()[0];
+                if (argumentOne != null && argumentOne instanceof ACMilestone) {
+                    ACMilestone acMilestone = (ACMilestone) invocation.getArguments()[0];
+                    JSONObject jsonObjectToReturn = new JSONObject();
+                    if (acMilestone != null) {
+                        //let's get the project id on the url
+                        String url = (String) invocation.getArguments()[1];
+                        String projectId = StringUtils.substringBetween(url, "projects/", "/milestones");
+                        jsonObjectToReturn.put("project_id", Integer.valueOf(projectId));
+                        jsonObjectToReturn.put("id", new Random().nextInt(100) + 1000);
+                        jsonObjectToReturn.put("name", acMilestone.getName());
+                        jsonObjectToReturn.put("body", acMilestone.getBody());
+                    }
+                    return jsonObjectToReturn;
+                } else
+                    return mockACTaskJsonObjectPostResult;
+            }
+        });
+
+        when(requestProcessor.processPost(Mockito.anyString(), Mockito.anyString())).thenReturn(mockACTaskJsonObjectPostResult);
+
+        ACObject.setRequestProcessor(requestProcessor);
+
+        //executing the 'deed' and initializing the ACTask
+        //we need to have an ACTask on the other side
+        initACTaskAssociatedWithGHIssue();
+        //we should take care of the milestone as well
+        Date milestoneDueDate = new Date();
+        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate);
+
+        //we should have a label as well, with a different project associated
+        initLabelWithAssociatedProject();
+        SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
+
+        try {
+            sync.sync();
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+
+        //we should have:
+
+        //the creation of the ACMilestone on the 'otherAcProject';
+        verify(requestProcessor,times(2)).processPost(apiAcObjectCaptor.capture(), Mockito.anyString());
+
+        for (ACObject acObject  : apiAcObjectCaptor.getAllValues()) {
+            if (acObject instanceof ACMilestone) {
+                ACMilestone acMilestone = (ACMilestone) acObject;
+                assertEquals(AC_OTHER_PROJECT_ID.longValue(), acMilestone.getProjectId());
+            }
+            else if (acObject instanceof ACTask) {
+                ACTask acTask = (ACTask) acObject;
+                assertEquals(GHISSUE_TITLE, acTask.getName());
+                assertEquals( GHISSUE_DESCRIPTION, acTask.getBody());
+                assertEquals( Boolean.TRUE, acTask.getComplete());
+            }
+            else {
+                fail();
+            }
+        }
+
+
+
+        //the 'move' of the ACTask to the 'otherAcProject';
+        ArgumentCaptor<String> pathCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> moveContentCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(requestProcessor).processPost(pathCaptor.capture(), moveContentCaptor.capture());
+
+        String pathValue = pathCaptor.getValue();
+        assertTrue(pathValue != null && pathValue.contains("tasks"));
+        assertTrue(pathValue != null && pathValue.contains("move-to-project"));
+        assertTrue(pathValue != null && pathValue.contains("123")); //the old project id
+
+        String contentValue = moveContentCaptor.getValue();
+        assertTrue(contentValue != null && contentValue.contains("move_to_project_id=" + AC_OTHER_PROJECT_ID.longValue()));
+//        assertTrue(contentValue != null && contentValue.contains("submitted=submitted")); -- this part is not done by the stubbed request processor
+
+        //the updates to the simple fields of the actask
+
+
+    }
+
+    private static final String AC_OTHER_PROJECT_NAME = "Project XPTO";
+    private static final Long AC_OTHER_PROJECT_ID = new Long(33);
+    private static final String GH_PROJECT_LABEL = GHLabel.PROJECT_PREFIX + AC_OTHER_PROJECT_NAME;
+
+    private void initLabelWithAssociatedProject() {
+        GHLabel ghLabel = new GHLabel();
+        ghLabel.setName(GH_PROJECT_LABEL);
+        ghLabel.setRepository(mockGHRepository);
+
+        DSIProject dsiProject = new DSIProject();
+        ACProject otherAcProject = new ACProject();
+        otherAcProject.setId(AC_OTHER_PROJECT_ID);
+        otherAcProject.setName(AC_OTHER_PROJECT_NAME);
+        ghLabel.setDsiObjectProject(dsiProject);
+        dsiProject.setAcProject(otherAcProject);
+        ghIssueToUse.addLabels(ghLabel);
     }
 }
