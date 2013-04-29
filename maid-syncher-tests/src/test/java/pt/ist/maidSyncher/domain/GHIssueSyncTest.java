@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +50,6 @@ import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
-import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
@@ -60,14 +58,13 @@ import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.dsi.DSISubTask;
-import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
-import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -168,30 +165,12 @@ public class GHIssueSyncTest {
         mockACProject.addTaskCategoriesDefined(acTaskCategory);
         mockDSIRepository.addAcTaskCategories(acTaskCategory);
 
-        createSyncEvent = syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
-        updateSyncEvent = syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
+        createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
+        updateSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
 
     }
 
-    private SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject) {
-        return syncEventGenerator(typeOfChangeEvent, originObject, Collections.<PropertyDescriptor> emptySet());
-    }
 
-    private SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject,
-            Collection<PropertyDescriptor> changedDescriptors) {
-        return new SyncEvent(new LocalTime(), typeOfChangeEvent, changedDescriptors, null, new APIObjectWrapper() {
-
-            @Override
-            public void validateAPIObject() throws SyncEventOriginObjectChanged {
-                return;
-            }
-
-            @Override
-            public Object getAPIObject() {
-                return null;
-            }
-        }, SyncUniverse.getTargetSyncUniverse(originObject), originObject);
-    }
 
     private final static String GHISSUE_TITLE = "Test issue";
     private final static String GHISSUE_DESCRIPTION = "Test on the description, this must be the same";
@@ -239,7 +218,6 @@ public class GHIssueSyncTest {
     @Test
     public void createOpenGHIssueWithMilestone() throws Exception {
 
-        final String ghMilestoneTitle = "testMilestone1";
         final Date ghMilestoneDueOn = new LocalDate().toDateMidnight().toDate();
 
         when(mockJSONObject.get("id")).thenReturn(123l);
@@ -263,7 +241,7 @@ public class GHIssueSyncTest {
         ACObject.setRequestProcessor(requestProcessor);
 
         //let's init the milestone
-        initMilestone(ghMilestoneTitle, ghMilestoneDueOn);
+        initMilestone(GHMILESTONE_TITLE, ghMilestoneDueOn, GHMILESTONE_DESCRIPTION);
 
         //let us say that the issue is open
         ghIssueToUse.setState(GHIssue.STATE_OPEN);
@@ -287,19 +265,21 @@ public class GHIssueSyncTest {
                 assertEquals(acTask.getBody(), GHISSUE_DESCRIPTION);
             } else if (acObject instanceof ACMilestone) {
                 ACMilestone acMilestone = (ACMilestone) acObject;
-                assertEquals(acMilestone.getName(), ghMilestoneTitle);
+                assertEquals(acMilestone.getName(), GHMILESTONE_TITLE);
                 assertEquals(acMilestone.getDueOn(), ghMilestoneDueOn);
+                assertEquals(acMilestone.getBody(), GHMILESTONE_DESCRIPTION);
 
             }
         }
 
     }
 
-    private GHMilestone initMilestone(final String milestoneTitle, final Date dueDate) {
+    private GHMilestone initMilestone(final String milestoneTitle, final Date dueDate, String ghMilestoneBody) {
 
         GHMilestone ghMilestone = new GHMilestone();
         ghMilestone.setTitle(milestoneTitle);
         ghMilestone.setDueOn(new LocalTime(dueDate));
+        ghMilestone.setDescription(ghMilestoneBody);
         ghMilestone.setRepository(mockGHRepository);
         DSIMilestone dsiMilestone = new DSIMilestone();
         ghMilestone.setDsiObjectMilestone(dsiMilestone);
@@ -390,7 +370,7 @@ public class GHIssueSyncTest {
         PropertyDescriptor[] propertyDescriptors = PropertyUtils.getPropertyDescriptors(new Issue());
 
         final SyncEvent updateSubTaskSyncEvent =
-                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, Arrays.asList(propertyDescriptors));
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, Arrays.asList(propertyDescriptors));
 
         //let's set up the mocks
 
@@ -464,7 +444,7 @@ public class GHIssueSyncTest {
                     }
                 });
         final SyncEvent updateTaskSyncEvent =
-                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
 
         //setting up the mocks
         when(requestProcessor.processPost(Mockito.any(ACTask.class), Mockito.anyString())).thenReturn(mockJSONObject);
@@ -493,6 +473,7 @@ public class GHIssueSyncTest {
     }
 
     private static final String GHMILESTONE_TITLE = "Milestone title";
+    private static final String GHMILESTONE_DESCRIPTION = "Milestone description";
 
     @Test
     @Atomic(mode = TxMode.WRITE)
@@ -513,7 +494,7 @@ public class GHIssueSyncTest {
                     }
                 });
         final SyncEvent updateTaskSyncEvent =
-                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, propertyDescriptorsToUse);
 
         //setting up the mocks
         JSONObject mockACTaskJsonObjectPostResult = mock(JSONObject.class);
@@ -526,7 +507,7 @@ public class GHIssueSyncTest {
         initACTaskAssociatedWithGHIssue();
         //we should take care of the milestone as well
         Date milestoneDueDate = new Date();
-        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate);
+        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate, GHMILESTONE_DESCRIPTION);
 
         //we should have the milestone on the AC side
         pt.ist.maidSyncher.domain.activeCollab.ACMilestone mockAcMilestone =
@@ -555,7 +536,7 @@ public class GHIssueSyncTest {
     public void updateTaskWithLabelAndNonExistingMilestoneChange() throws IOException {
         //the changed descriptors will be all of the descriptors
         final SyncEvent updateTaskSyncEvent =
-                syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse,
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse,
                         Arrays.asList(PropertyUtils.getPropertyDescriptors(new Issue())));
 
         when(requestProcessor.getBasicUrlForPath(Mockito.anyString())).then(new Answer<String>() {
@@ -602,7 +583,7 @@ public class GHIssueSyncTest {
         initACTaskAssociatedWithGHIssue();
         //we should take care of the milestone as well
         Date milestoneDueDate = new Date();
-        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate);
+        GHMilestone ghMilestone = initMilestone(GHMILESTONE_TITLE, milestoneDueDate, GHMILESTONE_DESCRIPTION);
 
         //we should have a label as well, with a different project associated
         initLabelWithAssociatedProject();
