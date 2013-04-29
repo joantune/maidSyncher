@@ -220,7 +220,7 @@ public class ACTask extends ACObject {
     public Set<ACSubTask> getSubTasks() throws IOException
     {
         Set<ACSubTask> subtasks = new HashSet<ACSubTask>();
-        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/subtasks");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(getUrl() + "/subtasks");
         if(jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
@@ -232,7 +232,7 @@ public class ACTask extends ACObject {
 
     public Set<ACComment> getComments() throws IOException {
         Set<ACComment> comments = new HashSet<ACComment>();
-        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(_url + "/comments");
+        JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(getUrl() + "/comments");
         //this URL has the
 
         if (jsonArr != null) {
@@ -248,7 +248,7 @@ public class ACTask extends ACObject {
     public ACCategory getCategory() throws IOException {
         if (this._categoryId == -1 || this._categoryId == 0)
             return null;
-        String decodedUrl = URLDecoder.decode(_url, "UTF-8");
+        String decodedUrl = URLDecoder.decode(getUrl(), "UTF-8");
         int lastIndexOfSlash = StringUtils.lastIndexOf(decodedUrl, "/");
         String urlToUse = StringUtils.substring(decodedUrl, 0, lastIndexOfSlash);
         return new ACCategory((JSONObject) getRequestProcessor().processGet(urlToUse + "/categories/" + _categoryId));

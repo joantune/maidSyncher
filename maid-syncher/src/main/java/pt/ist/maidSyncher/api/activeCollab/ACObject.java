@@ -25,7 +25,7 @@ public abstract class ACObject {
     public static final Logger LOGGER = LoggerFactory.getLogger(ACObject.class);
 
     private long _id;
-    protected String _url;
+    private String _url;
     protected Date _createdOn;
     protected long _createdById;
     protected Date _updatedOn;
@@ -48,11 +48,11 @@ public abstract class ACObject {
 
     private void privateInit(JSONObject jsonObj) {
         setId(JsonRest.getInt(jsonObj, "id"));
-        _url = JsonRest.getString(jsonObj, "permalink");
-        if (_url != null)
-            _url = _url.replaceFirst("public/index","api");
+        setUrl(JsonRest.getString(jsonObj, "permalink"));
+        if (getUrl() != null)
+            setUrl(getUrl().replaceFirst("public/index","api"));
 
-        LOGGER.trace("URL:" + _url);
+        LOGGER.trace("URL:" + getUrl());
 
         _createdOn = JsonRest.getDate(jsonObj, "created_on");
         _createdById = JsonRest.getInt(jsonObj, "created_by_id");
@@ -64,7 +64,7 @@ public abstract class ACObject {
 
     protected final void updateFromPermalink() throws IOException {
         //let's use the permalink to get all of the information
-        JSONObject jsonObject = (JSONObject) getRequestProcessor().processGet(_url);
+        JSONObject jsonObject = (JSONObject) getRequestProcessor().processGet(getUrl());
         init(jsonObject);
 
     }
@@ -112,5 +112,9 @@ public abstract class ACObject {
 
     public static void setRequestProcessor(RequestProcessor requestProcessor) {
         ACObject.requestProcessor = requestProcessor;
+    }
+
+    public void setUrl(String _url) {
+        this._url = _url;
     }
 }

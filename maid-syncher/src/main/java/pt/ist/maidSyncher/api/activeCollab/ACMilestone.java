@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
 
 public class ACMilestone extends ACObject {
@@ -144,6 +145,19 @@ public class ACMilestone extends ACObject {
         checkArgument(preliminarObject.getProjectId() > 0);
         String path = getRequestProcessor().getBasicUrlForPath("projects/" + preliminarObject.getProjectId() + "/milestones/add");
         return new ACMilestone(postObject(path, preliminarObject));
+    }
+
+    /**
+     * 
+     * @param url the base url of the object to update
+     * @return
+     * @throws IOException
+     */
+    public ACMilestone update(String url) throws IOException {
+        checkArgument(StringUtils.isBlank(url) == false);
+        //let us construct the URL and send an edit
+        url += "/edit";
+        return new ACMilestone(ACMilestone.postObject(url, this));
     }
 
     @Override

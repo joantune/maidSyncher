@@ -9,6 +9,8 @@ import java.util.Collections;
 
 import org.joda.time.LocalTime;
 
+import pt.ist.fenixframework.Atomic;
+import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
@@ -44,4 +46,20 @@ public class TestUtils {
         }, SyncUniverse.getTargetSyncUniverse(originObject), originObject);
     }
 
+    @Atomic
+    public static void clearInstancesWithRoot() {
+        //let's clear out the objects
+        MaidRoot instance = MaidRoot.getInstance();
+
+        instance.getAcObjectsSet().clear();
+        instance.getDsiObjectsSet().clear();
+        instance.getGhCommentsSet().clear();
+        instance.getGhIssuesSet().clear();
+        instance.getGhLabelsSet().clear();
+        instance.getGhMilestonesSet().clear();
+//        instance.getGhOrganization().
+        instance.getGhRepositoriesSet().clear();
+        instance.getGhUsersSet().clear();
+
+    }
 }

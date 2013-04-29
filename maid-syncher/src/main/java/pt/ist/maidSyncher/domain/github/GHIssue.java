@@ -536,7 +536,7 @@ public class GHIssue extends GHIssue_Base {
 //
 //    }
 
-    private SyncActionWrapper syncUpdateTaskEvent(ACTask newAcTask, DSIIssue dsiIssue, SyncEvent syncEvent) {
+    private SyncActionWrapper syncUpdateTaskEvent(ACTask newAcTask, DSIIssue dsiIssue, final SyncEvent syncEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
         boolean auxChangedMilestones = false;
         boolean auxChangedLabels = false;
@@ -672,20 +672,17 @@ public class GHIssue extends GHIssue_Base {
 
             @Override
             public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                // TODO Auto-generated method stub
-                return null;
+                return tickedDescriptors;
             }
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
-                // TODO Auto-generated method stub
-                return null;
+                return syncEvent;
             }
 
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
-                // TODO Auto-generated method stub
-                return null;
+                return Collections.emptyList();
             }
 
             @Override

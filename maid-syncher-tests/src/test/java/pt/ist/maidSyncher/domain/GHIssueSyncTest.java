@@ -111,27 +111,13 @@ public class GHIssueSyncTest {
 
     private static boolean initialized = false;
 
-    private static void clearRoot() {
-        //let's clear out the objects
-        MaidRoot instance = MaidRoot.getInstance();
 
-        instance.getAcObjectsSet().clear();
-        instance.getDsiObjectsSet().clear();
-        instance.getGhCommentsSet().clear();
-        instance.getGhIssuesSet().clear();
-        instance.getGhLabelsSet().clear();
-        instance.getGhMilestonesSet().clear();
-//        instance.getGhOrganization().
-        instance.getGhRepositoriesSet().clear();
-        instance.getGhUsersSet().clear();
-
-    }
 
     @Before
     @Atomic
     public void initMockGHIssue() {
 
-        clearRoot();
+        TestUtils.clearInstancesWithRoot();
         requestProcessor = mock(RequestProcessor.class);
         //let's create a usable GHRepository
         mockGHRepository = new GHRepository();

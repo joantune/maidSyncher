@@ -65,7 +65,7 @@ public class ACInstance extends ACObject {
 
     public List<ACUser> getUsers() throws IOException {
         List<ACUser> users = new ArrayList<ACUser>();
-        JSONArray jsonArray = (JSONArray) getRequestProcessor().processGet(_url + "/users");
+        JSONArray jsonArray = (JSONArray) getRequestProcessor().processGet(getUrl() + "/users");
         for (Object object : jsonArray) {
             JSONObject jsonObj = (JSONObject) object;
             users.add(new ACUser(jsonObj));
