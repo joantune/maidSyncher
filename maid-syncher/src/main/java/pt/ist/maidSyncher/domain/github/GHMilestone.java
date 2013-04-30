@@ -43,11 +43,15 @@ public class GHMilestone extends GHMilestone_Base {
     }
 
     static GHMilestone process(Milestone milestone) {
+        return process(milestone, false);
+    }
+
+    public static GHMilestone process(Milestone milestone, boolean skipSync) {
         checkNotNull(milestone);
         MaidRoot maidRoot = MaidRoot.getInstance();
 
         GHMilestone ghMilestone =
-                (GHMilestone) findOrCreateAndProccess(milestone, GHMilestone.class, maidRoot.getGhMilestonesSet(),
+                (GHMilestone) findOrCreateAndProccess(milestone, GHMilestone.class, maidRoot.getGhMilestonesSet(), skipSync,
                         ObjectFindStrategy.FIND_BY_URL);
         return ghMilestone;
     }

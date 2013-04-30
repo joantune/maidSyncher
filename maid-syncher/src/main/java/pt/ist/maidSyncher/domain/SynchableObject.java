@@ -432,22 +432,22 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     Object valueOrigin = PropertyUtils.getSimpleProperty(orig, name);
 
                     LOGGER.debug("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
-                    System.out.println("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
+//                    System.out.println("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
                     //let's ignore the properties were the values are our domain packages
                     if (valueOrigin != null
- && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))) {
-                        System.out.println("Skipping");
+                            && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))) {
+//                        System.out.println("Skipping");
                         continue; //let's skip these properties
                     }
                     if (SynchableObject.class.isAssignableFrom(origDescriptor.getPropertyType())) {
-                        System.out.println("Skipping");
+//                        System.out.println("Skipping");
                         continue;
                     }
                     if (origDescriptor instanceof IndexedPropertyDescriptor) {
                         IndexedPropertyDescriptor indexedPropertyDescriptor = (IndexedPropertyDescriptor) origDescriptor;
-                        System.out.println("OrigDescriptor IndexedPropertyDescriptor: " + indexedPropertyDescriptor.getName());
+//                        System.out.println("OrigDescriptor IndexedPropertyDescriptor: " + indexedPropertyDescriptor.getName());
                         if (SynchableObject.class.isAssignableFrom(indexedPropertyDescriptor.getIndexedPropertyType())) {
-                            System.out.println("Skipping");
+//                            System.out.println("Skipping");
                             continue;
                         }
 
@@ -482,7 +482,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     LOGGER.trace("Copied property " + name + " from " + orig.getClass().getName() + " object to a "
                             + dest.getClass().getName() + " oid: " + getExternalId());
                 }
-                System.out.println("--");
+//                System.out.println("--");
             }
         }
 
