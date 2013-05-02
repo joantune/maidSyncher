@@ -109,8 +109,7 @@ public class ACTask extends ACTask_Base {
 
     @Override
     public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException,
-    NoSuchMethodException {
+    InvocationTargetException, NoSuchMethodException {
         HashSet<PropertyDescriptor> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         pt.ist.maidSyncher.api.activeCollab.ACTask acTask = (pt.ist.maidSyncher.api.activeCollab.ACTask) orig;
@@ -125,7 +124,6 @@ public class ACTask extends ACTask_Base {
         changedDescriptors.addAll(processCategory(acTask));
 
         changedDescriptors.addAll(processLabel(acTask));
-
 
         return changedDescriptors;
 
@@ -271,8 +269,6 @@ public class ACTask extends ACTask_Base {
             @Override
             public Collection<GHIssue> sync() throws IOException {
 
-
-
                 //let's try to find out if we need to create a GHIssue (if we have an ACTaskCategory that
                 //has an DSIRepository associated, then we do)
                 ACTaskCategory acTaskCategory = getTaskCategory();
@@ -287,26 +283,37 @@ public class ACTask extends ACTask_Base {
                 //the label corresponds to the project name, let's try to retrieve it
                 final DSIProject dsiProject = (DSIProject) getProject().getDSIObject(); //depended
 
-
-                final GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
+                GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
+                if (gitHubLabel == null) {
+                    //we have to create a new one, or reuse one that has an appropriate
+                    //name
+                    gitHubLabel = tryToFindSuitableGHLabel(ghRepository, getProject());
+                    if (gitHubLabel == null) {
+                        //we have to create one
+                        gitHubLabel = createSuitableGHLabel(ghRepository, getProject());
+                    }
+                }
                 final GHUser repoOwner = ghRepository.getOwner();
-                LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
+//                LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
 
-                //let's get the repository
-                RepositoryService repositoryService = new RepositoryService(MaidRoot.getGitHubClient());
-                Repository repository = repositoryService.getRepository(repoOwner.getLogin(), ghRepository.getName());
-
-                Label label = labelService.getLabel(repository, gitHubLabel.getName());
-                newGHIssue.setLabels(Collections.singletonList(label));
+                //We don't need to go and fetch the label to use now, we can just create it
+//                Label label = labelService.getLabel(ghRepository, gitHubLabel.getName());
+//                newGHIssue.setLabels(Collections.singletonList(label));
+                Label newLabel = new Label();
+                newLabel.setName(gitHubLabel.getName());
+                newGHIssue.setLabels(Collections.singletonList(newLabel));
 
                 //milestone
                 ACMilestone acMilestone = getMilestone();
-                final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
-                //TODO what if there is no miletone on the other side?!
-                final GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
-                MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
-                Milestone milestone = milestoneService.getMilestone(repository, ghMilestone.getNumber());
-                newGHIssue.setMilestone(milestone);
+                if (acMilestone != null) {
+
+                    final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
+                    //TODO what if there is no miletone on the other side?!
+                    final GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
+                    MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
+                    Milestone milestone = milestoneService.getMilestone(ghRepository, ghMilestone.getNumber());
+                    newGHIssue.setMilestone(milestone);
+                }
 
                 newGHIssue.setBodyHtml(getBody());
 
@@ -316,14 +323,40 @@ public class ACTask extends ACTask_Base {
 
                 //let's create the issue
                 IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
-                Issue newlyCreatedIssue = issueService.createIssue(repository, newGHIssue);
+                Issue newlyCreatedIssue = issueService.createIssue(ghRepository, newGHIssue);
 
-                GHIssue ghProcess = GHIssue.process(newlyCreatedIssue, repository, true);
+                GHIssue ghProcess = GHIssue.process(newlyCreatedIssue, ghRepository, true);
 
                 //we must add it to the other side of the DSIElement
                 DSIIssue dsiIssue = (DSIIssue) getDSIObject();
                 dsiIssue.setGhIssue(ghProcess);
                 return Collections.singleton(ghProcess);
+            }
+
+            private GHLabel createSuitableGHLabel(GHRepository ghRepository,
+                    pt.ist.maidSyncher.domain.activeCollab.ACProject project) throws IOException {
+                LabelService labelService = new LabelService(MaidRoot.getInstance().getGitHubClient());
+                Label newLabel = new Label();
+                newLabel.setName(GHLabel.PROJECT_PREFIX + project.getName());
+                Label createdLabel = labelService.createLabel(ghRepository, newLabel);
+                return GHLabel.process(createdLabel, ghRepository.getId(), true);
+            }
+
+            /**
+             * 
+             * @param ghRepository
+             * @param project
+             * @return a GHLabel that is suitable (i.e. its name matches the one needed for the given project), if any was found,
+             *         or null otherwise
+             */
+            private GHLabel tryToFindSuitableGHLabel(GHRepository ghRepository,
+                    pt.ist.maidSyncher.domain.activeCollab.ACProject project) {
+                for (GHLabel ghLabel : ghRepository.getLabelsDefinedSet()) {
+                    if ((GHLabel.PROJECT_PREFIX + project.getName()).equalsIgnoreCase(ghLabel.getName())) {
+                        return ghLabel;
+                    }
+                }
+                return null;
             }
 
             @Override
@@ -353,8 +386,6 @@ public class ACTask extends ACTask_Base {
                 return classesDependedOn;
             }
         };
-
-
 
         return toReturnActionWrapper;
     }
@@ -432,7 +463,6 @@ public class ACTask extends ACTask_Base {
                 if (ObjectUtils.equals(processedGHIssue, ((DSIIssue) getDSIObject()).getGhIssue()) == false)
                     throw new SyncActionError("we did an update and the resulting GHIssue don't match");
 
-
                 return Collections.singleton(processedGHIssue);
             }
 
@@ -482,7 +512,6 @@ public class ACTask extends ACTask_Base {
             }
             syncActionWrapperToReturn = syncUpdateEvent(ghIssueToUpdate, ghIssue, syncEvent);
 
-
         } else {
             LOGGER.warn("Read and Delete events not supported yet. " + syncEvent);
             syncActionWrapperToReturn = new EmptySyncActionWrapper(syncEvent);
@@ -490,6 +519,5 @@ public class ACTask extends ACTask_Base {
 
         return syncActionWrapperToReturn;
     }
-
 
 }

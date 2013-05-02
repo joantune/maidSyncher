@@ -108,6 +108,17 @@ public class GHIssue extends GHIssue_Base {
 
     }
 
+    public static GHIssue process(Issue issue, GHRepository ghRepository, boolean skipSync) {
+        checkNotNull(ghRepository);
+        //let's first take care of the issue, and then assign it the repository
+        GHIssue ghIssue = process(issue, skipSync);
+
+        ghIssue.setRepository(ghRepository);
+
+        return ghIssue;
+
+    }
+
     @Override
     public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException {

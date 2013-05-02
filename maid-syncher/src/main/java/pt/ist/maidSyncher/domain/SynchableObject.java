@@ -115,7 +115,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     return Iterables.tryFind(iterable, new PredicateFindGHObjectByClassAndUrl(clazz, url));
                 } catch (MalformedURLException e) {
                     LOGGER.error("trying to find an object by url with a malformed url on the origin object"
-                            + " origin object class: " + object.getClass().getName(), e);
+                            + " origin object class: " + object.getClass().getName() + " url: " + url, e);
                     throw new IllegalArgumentException(e);
                 }
 
