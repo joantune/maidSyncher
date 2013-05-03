@@ -5,7 +5,6 @@ package pt.ist.maidSyncher.domain;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +13,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.eclipse.egit.github.core.Issue;
@@ -22,6 +24,8 @@ import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.GitHubRequest;
 import org.eclipse.egit.github.core.client.GitHubResponse;
+import org.eclipse.egit.github.core.service.IssueService;
+import org.joda.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +40,7 @@ import org.mockito.stubbing.Answer;
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
@@ -58,11 +63,15 @@ import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 @RunWith(MockitoJUnitRunner.class)
 public class ACTaskSyncTest {
 
+    private static final String AC_MILESTONE_BODY = "ac milestone body";
+
     private static final String HTTP_LABEL_PHONY_URL = "http://label/phony/url";
 
     private static final String GH_REP_OWNER_LOGIN = "owner";
 
     ACTask acTask;
+
+    ACMilestone acMilestone;
 
     private final static String AC_TASK_NAME = "ac task name";
     private final static String AC_TASK_BODY = "ac task body";
@@ -82,6 +91,12 @@ public class ACTaskSyncTest {
     private final static String GH_REPOSITORY_URL = "http://smthing/repos/" + GH_REPOSITORY_ID;
 
     private static final String AC_PROJECT_NAME = "projectName";
+
+    private static final int GH_MILESTONE_NUMBER = new Random().nextInt(2000);
+
+    private static final String GH_MILESTONE_TITLE = "gh milestone title";
+
+    private static final LocalTime AC_MILESTONE_DUEON = new LocalTime();
 
     DSIRepository dsiRepository;
 
@@ -132,6 +147,8 @@ public class ACTaskSyncTest {
     private void initializeGHMilestoneAssumingRepositoryInitialized() {
         ghMilestone = new GHMilestone();
         ghMilestone.setRepository(ghRepository);
+        ghMilestone.setNumber(GH_MILESTONE_NUMBER);
+        ghMilestone.setTitle(GH_MILESTONE_TITLE);
 
     }
 
@@ -157,17 +174,8 @@ public class ACTaskSyncTest {
         MaidRoot.setGitHubClient(gitHubClient);
 
         when(taskMock.getId()).thenReturn(12l);
-        when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class))).thenReturn(taskMock);
+        when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Issue.class))).thenReturn(taskMock);
 
-        //let's create the repository to be associated with the milestones
-//        ACProject acProject = new ACProject();
-//        acProject.addMilestones(ghMilestoneTwo);
-//        acProject.addMilestones(ghMilestoneOne);
-//        acProject.setId(AC_PROJECT_ID);
-
-//        ghMilestone.setTitle(GH_MILESTONE_TITLE);
-//        ghMilestone.setDescription(GH_MILESTONE_DESCRIPTION);
-//        ghMilestone.setDueOn(GH_MILESTONE_DUE_ON_LT);
 
     }
 
@@ -180,17 +188,24 @@ public class ACTaskSyncTest {
     @Mock
     GitHubResponse response;
 
-    @Captor
-    ArgumentCaptor<Issue> issueCaptor;
+//    @Captor
+//    ArgumentCaptor<Issue> issueCaptor;
 
-    @Captor
-    ArgumentCaptor<Label> labelCaptor;
 
     @Captor
     ArgumentCaptor<GitHubRequest> ghRequestCaptor;
 
     @Captor
     ArgumentCaptor<String> stringPostUriCaptor;
+
+    @Captor
+    ArgumentCaptor<Map<Object, Object>> postCaptor;
+
+    @Captor
+    ArgumentCaptor<Label> labelCaptor;
+
+    @Captor
+    ArgumentCaptor<Milestone> milestoneCaptor;
 
     @SuppressWarnings("static-access")
     @Test
@@ -199,20 +214,7 @@ public class ACTaskSyncTest {
         //an issue on the GH side should be created. Let's make sure it mirrors the
         //issue passed as an argument, as expected
         initializeGHLabelAssumingRepositoryInitialized();
-//        when(gitHubClient.get(Mockito.any(GitHubRequest.class))).then(new Answer<GitHubResponse>( {
-//
-//            @Override
-//            public GitHubResponse answer(InvocationOnMock invocation) throws Throwable {
-//                GitHubRequest request = invocation.getArguments()[0];
-//                if (request.getType().equals(Repository.class)) {
-//                    //let's return a repository with the
-//                }
-//                return response;
-//            }
-//
-//
-//        }));
-//
+
         when(gitHubClient.get(Mockito.any(GitHubRequest.class))).thenReturn(response);
         SyncEvent createWithoutMilestoneEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acTask,
@@ -222,13 +224,14 @@ public class ACTaskSyncTest {
 
         sync.sync();
 
-        verify(gitHubClient).post(Mockito.anyString(), issueCaptor.capture(), Mockito.any(Type.class));
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.any(Type.class));
 
-        Label labelExpected = new Label();
-        labelExpected.setName(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME);
-        assertEquals(AC_TASK_BODY, issueCaptor.getValue().getBodyHtml());
-        assertEquals(AC_TASK_NAME, issueCaptor.getValue().getTitle());
-        assertTrue(issueCaptor.getValue().getLabels().contains(labelExpected));
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+        List<String> labelNames = (List<String>) issueMap.get(IssueService.FILTER_LABELS);
+        assertTrue(labelNames.contains(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME));
 
     }
 
@@ -241,7 +244,7 @@ public class ACTaskSyncTest {
     @SuppressWarnings("static-access")
     @Atomic(mode = TxMode.WRITE)
     @Test
-    public void createWithoutMilestoneAndWithoutLabel() throws IOException {
+    public void createWithoutMilestoneAndWithoutExistingLabel() throws IOException {
 
         final Label labelMock = mock(Label.class);
         when(labelMock.getUrl()).thenReturn("http://smthng.com/smthng");
@@ -266,11 +269,15 @@ public class ACTaskSyncTest {
 
         sync.sync();
 
-        verify(gitHubClient).post(Mockito.anyString(), issueCaptor.capture(), Mockito.eq(Issue.class));
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
         verify(gitHubClient).post(Mockito.anyString(), labelCaptor.capture(), Mockito.eq(Label.class));
 
-        assertEquals(AC_TASK_BODY, issueCaptor.getValue().getBodyHtml());
-        assertEquals(AC_TASK_NAME, issueCaptor.getValue().getTitle());
 
         assertEquals(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME, labelCaptor.getValue().getName());
 
@@ -278,31 +285,18 @@ public class ACTaskSyncTest {
 
     @SuppressWarnings("static-access")
     @Atomic(mode = TxMode.WRITE)
-    @Test
+//    @Test
     public void createReusingExistingMilestoneAndExistingLabel() throws IOException {
         //we must create a label on the other side
         initializeGHLabelAssumingRepositoryInitialized();
 
         initializeGHMilestoneAssumingRepositoryInitialized();
 
-        when(gitHubClient.get(Mockito.any(GitHubRequest.class))).thenAnswer(new Answer<Object>() {
+        //we must set a milestone with the same name of the GH one
+        initializeACMilestone();
 
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                GitHubRequest gitHubRequest = (GitHubRequest) invocation.getArguments()[0];
-                GitHubResponse gitHubResponseMock = mock(GitHubResponse.class);
-                if (gitHubRequest.getType().equals(Milestone.class)) {
-                    Milestone mockMilestone = mock(Milestone.class);
-                    doReturn(mockMilestone).when(gitHubResponseMock).getBody();
-                }
-                if (gitHubRequest.getType().equals(Label.class)) {
-                    Label mockLabel = mock(Label.class);
-                    doReturn(mockLabel).when(gitHubResponseMock).getBody();
-                }
-
-                return gitHubResponseMock;
-            }
-        });
+        //let's intercept the creation of a milestone and retrieve a number to verify
+        //later that that number is used on the creation of the issue
 
         SyncEvent createWithoutMilestoneEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acTask,
@@ -312,27 +306,86 @@ public class ACTaskSyncTest {
 
         sync.sync();
 
-        verify(gitHubClient).post(Mockito.anyString(), issueCaptor.capture(), Mockito.eq(Issue.class));
 
-        assertEquals(AC_TASK_BODY, issueCaptor.getValue().getBodyHtml());
-        assertEquals(AC_TASK_NAME, issueCaptor.getValue().getTitle());
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.any(Type.class));
 
-        assertEquals(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME, labelCaptor.getValue().getName());
+        Map<Object, Object> issueMap = postCaptor.getValue();
 
-        //we should have had 2 'GET's, one to the label and the other to the milestone
-        verify(gitHubClient, times(2)).get(ghRequestCaptor.capture());
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
 
-        GitHubRequest milestoneRequest = null;
-        GitHubRequest labelRequest = null;
-        for (GitHubRequest gitHubRequest : ghRequestCaptor.getAllValues()) {
-            if (gitHubRequest.getType().equals(Milestone.class))
-                milestoneRequest = gitHubRequest;
-            else if (gitHubRequest.getType().equals(Label.class))
-                labelRequest = gitHubRequest;
+        assertTrue(((List<String>) issueMap.get(IssueService.FILTER_LABELS)).contains(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME));
+
+        //assert the milestone is there with the correct number
+        assertEquals(String.valueOf(GH_MILESTONE_NUMBER), issueMap.get(IssueService.FILTER_MILESTONE));
+
+    }
+
+    private void initializeACMilestone() {
+        acMilestone = new ACMilestone();
+        acMilestone.setDueOn(AC_MILESTONE_DUEON);
+        acMilestone.setBody(AC_MILESTONE_BODY);
+        acMilestone.setName(GH_MILESTONE_TITLE);
+        acMilestone.setProject(acProject);
+        acTask.setMilestone(acMilestone);
+        if (dsiMilestone == null) {
+            dsiMilestone = new DSIMilestone();
         }
+        acMilestone.setDsiObjectMilestone(dsiMilestone);
+    }
 
-        assertTrue("We should have done one milestone request", milestoneRequest != null);
-        assertTrue("We should have done a label request", labelRequest != null);
+    @Mock
+    Milestone milestoneMock;
+
+    @Test
+    @Atomic(mode = TxMode.WRITE)
+    public void createCreatingNonExistingMilestoneAndExistingLabel() throws IOException {
+        //we must create a label on the other side
+        initializeGHLabelAssumingRepositoryInitialized();
+
+        //we will have a milestone on the AC side, but none on the GH side
+        //so we should have an attempt of creation of the ghmilestone
+        initializeACMilestone();
+
+        //let's intercept the milestone creation and return a mock milestone
+        //with a valid url
+        when(milestoneMock.getUrl()).thenReturn("http://some.valid.url");
+        when(milestoneMock.getNumber()).thenReturn(GH_MILESTONE_NUMBER);
+
+        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Milestone.class))).thenReturn(milestoneMock);
+
+
+        SyncEvent createWithMilestoneEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acTask,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)));
+
+        SyncActionWrapper sync = acTask.sync(createWithMilestoneEvent);
+
+        sync.sync();
+
+
+        //making sure we called the post twice
+        verify(gitHubClient, times(2)).post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class));
+
+        //let's intercept the milestone creation
+        verify(gitHubClient).post(Mockito.anyString(), milestoneCaptor.capture(), Mockito.eq(Milestone.class));
+
+        assertEquals(GH_MILESTONE_TITLE, milestoneCaptor.getValue().getTitle());
+        assertEquals(AC_MILESTONE_BODY, milestoneCaptor.getValue().getDescription());
+        assertEquals(AC_MILESTONE_DUEON.toDateTimeToday().toDate(), milestoneCaptor.getValue().getDueOn());
+
+
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+        assertTrue(((List<String>) issueMap.get(IssueService.FILTER_LABELS)).contains(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME));
+
+        //assert the milestone is there with the correct number
+        assertEquals(String.valueOf(GH_MILESTONE_NUMBER), issueMap.get(IssueService.FILTER_MILESTONE));
 
     }
 

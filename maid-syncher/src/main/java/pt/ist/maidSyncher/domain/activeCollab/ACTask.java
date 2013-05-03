@@ -308,14 +308,28 @@ public class ACTask extends ACTask_Base {
                 if (acMilestone != null) {
 
                     final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
-                    //TODO what if there is no miletone on the other side?!
-                    final GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
-                    MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
-                    Milestone milestone = milestoneService.getMilestone(ghRepository, ghMilestone.getNumber());
+                    GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
+                    if (ghMilestone == null) {
+                        //we must reuse/create it
+                        ghMilestone = tryToFindSuitableGHMilestone(ghRepository, acMilestone);
+                        if (ghMilestone == null)
+                        {
+                            ghMilestone = createSuitableGHMilestone(ghRepository, acMilestone);
+                        }
+                    }
+
+                    //we don't need to get the milestoneService
+//                    MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
+//                    Milestone milestone = milestoneService.getMilestone(ghRepository, ghMilestone.getNumber());
+
+                    //just the number
+                    Milestone milestone = new Milestone();
+                    milestone.setNumber(ghMilestone.getNumber());
                     newGHIssue.setMilestone(milestone);
                 }
 
-                newGHIssue.setBodyHtml(getBody());
+                //TODO #16 - probably we will have to strip the html
+                newGHIssue.setBody(getBody());
 
                 newGHIssue.setTitle(getName());
 
@@ -331,6 +345,26 @@ public class ACTask extends ACTask_Base {
                 DSIIssue dsiIssue = (DSIIssue) getDSIObject();
                 dsiIssue.setGhIssue(ghProcess);
                 return Collections.singleton(ghProcess);
+            }
+
+            private GHMilestone createSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) throws IOException {
+                MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
+                Milestone newMilestone = new Milestone();
+                newMilestone.setTitle(acMilestone.getName());
+                newMilestone.setDescription(acMilestone.getBody());
+                newMilestone.setDueOn(acMilestone.getDueOn() != null ? acMilestone.getDueOn().toDateTimeToday().toDate() : null);
+                Milestone createdMilestone = milestoneService.createMilestone(ghRepository, newMilestone);
+                GHMilestone processedGhMilestone = GHMilestone.process(createdMilestone, true);
+                ghRepository.addMilestones(processedGhMilestone);
+                return processedGhMilestone;
+            }
+
+            private GHMilestone tryToFindSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) {
+                for (GHMilestone ghMilestone : ghRepository.getMilestonesSet()) {
+                    if (ObjectUtils.equals(acMilestone.getName(), ghMilestone.getTitle()))
+                        return ghMilestone;
+                }
+                return null;
             }
 
             private GHLabel createSuitableGHLabel(GHRepository ghRepository,
