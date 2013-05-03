@@ -25,11 +25,9 @@ import org.apache.commons.lang.ObjectUtils;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Milestone;
-import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.service.IssueService;
 import org.eclipse.egit.github.core.service.LabelService;
 import org.eclipse.egit.github.core.service.MilestoneService;
-import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,11 +222,14 @@ public class ACTask extends ACTask_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(ACTask.class);
 
     // List of descriptor names
-    protected static final String DSC_VISIBILITY = "visibility";
-    protected static final String DSC_BODY = "body";
-    protected static final String DSC_OTHER_ASSIGNEES_ID = "otherAssigneesId";
-    protected static final String DSC_ASSIGNEE_ID = "assigneeId";
-    protected static final String DSC_COMPLETE = "complete";
+    public static final String DSC_VISIBILITY = "visibility";
+    public static final String DSC_BODY = "body";
+    public static final String DSC_OTHER_ASSIGNEES_ID = "otherAssigneesId";
+    public static final String DSC_ASSIGNEE_ID = "assigneeId";
+    public static final String DSC_COMPLETE = "complete";
+
+    public static final String DSC_MILESTONE_ID = "milestoneId";
+    public static final String DSC_CATEGORY_ID = "categoryId";
 
     private SyncActionWrapper syncCreateEvent(final Issue newGHIssue, final SyncEvent triggerEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
@@ -469,7 +470,8 @@ public class ACTask extends ACTask_Base {
                     throw new SyncActionError("We are trying to sync a Task that isn't visible");
                 break;
             case DSC_BODY:
-                ghIssueToUpdate.setBodyHtml(getBody());
+                //TODO #16 probably strip the HTML from the getBody
+                ghIssueToUpdate.setBody(getBody());
                 break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
@@ -478,24 +480,24 @@ public class ACTask extends ACTask_Base {
             }
         }
 
-        SyncActionWrapper toReturnActionWrapper = new SyncActionWrapper() {
+        return new SyncActionWrapper() {
 
             @Override
             public Collection<GHIssue> sync() throws IOException {
                 //get the repository
                 GHRepository ghRepository = ghIssue.getRepository();
                 GHUser ghOwner = ghRepository.getOwner();
-                RepositoryService repositoryService = new RepositoryService(MaidRoot.getGitHubClient());
-                Repository repository = repositoryService.getRepository(ghOwner.getLogin(), ghRepository.getName());
+//                RepositoryService repositoryService = new RepositoryService(MaidRoot.getGitHubClient());
+//                Repository repository = repositoryService.getRepository(ghOwner.getLogin(), ghRepository.getName());
 
                 //let's edit the issue
                 IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
-                Issue newlyEditedIssue = issueService.editIssue(repository, ghIssueToUpdate);
-                GHIssue processedGHIssue = GHIssue.process(newlyEditedIssue, repository, true);
+                Issue newlyEditedIssue = issueService.editIssue(ghRepository, ghIssueToUpdate);
+                GHIssue processedGHIssue = GHIssue.process(newlyEditedIssue, ghRepository, true);
 
-                //extra check
-                if (ObjectUtils.equals(processedGHIssue, ((DSIIssue) getDSIObject()).getGhIssue()) == false)
-                    throw new SyncActionError("we did an update and the resulting GHIssue don't match");
+//                //extra check
+//                if (ObjectUtils.equals(processedGHIssue, ((DSIIssue) getDSIObject()).getGhIssue()) == false)
+//                    throw new SyncActionError("we did an update and the resulting GHIssue don't match");
 
                 return Collections.singleton(processedGHIssue);
             }
@@ -521,7 +523,6 @@ public class ACTask extends ACTask_Base {
             }
         };
 
-        return null;
     }
 
     @Override

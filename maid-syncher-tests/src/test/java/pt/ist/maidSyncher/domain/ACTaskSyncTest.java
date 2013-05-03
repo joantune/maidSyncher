@@ -10,9 +10,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -48,12 +50,16 @@ import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
+import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 29 de Abr de 2013
@@ -62,6 +68,8 @@ import pt.ist.maidSyncher.domain.test.utils.TestUtils;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ACTaskSyncTest {
+
+    private static final int GH_ISSUE_NUMBER = new Random().nextInt(3000);
 
     private static final String AC_MILESTONE_BODY = "ac milestone body";
 
@@ -170,12 +178,12 @@ public class ACTaskSyncTest {
         initializeTaskCategoryRepositoryAndACProject();
         acTask.setProject(acProject);
         acTask.setTaskCategory(acTaskCategory);
+        acTask.setVisibility(true);
 
         MaidRoot.setGitHubClient(gitHubClient);
 
         when(taskMock.getId()).thenReturn(12l);
         when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Issue.class))).thenReturn(taskMock);
-
 
     }
 
@@ -190,7 +198,6 @@ public class ACTaskSyncTest {
 
 //    @Captor
 //    ArgumentCaptor<Issue> issueCaptor;
-
 
     @Captor
     ArgumentCaptor<GitHubRequest> ghRequestCaptor;
@@ -224,7 +231,7 @@ public class ACTaskSyncTest {
 
         sync.sync();
 
-        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.any(Type.class));
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
 
         Map<Object, Object> issueMap = postCaptor.getValue();
 
@@ -278,7 +285,6 @@ public class ACTaskSyncTest {
 
         verify(gitHubClient).post(Mockito.anyString(), labelCaptor.capture(), Mockito.eq(Label.class));
 
-
         assertEquals(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME, labelCaptor.getValue().getName());
 
     }
@@ -306,8 +312,7 @@ public class ACTaskSyncTest {
 
         sync.sync();
 
-
-        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.any(Type.class));
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
 
         Map<Object, Object> issueMap = postCaptor.getValue();
 
@@ -337,6 +342,8 @@ public class ACTaskSyncTest {
     @Mock
     Milestone milestoneMock;
 
+    private GHIssue ghIssue;
+
     @Test
     @Atomic(mode = TxMode.WRITE)
     public void createCreatingNonExistingMilestoneAndExistingLabel() throws IOException {
@@ -354,7 +361,6 @@ public class ACTaskSyncTest {
 
         when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Milestone.class))).thenReturn(milestoneMock);
 
-
         SyncEvent createWithMilestoneEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acTask,
                         Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)));
@@ -362,7 +368,6 @@ public class ACTaskSyncTest {
         SyncActionWrapper sync = acTask.sync(createWithMilestoneEvent);
 
         sync.sync();
-
 
         //making sure we called the post twice
         verify(gitHubClient, times(2)).post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class));
@@ -373,7 +378,6 @@ public class ACTaskSyncTest {
         assertEquals(GH_MILESTONE_TITLE, milestoneCaptor.getValue().getTitle());
         assertEquals(AC_MILESTONE_BODY, milestoneCaptor.getValue().getDescription());
         assertEquals(AC_MILESTONE_DUEON.toDateTimeToday().toDate(), milestoneCaptor.getValue().getDueOn());
-
 
         verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
 
@@ -389,7 +393,45 @@ public class ACTaskSyncTest {
 
     }
 
-    public void updateSimpleFields() {
+    @Atomic(mode = TxMode.WRITE)
+    @Test
+    public void updateSimpleFields() throws IOException {
+
+        //let's create the corresponding GHIssue
+        ghIssue = new GHIssue();
+        ghIssue.setRepository(ghRepository);
+        ghIssue.setDsiObjectIssue(dsiIssue);
+        ghIssue.setNumber(GH_ISSUE_NUMBER);
+
+        //let's get the property descriptors for the right fields
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                Collections2.filter(
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)),
+                        new Predicate<PropertyDescriptor>() {
+                            @Override
+                            public boolean apply(PropertyDescriptor input) {
+                                if (input == null)
+                                    return false;
+                                if (input.getName().equals(ACTask.DSC_MILESTONE_ID)
+                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)) {
+                                    return false;
+                                }
+                                return true;
+                            }
+                        });
+
+        SyncEvent updateSimpleFieldsEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acTask, propertyDescriptorsToUse);
+        SyncActionWrapper sync = acTask.sync(updateSimpleFieldsEvent);
+        sync.sync();
+
+        //let's make sure that the post was used and with the right values
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
 
     }
 
