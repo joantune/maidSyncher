@@ -11,6 +11,7 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.domain.activeCollab;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.beans.PropertyDescriptor;
@@ -123,8 +124,25 @@ public class ACTask extends ACTask_Base {
 
         changedDescriptors.addAll(processLabel(acTask));
 
+        changedDescriptors.addAll(processProject(acTask));
+
         return changedDescriptors;
 
+    }
+
+    private Collection<PropertyDescriptor> processProject(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+        //let's get the projectid
+        int projectId = acTask.getProjectId();
+        checkArgument(projectId > 0);
+        pt.ist.maidSyncher.domain.activeCollab.ACProject acCurrentProject =
+                pt.ist.maidSyncher.domain.activeCollab.ACProject.findById(projectId);
+        pt.ist.maidSyncher.domain.activeCollab.ACProject acOldProject = getProject();
+
+        if (ObjectUtils.equals(acCurrentProject, acOldProject) == false) {
+            setProject(acCurrentProject);
+            return Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask, DSC_PROJECT_ID));
+        } else
+            return Collections.emptySet();
     }
 
     public static ACTask findById(long id) {
@@ -230,6 +248,7 @@ public class ACTask extends ACTask_Base {
 
     public static final String DSC_MILESTONE_ID = "milestoneId";
     public static final String DSC_CATEGORY_ID = "categoryId";
+    public static final String DSC_PROJECT_ID = "projectId";
 
     private SyncActionWrapper syncCreateEvent(final Issue newGHIssue, final SyncEvent triggerEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
@@ -240,6 +259,7 @@ public class ACTask extends ACTask_Base {
             case DSC_ASSIGNEE_ID:
             case DSC_ID:
             case DSC_URL:
+            case DSC_PROJECT_ID:
                 //the ones that we don't have to do anything
             case DSC_CREATED_ON:
             case DSC_UPDATED_ON:
@@ -313,8 +333,7 @@ public class ACTask extends ACTask_Base {
                     if (ghMilestone == null) {
                         //we must reuse/create it
                         ghMilestone = tryToFindSuitableGHMilestone(ghRepository, acMilestone);
-                        if (ghMilestone == null)
-                        {
+                        if (ghMilestone == null) {
                             ghMilestone = createSuitableGHMilestone(ghRepository, acMilestone);
                         }
                     }
@@ -368,32 +387,6 @@ public class ACTask extends ACTask_Base {
                 return null;
             }
 
-            private GHLabel createSuitableGHLabel(GHRepository ghRepository,
-                    pt.ist.maidSyncher.domain.activeCollab.ACProject project) throws IOException {
-                LabelService labelService = new LabelService(MaidRoot.getInstance().getGitHubClient());
-                Label newLabel = new Label();
-                newLabel.setName(GHLabel.PROJECT_PREFIX + project.getName());
-                Label createdLabel = labelService.createLabel(ghRepository, newLabel);
-                return GHLabel.process(createdLabel, ghRepository.getId(), true);
-            }
-
-            /**
-             * 
-             * @param ghRepository
-             * @param project
-             * @return a GHLabel that is suitable (i.e. its name matches the one needed for the given project), if any was found,
-             *         or null otherwise
-             */
-            private GHLabel tryToFindSuitableGHLabel(GHRepository ghRepository,
-                    pt.ist.maidSyncher.domain.activeCollab.ACProject project) {
-                for (GHLabel ghLabel : ghRepository.getLabelsDefinedSet()) {
-                    if ((GHLabel.PROJECT_PREFIX + project.getName()).equalsIgnoreCase(ghLabel.getName())) {
-                        return ghLabel;
-                    }
-                }
-                return null;
-            }
-
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
                 Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
@@ -425,8 +418,34 @@ public class ACTask extends ACTask_Base {
         return toReturnActionWrapper;
     }
 
+    private GHLabel createSuitableGHLabel(GHRepository ghRepository, pt.ist.maidSyncher.domain.activeCollab.ACProject project)
+            throws IOException {
+        LabelService labelService = new LabelService(MaidRoot.getInstance().getGitHubClient());
+        Label newLabel = new Label();
+        newLabel.setName(GHLabel.PROJECT_PREFIX + project.getName());
+        Label createdLabel = labelService.createLabel(ghRepository, newLabel);
+        return GHLabel.process(createdLabel, ghRepository.getId(), true);
+    }
+
+    /**
+     * 
+     * @param ghRepository
+     * @param project
+     * @return a GHLabel that is suitable (i.e. its name matches the one needed for the given project), if any was found,
+     *         or null otherwise
+     */
+    private GHLabel tryToFindSuitableGHLabel(GHRepository ghRepository, pt.ist.maidSyncher.domain.activeCollab.ACProject project) {
+        for (GHLabel ghLabel : ghRepository.getLabelsDefinedSet()) {
+            if ((GHLabel.PROJECT_PREFIX + project.getName()).equalsIgnoreCase(ghLabel.getName())) {
+                return ghLabel;
+            }
+        }
+        return null;
+    }
+
     private SyncActionWrapper syncUpdateEvent(final Issue ghIssueToUpdate, final GHIssue ghIssue, final SyncEvent triggerEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        boolean auxProjectChanged = false;
         for (PropertyDescriptor changedDescriptor : triggerEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor.getName()) {
@@ -473,12 +492,21 @@ public class ACTask extends ACTask_Base {
                 //TODO #16 probably strip the HTML from the getBody
                 ghIssueToUpdate.setBody(getBody());
                 break;
+            case DSC_PROJECT_ID:
+                //the project changed, thus we must change the label from the GH side
+                //but let's do it on the sync (giving a chance for the Labels and etc
+                //to be already synched)
+                auxProjectChanged = true;
+
+                break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
                 //cases, let's remove it from the ticked descriptors
 
             }
         }
+
+        final boolean projectChanged = auxProjectChanged;
 
         return new SyncActionWrapper() {
 
@@ -489,6 +517,24 @@ public class ACTask extends ACTask_Base {
                 GHUser ghOwner = ghRepository.getOwner();
 //                RepositoryService repositoryService = new RepositoryService(MaidRoot.getGitHubClient());
 //                Repository repository = repositoryService.getRepository(ghOwner.getLogin(), ghRepository.getName());
+
+                if (projectChanged) {
+                    //let's try to find the GHLabel associated with this one
+                    //and if it doesn't exist, create it
+
+                    DSIProject dsiProject = (DSIProject) getProject().getDSIObject();
+                    GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
+                    if (gitHubLabel == null) {
+                        gitHubLabel = tryToFindSuitableGHLabel(ghRepository, getProject());
+                        if (gitHubLabel == null) {
+                            gitHubLabel = createSuitableGHLabel(ghRepository, getProject());
+                        }
+                    }
+
+                    Label newLabel = new Label();
+                    newLabel.setName(gitHubLabel.getName());
+                    ghIssueToUpdate.setLabels(Collections.singletonList(newLabel));
+                }
 
                 //let's edit the issue
                 IssueService issueService = new IssueService(MaidRoot.getGitHubClient());

@@ -185,6 +185,8 @@ public class ACTaskSyncTest {
         when(taskMock.getId()).thenReturn(12l);
         when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Issue.class))).thenReturn(taskMock);
 
+        when(labelMock.getUrl()).thenReturn("http://phony.url/");
+
     }
 
     @Mock
@@ -393,15 +395,24 @@ public class ACTaskSyncTest {
 
     }
 
+    private void initializeAssociatedGHIssue() {
+        ghIssue = new GHIssue();
+        ghIssue.setRepository(ghRepository);
+        ghIssue.setDsiObjectIssue(dsiIssue);
+        ghIssue.setNumber(GH_ISSUE_NUMBER);
+
+    }
+
+    @Mock
+    Label labelMock;
+
     @Atomic(mode = TxMode.WRITE)
     @Test
     public void updateSimpleFields() throws IOException {
 
         //let's create the corresponding GHIssue
-        ghIssue = new GHIssue();
-        ghIssue.setRepository(ghRepository);
-        ghIssue.setDsiObjectIssue(dsiIssue);
-        ghIssue.setNumber(GH_ISSUE_NUMBER);
+        initializeAssociatedGHIssue();
+
 
         //let's get the property descriptors for the right fields
         Collection<PropertyDescriptor> propertyDescriptorsToUse =
@@ -413,7 +424,8 @@ public class ACTaskSyncTest {
                                 if (input == null)
                                     return false;
                                 if (input.getName().equals(ACTask.DSC_MILESTONE_ID)
-                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)) {
+                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)
+                                        || input.getName().equals(ACTask.DSC_PROJECT_ID)) {
                                     return false;
                                 }
                                 return true;
@@ -432,6 +444,72 @@ public class ACTaskSyncTest {
 
         assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
         assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    @Test
+    public void updateWithProjectChange() throws IOException {
+        initializeAssociatedGHIssue();
+
+        //setup the stubs
+        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Label.class))).then(new Answer<Label> (){
+
+            @Override
+            public Label answer(InvocationOnMock invocation) throws Throwable {
+                Label label = (Label) invocation.getArguments()[1];
+                if (label.getUrl() == null)
+                    label.setUrl("http://phonyUrl.com/");
+                return label;
+            }
+
+        });
+
+        //let's get the property descriptors for the right fields
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                Collections2.filter(
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)),
+                        new Predicate<PropertyDescriptor>() {
+                            @Override
+                            public boolean apply(PropertyDescriptor input) {
+                                if (input == null)
+                                    return false;
+                                if (input.getName().equals(ACTask.DSC_MILESTONE_ID)
+                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)) {
+                                    return false;
+                                }
+                                return true;
+                            }
+                        });
+
+        SyncEvent updateWithProjectChangeEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acTask, propertyDescriptorsToUse);
+
+        SyncActionWrapper sync = acTask.sync(updateWithProjectChangeEvent);
+
+        sync.sync();
+
+        //verifications
+        verify(gitHubClient).post(Mockito.anyString(), labelCaptor.capture(), Mockito.eq(Label.class));
+
+        assertEquals(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME, labelCaptor.getValue().getName());
+
+
+        verify(gitHubClient).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+        assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+        List<String> labels = (List<String>) issueMap.get(IssueService.FILTER_LABELS);
+
+        System.out.println("Printing labels");
+        for (String label : labels) {
+            System.out.println(label);
+
+        }
+        assertTrue(labels.contains(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME));
 
     }
 

@@ -34,6 +34,7 @@ public class ACTask extends ACObject {
     private boolean _visibility;
     private int _categoryId;
     private int _labelId;
+    private int projectId;
     private int _milestoneId;
     private int _priority;
     private int _assigneeId;
@@ -92,6 +93,8 @@ public class ACTask extends ACObject {
         Boolean archivedBoolean = JsonRest.getBooleanFromInt(jsonObj, "is_archived");
         setArchived(archivedBoolean == null ? false : archivedBoolean);
 
+        setProjectId(JsonRest.getInt(jsonObj, "project_id"));
+
 
 
     }
@@ -99,7 +102,7 @@ public class ACTask extends ACObject {
     static public ACTask moveTo(long taskId, long currentProjectId, long newProjectId) throws IOException {
         String path =
                 getRequestProcessor()
-                        .getBasicUrlForPath("projects/" + currentProjectId + "/tasks/" + taskId + "/move-to-project");
+                .getBasicUrlForPath("projects/" + currentProjectId + "/tasks/" + taskId + "/move-to-project");
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "move_to_project_id", String.valueOf(newProjectId));
         return new ACTask(getRequestProcessor().processPost(path, postData.toString()));
@@ -273,6 +276,14 @@ public class ACTask extends ACObject {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    public int getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(int projectId) {
+        this.projectId = projectId;
     }
 
 }
