@@ -367,26 +367,6 @@ public class ACTask extends ACTask_Base {
                 return Collections.singleton(ghProcess);
             }
 
-            private GHMilestone createSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) throws IOException {
-                MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
-                Milestone newMilestone = new Milestone();
-                newMilestone.setTitle(acMilestone.getName());
-                newMilestone.setDescription(acMilestone.getBody());
-                newMilestone.setDueOn(acMilestone.getDueOn() != null ? acMilestone.getDueOn().toDateTimeToday().toDate() : null);
-                Milestone createdMilestone = milestoneService.createMilestone(ghRepository, newMilestone);
-                GHMilestone processedGhMilestone = GHMilestone.process(createdMilestone, true);
-                ghRepository.addMilestones(processedGhMilestone);
-                return processedGhMilestone;
-            }
-
-            private GHMilestone tryToFindSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) {
-                for (GHMilestone ghMilestone : ghRepository.getMilestonesSet()) {
-                    if (ObjectUtils.equals(acMilestone.getName(), ghMilestone.getTitle()))
-                        return ghMilestone;
-                }
-                return null;
-            }
-
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
                 Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
@@ -418,6 +398,26 @@ public class ACTask extends ACTask_Base {
         return toReturnActionWrapper;
     }
 
+    private GHMilestone createSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) throws IOException {
+        MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
+        Milestone newMilestone = new Milestone();
+        newMilestone.setTitle(acMilestone.getName());
+        newMilestone.setDescription(acMilestone.getBody());
+        newMilestone.setDueOn(acMilestone.getDueOn() != null ? acMilestone.getDueOn().toDateTimeToday().toDate() : null);
+        Milestone createdMilestone = milestoneService.createMilestone(ghRepository, newMilestone);
+        GHMilestone processedGhMilestone = GHMilestone.process(createdMilestone, true);
+        ghRepository.addMilestones(processedGhMilestone);
+        return processedGhMilestone;
+    }
+
+    private GHMilestone tryToFindSuitableGHMilestone(GHRepository ghRepository, ACMilestone acMilestone) {
+        for (GHMilestone ghMilestone : ghRepository.getMilestonesSet()) {
+            if (ObjectUtils.equals(acMilestone.getName(), ghMilestone.getTitle()))
+                return ghMilestone;
+        }
+        return null;
+    }
+
     private GHLabel createSuitableGHLabel(GHRepository ghRepository, pt.ist.maidSyncher.domain.activeCollab.ACProject project)
             throws IOException {
         LabelService labelService = new LabelService(MaidRoot.getInstance().getGitHubClient());
@@ -446,6 +446,7 @@ public class ACTask extends ACTask_Base {
     private SyncActionWrapper syncUpdateEvent(final Issue ghIssueToUpdate, final GHIssue ghIssue, final SyncEvent triggerEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
         boolean auxProjectChanged = false;
+        boolean auxMilestoneChanged = false;
         for (PropertyDescriptor changedDescriptor : triggerEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor.getName()) {
@@ -499,6 +500,9 @@ public class ACTask extends ACTask_Base {
                 auxProjectChanged = true;
 
                 break;
+            case DSC_MILESTONE_ID:
+                auxMilestoneChanged = true;
+                break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
                 //cases, let's remove it from the ticked descriptors
@@ -507,6 +511,7 @@ public class ACTask extends ACTask_Base {
         }
 
         final boolean projectChanged = auxProjectChanged;
+        final boolean milestoneChanged = auxMilestoneChanged;
 
         return new SyncActionWrapper() {
 
@@ -534,6 +539,28 @@ public class ACTask extends ACTask_Base {
                     Label newLabel = new Label();
                     newLabel.setName(gitHubLabel.getName());
                     ghIssueToUpdate.setLabels(Collections.singletonList(newLabel));
+                }
+
+                if (milestoneChanged) {
+                    ACMilestone acMilestone = getMilestone();
+                    if (acMilestone != null) {
+
+                        final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
+                        GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
+                        if (ghMilestone == null) {
+                            //we must reuse/create it
+                            ghMilestone = tryToFindSuitableGHMilestone(ghRepository, acMilestone);
+                            if (ghMilestone == null) {
+                                ghMilestone = createSuitableGHMilestone(ghRepository, acMilestone);
+                            }
+                        }
+
+                        //we don't need the milestoneService, just the number
+                        Milestone milestone = new Milestone();
+                        milestone.setNumber(ghMilestone.getNumber());
+                        ghIssueToUpdate.setMilestone(milestone);
+
+                    }
                 }
 
                 //let's edit the issue
