@@ -69,6 +69,8 @@ import com.google.common.collect.Collections2;
 @RunWith(MockitoJUnitRunner.class)
 public class ACTaskSyncTest {
 
+    private static final String OTHER_GH_REPOSITORY_NAME = "OTHER GH REPOSITORY NAME";
+
     private static final int GH_ISSUE_NUMBER = new Random().nextInt(3000);
 
     private static final String AC_MILESTONE_BODY = "ac milestone body";
@@ -118,13 +120,15 @@ public class ACTaskSyncTest {
 
     GHMilestone ghMilestone;
 
+    GHUser repOwner;
+
     private void initializeTaskCategoryRepositoryAndACProject() {
 
         acTaskCategory = new ACTaskCategory();
         acTaskCategory.setName(AC_TASK_REPOSITORY_NAME);
         dsiRepository = new DSIRepository();
 
-        GHUser repOwner = new GHUser();
+        repOwner = new GHUser();
         repOwner.setLogin(GH_REP_OWNER_LOGIN);
         ghRepository = new GHRepository();
         ghRepository.setId(GH_REPOSITORY_ID);
@@ -283,7 +287,7 @@ public class ACTaskSyncTest {
 
     @SuppressWarnings("static-access")
     @Atomic(mode = TxMode.WRITE)
-//    @Test
+    @Test
     public void createReusingExistingMilestoneAndExistingLabel() throws IOException {
         //we must create a label on the other side
         initializeGHLabelAssumingRepositoryInitialized();
@@ -487,8 +491,113 @@ public class ACTaskSyncTest {
         return issueMap;
     }
 
-    public void updateWithTaskCategoryChange() {
+    public final static String OTHER_AC_TASK_CATEGORY_NAME = ACTaskCategory.REPOSITORY_PREFIX + OTHER_GH_REPOSITORY_NAME;
 
+    @Atomic(mode = TxMode.WRITE)
+    @Test
+    public void updateWithTaskCategoryChange() throws IOException {
+        initializeAssociatedGHIssue();
+
+        //let's initialize the second repository
+        //and the TaskCategory
+        GHRepository otherGhRepository = new GHRepository();
+        otherGhRepository.setId(230);
+        otherGhRepository.setOwner(repOwner);
+        otherGhRepository.setName(OTHER_GH_REPOSITORY_NAME);
+
+        DSIRepository otherDsiRepository = new DSIRepository();
+
+        ACTaskCategory otherAcTaskCategory = new ACTaskCategory();
+        otherAcTaskCategory.setName(OTHER_AC_TASK_CATEGORY_NAME);
+        otherDsiRepository.setGitHubRepository(otherGhRepository);
+        acTask.setTaskCategory(otherAcTaskCategory);
+
+        //let's initialize the Milestone, so that we can check if the corresponding
+        //milestone on the other repository is created
+        initializeACMilestone();
+
+//        //let's create a couple of comments to make sure that they are copied
+//        GHComment comment1 = new GHComment();
+//        comment1.setIssue(ghIssue);
+//        comment1. TODO ? for now let's not copy them
+
+        //setup the stubs
+        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Label.class))).then(new Answer<Label>() {
+
+            @Override
+            public Label answer(InvocationOnMock invocation) throws Throwable {
+                Label label = (Label) invocation.getArguments()[1];
+                if (label.getUrl() == null)
+                    label.setUrl("http://phonyUrl.com/");
+                return label;
+            }
+
+        });
+
+        //let's get the property descriptors for the right fields
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                Collections2.filter(
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)),
+                        new Predicate<PropertyDescriptor>() {
+                            @Override
+                            public boolean apply(PropertyDescriptor input) {
+                                if (input == null)
+                                    return false;
+                                if (input.getName().equals(ACTask.DSC_PROJECT_ID)
+                                        || input.getName().equals(ACTask.DSC_MILESTONE_ID)) {
+                                    return false;
+                                }
+                                return true;
+                            }
+                        });
+        SyncEvent updateWithTaskCategoryChange =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acTask, propertyDescriptorsToUse);
+
+        SyncActionWrapper sync = acTask.sync(updateWithTaskCategoryChange);
+
+        sync.sync();
+
+        //verifications
+
+        //the simple fields of the new issue
+
+        //twice - one to close the issue, and another
+        //to open the other one
+        verify(gitHubClient, times(2)).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+//        Map<Object, Object> issueMap = postCaptor.getValue();
+        boolean detectedTheClosedIssue = false;
+        for (Map<Object, Object> issueMap : postCaptor.getAllValues()) {
+            //we should have two issueMaps, one for the old issue, and another
+            //for the new one
+            String state = (String) issueMap.get(IssueService.FILTER_STATE);
+            if (IssueService.STATE_CLOSED.equals(state)) {
+                //then this is the old one
+                detectedTheClosedIssue = true;
+                //this one should have the deleted label
+                List<String> labelsString = (List<String>) issueMap.get(IssueService.FILTER_LABELS);
+                assertTrue(labelsString.contains(GHLabel.DELETED_LABEL_NAME));
+                //the description must have the - moved to XX -
+                String body = (String) issueMap.get(IssueService.FIELD_BODY);
+                //TODO ? make sure the creation of the issue gives out a number, and assert that
+                //the number is here ?
+                body.contains(GHIssue.MOVED_TO_PREFIX + otherGhRepository.generateId());
+
+            } else {
+                assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+                assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+            }
+
+        }
+
+        assertTrue(detectedTheClosedIssue);
+
+        //a creation of a GHMilestone on the other side
+        verify(gitHubClient).post(Mockito.anyString(), milestoneCaptor.capture(), Mockito.eq(Milestone.class));
+
+        Milestone capturedMilestone = milestoneCaptor.capture();
+        assertEquals(GH_MILESTONE_TITLE, capturedMilestone.getTitle());
 
     }
 

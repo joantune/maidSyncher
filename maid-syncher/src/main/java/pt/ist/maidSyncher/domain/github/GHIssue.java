@@ -76,6 +76,8 @@ public class GHIssue extends GHIssue_Base {
     public final static String DSC_HTML_URL = "htmlUrl";
     public final static String DSC_MILESTONE = "milestone";
 
+    public final static String MOVED_TO_PREFIX = "Moved to ";
+
     public GHIssue() {
         super();
         MaidRoot.getInstance().addGhIssues(this);
