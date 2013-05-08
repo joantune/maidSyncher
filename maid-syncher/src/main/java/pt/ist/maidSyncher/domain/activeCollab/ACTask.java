@@ -17,9 +17,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
@@ -41,6 +43,7 @@ import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
+import pt.ist.maidSyncher.domain.dsi.DSISubTask;
 import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
 import pt.ist.maidSyncher.domain.github.GHIssue;
@@ -260,6 +263,7 @@ public class ACTask extends ACTask_Base {
             case DSC_ID:
             case DSC_URL:
             case DSC_PROJECT_ID:
+            case DSC_CATEGORY_ID:
                 //the ones that we don't have to do anything
             case DSC_CREATED_ON:
             case DSC_UPDATED_ON:
@@ -447,6 +451,7 @@ public class ACTask extends ACTask_Base {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
         boolean auxProjectChanged = false;
         boolean auxMilestoneChanged = false;
+        boolean auxTaskCategoryChanged = false;
         for (PropertyDescriptor changedDescriptor : triggerEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor.getName()) {
@@ -503,6 +508,10 @@ public class ACTask extends ACTask_Base {
             case DSC_MILESTONE_ID:
                 auxMilestoneChanged = true;
                 break;
+            case DSC_CATEGORY_ID:
+                auxTaskCategoryChanged = true;
+                break;
+
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
                 //cases, let's remove it from the ticked descriptors
@@ -512,6 +521,7 @@ public class ACTask extends ACTask_Base {
 
         final boolean projectChanged = auxProjectChanged;
         final boolean milestoneChanged = auxMilestoneChanged;
+        final boolean taskCategoryChanged = auxTaskCategoryChanged;
 
         return new SyncActionWrapper() {
 
@@ -538,28 +548,70 @@ public class ACTask extends ACTask_Base {
 
                     Label newLabel = new Label();
                     newLabel.setName(gitHubLabel.getName());
-                    ghIssueToUpdate.setLabels(Collections.singletonList(newLabel));
+                    List<Label> labelsToUse = addLabelsToUse(ghIssueToUpdate.getLabels(), newLabel);
+
+                    ghIssueToUpdate.setLabels(labelsToUse);
                 }
 
                 if (milestoneChanged) {
-                    ACMilestone acMilestone = getMilestone();
-                    if (acMilestone != null) {
 
-                        final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
-                        GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
-                        if (ghMilestone == null) {
-                            //we must reuse/create it
-                            ghMilestone = tryToFindSuitableGHMilestone(ghRepository, acMilestone);
-                            if (ghMilestone == null) {
-                                ghMilestone = createSuitableGHMilestone(ghRepository, acMilestone);
-                            }
+                    syncGHMilestoneFromACMilestone(getMilestone(), ghRepository, ghIssueToUpdate);
+                }
+
+                if (taskCategoryChanged) {
+
+                    //let's create the new Issue
+                    Issue newIssue = new Issue();
+
+                    //copy everything from the old one
+                    try {
+                        ghIssue.copyPropertiesTo(newIssue);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+                        throw new SyncActionError("Error trying to prefill the properties from the GHIssue to the bean.", e);
+                    }
+                    // let's take care of processing the milestones
+                    //as the overriden method of the copyPropertiesTo
+                    //already takes care of the labels
+
+                    ACTaskCategory taskCategory = getTaskCategory();
+                    DSIRepository dsiRepository = (DSIRepository) taskCategory.getDSIObject();
+                    GHRepository newGHRepository = dsiRepository.getGitHubRepository();
+
+                    //taking care of the milestone
+                    GHMilestoneWrapper syncGHMilestoneFromACMilestone =
+                            syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, ghIssueToUpdate);
+
+                    IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+                    GHIssue newGhCreatedIssue =
+                            GHIssue.process(issueService.createIssue(newGHRepository, newIssue), newGHRepository, true);
+
+                    DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+                    dsiIssue.setGhIssue(newGhCreatedIssue);
+
+                    //adding the deleted label to the old issue
+                    Label labelDeleted = new Label();
+                    labelDeleted.setName(GHLabel.DELETED_LABEL_NAME);
+
+                    List<Label> labelsToUseInTheOldIssue = addLabelsToUse(ghIssueToUpdate.getLabels(), labelDeleted);
+                    ghIssueToUpdate.setLabels(labelsToUseInTheOldIssue);
+
+                    //let's close the old issue
+                    ghIssueToUpdate.setState(GHIssue.STATE_CLOSED);
+
+                    //and add into the description what happened to it
+                    String oldIssueBody = ghIssueToUpdate.getBody();
+                    String newBodyForIssue = applyMovedTo(oldIssueBody, newGhCreatedIssue);
+                    ghIssueToUpdate.setBody(newBodyForIssue);
+
+                    //now let's do the same for each subtask
+                    for (ACSubTask acSubTask : getSubTasksSet()) {
+                        //only if they have an associated GHIssue by now
+                        DSISubTask dsiSubTask = (DSISubTask) acSubTask.getDSIObject();
+                        GHIssue subTaskGHIssue = dsiSubTask.getGhIssue();
+                        if (subTaskGHIssue != null) {
+                            //let's migrate this
+                            processGHIssueFromACSubTaskMigration(newGHRepository, subTaskGHIssue, acSubTask);
                         }
-
-                        //we don't need the milestoneService, just the number
-                        Milestone milestone = new Milestone();
-                        milestone.setNumber(ghMilestone.getNumber());
-                        ghIssueToUpdate.setMilestone(milestone);
-
                     }
                 }
 
@@ -573,6 +625,69 @@ public class ACTask extends ACTask_Base {
 //                    throw new SyncActionError("we did an update and the resulting GHIssue don't match");
 
                 return Collections.singleton(processedGHIssue);
+            }
+
+            private void processGHIssueFromACSubTaskMigration(GHRepository newGHRepository, GHIssue subTaskGHIssue,
+                    ACSubTask acSubTask)
+                            throws IOException {
+                //let's get the old issue based on the current one
+                Issue oldIssue = new Issue();
+
+                //let's create the new Issue
+                Issue newIssue = new Issue();
+
+                //copy everything from the old one
+                try {
+                    subTaskGHIssue.copyPropertiesTo(newIssue);
+                    subTaskGHIssue.copyPropertiesTo(oldIssue);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+                    throw new SyncActionError("Error trying to prefill the properties from the GHIssue to the bean.", e);
+                }
+
+
+                //taking care of the eventual milestone
+                GHMilestoneWrapper syncGHMilestoneFromACMilestone =
+                        syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, newIssue);
+
+                IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+                GHIssue newGhCreatedIssue =
+                        GHIssue.process(issueService.createIssue(newGHRepository, newIssue), newGHRepository, true);
+
+                DSIIssue dsiIssue = (DSIIssue) getDSIObject();
+                dsiIssue.setGhIssue(newGhCreatedIssue);
+
+                //adding the deleted label to the old issue
+                Label labelDeleted = new Label();
+                labelDeleted.setName(GHLabel.DELETED_LABEL_NAME);
+
+                List<Label> labelsToUseInTheOldIssue = addLabelsToUse(oldIssue.getLabels(), labelDeleted);
+                oldIssue.setLabels(labelsToUseInTheOldIssue);
+
+                //let's close the old issue
+                oldIssue.setState(GHIssue.STATE_CLOSED);
+
+                //and add into the description what happened to it
+                String oldIssueBody = oldIssue.getBody();
+                String newBodyForIssue = applyMovedTo(oldIssueBody, newGhCreatedIssue);
+                oldIssue.setBody(newBodyForIssue);
+                //let's close the oldIssue
+
+                GHIssue.process(issueService.editIssue(subTaskGHIssue.getRepository(), oldIssue), subTaskGHIssue.getRepository(),
+                        true);
+
+            }
+
+            private List<Label> addLabelsToUse(List<Label> currentlyUsedLabels, Label... labelsToAdd) {
+                List<Label> labelsToReturn = null;
+                if (currentlyUsedLabels == null) {
+                    labelsToReturn = new ArrayList<Label>();
+                } else {
+                    labelsToReturn = currentlyUsedLabels;
+                }
+                for (Label labelToAdd : labelsToAdd) {
+                    labelsToReturn.add(labelToAdd);
+                }
+                return labelsToReturn;
             }
 
             @Override
@@ -592,9 +707,73 @@ public class ACTask extends ACTask_Base {
 
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
-                return Collections.emptySet();
+                Set<Class> dependedOnObjects = new HashSet();
+                dependedOnObjects.add(ACTaskCategory.class);
+                return dependedOnObjects;
             }
         };
+
+    }
+
+    static class GHMilestoneWrapper {
+        public final GHMilestone ghMilestone;
+        public final boolean wasJustCreated;
+
+        public GHMilestoneWrapper(GHMilestone ghMilestone, boolean wasRecentlyCreated) {
+            this.ghMilestone = ghMilestone;
+            this.wasJustCreated = wasRecentlyCreated;
+        }
+    }
+
+    /**
+     * 
+     * @param acMilestone the acMilestone to process
+     * @param ghRepository the repository where to place the new Milestone
+     * @param ghIssueToUpdate the {@link Issue} object to edit/create
+     * @return a {@link GHMilestoneWrapper} with the {@link GHMilestone} reused/created
+     *         creates/reuses a milestone that it might find on the given repository, wich is returned in
+     *         a {@link GHMilestoneWrapper}, and updates it on the given ghIssueToUpdate
+     * 
+     * @throws IOException if something went wrong with the creation of a new Milestone
+     */
+    GHMilestoneWrapper syncGHMilestoneFromACMilestone(ACMilestone acMilestone, GHRepository ghRepository,
+            Issue ghIssueToUpdate) throws IOException {
+        if (acMilestone != null) {
+            checkNotNull(ghIssueToUpdate);
+            checkNotNull(ghRepository);
+            boolean wasCreatedANewMilestone = false;
+
+            final DSIMilestone dsiMilestone = (DSIMilestone) acMilestone.getDSIObject(); //depended upon
+            GHMilestone ghMilestone = dsiMilestone.getGhMilestone(ghRepository);
+            if (ghMilestone == null) {
+                //we must reuse/create it
+                ghMilestone = tryToFindSuitableGHMilestone(ghRepository, acMilestone);
+                if (ghMilestone == null) {
+                    ghMilestone = createSuitableGHMilestone(ghRepository, acMilestone);
+                    wasCreatedANewMilestone = true;
+                }
+            }
+
+            //we don't need the milestoneService, just the number
+            Milestone milestone = new Milestone();
+            milestone.setNumber(ghMilestone.getNumber());
+            ghIssueToUpdate.setMilestone(milestone);
+
+            return new GHMilestoneWrapper(ghMilestone, wasCreatedANewMilestone);
+        }
+        return null;
+
+    }
+
+    String applyMovedTo(String oldIssueBody, GHIssue newGhCreatedIssue) {
+        String newString = null;
+        if (oldIssueBody == null) {
+            newString = "";
+        } else {
+            newString = oldIssueBody;
+        }
+        return GHIssue.MOVED_TO_PREFIX + newGhCreatedIssue.getRepository().generateId() + "#" + newGhCreatedIssue.getNumber()
+                + newString;
 
     }
 

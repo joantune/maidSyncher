@@ -87,6 +87,7 @@ class GHRepository extends GHObject {
 
 class GHLabel  extends GHObject {
 	String name;
+	String color;
 }
 
 class GHMilestone extends GHObject {

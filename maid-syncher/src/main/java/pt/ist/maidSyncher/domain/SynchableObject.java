@@ -414,7 +414,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         return propertyDescriptorsThatChanged;
     }
 
-    public Collection<PropertyDescriptor> copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException,
+    public void copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException,
     NoSuchMethodException, TaskNotVisibleException {
         Set<PropertyDescriptor> propertyDescriptorsThatChanged = new HashSet<PropertyDescriptor>();
 
@@ -486,7 +486,6 @@ public abstract class SynchableObject extends SynchableObject_Base {
             }
         }
 
-        return propertyDescriptorsThatChanged;
     }
 
     /**

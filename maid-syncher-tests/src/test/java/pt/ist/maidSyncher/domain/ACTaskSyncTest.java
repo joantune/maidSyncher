@@ -72,6 +72,8 @@ import com.google.common.collect.Collections2;
 @RunWith(MockitoJUnitRunner.class)
 public class ACTaskSyncTest {
 
+    private static final String GH_LABEL_SIMPLE_LABEL_NAME = "GH LABEL SIMPLE LABEL NAME";
+
     private static final String AC_SUB_TASK_ONE_NAME = "AC SUB TASK ONE NAME";
 
     private static final String OTHER_GH_REPOSITORY_NAME = "OTHER GH REPOSITORY NAME";
@@ -434,6 +436,12 @@ public class ACTaskSyncTest {
     public void updateWithProjectChange() throws IOException {
         initializeAssociatedGHIssue();
 
+        //let's have a previous GHLabel associated with this
+        //issue
+        initializeGHLabelAssumingRepositoryInitialized();
+        ghLabel.setName(GH_LABEL_SIMPLE_LABEL_NAME);
+        ghIssue.addLabels(ghLabel);
+
         //setup the stubs
         when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Label.class))).then(new Answer<Label>() {
 
@@ -481,6 +489,7 @@ public class ACTaskSyncTest {
         List<String> labels = (List<String>) issueMap.get(IssueService.FILTER_LABELS);
 
         assertTrue(labels.contains(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME));
+        assertTrue(labels.contains(GH_LABEL_SIMPLE_LABEL_NAME));
 
     }
 
@@ -502,6 +511,8 @@ public class ACTaskSyncTest {
     @Test
     public void updateWithTaskCategoryChange() throws IOException {
         initializeAssociatedGHIssue();
+        ghIssue.setTitle(AC_TASK_NAME);
+        ghIssue.setBody(AC_TASK_BODY);
 
         //let's initialize the second repository
         //and the TaskCategory
@@ -514,6 +525,7 @@ public class ACTaskSyncTest {
 
         ACTaskCategory otherAcTaskCategory = new ACTaskCategory();
         otherAcTaskCategory.setName(OTHER_AC_TASK_CATEGORY_NAME);
+        otherAcTaskCategory.setDsiObjectRepository(otherDsiRepository);
         otherDsiRepository.setGitHubRepository(otherGhRepository);
         acTask.setTaskCategory(otherAcTaskCategory);
 
@@ -539,12 +551,13 @@ public class ACTaskSyncTest {
         DSISubTask subTaskTwo = new DSISubTask(dsiIssue);
 
         acSubTaskTwo.setName(AC_SUB_TASK_TWO_NAME);
+        ghIssueAssociatedWithSubTaskTwo.setTitle(AC_SUB_TASK_TWO_NAME);
         acSubTaskTwo.setTask(acTask);
         acSubTaskTwo.setDsiObjectSubTask(subTaskTwo);
 
         ghIssueAssociatedWithSubTaskTwo.setRepository(ghRepository);
         ghIssueAssociatedWithSubTaskTwo.setTitle(AC_SUB_TASK_TWO_NAME);
-        ghIssueAssociatedWithSubTaskTwo.setDsiObjectSubTask(subTaskOne);
+        ghIssueAssociatedWithSubTaskTwo.setDsiObjectSubTask(subTaskTwo);
 
         //setup the stubs
         when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Label.class))).then(new Answer<Label>() {
@@ -558,6 +571,20 @@ public class ACTaskSyncTest {
             }
 
         });
+
+        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Milestone.class))).then(
+                new Answer<Milestone>() {
+
+                    @Override
+                    public Milestone answer(InvocationOnMock invocation) throws Throwable {
+                        Milestone milestone = (Milestone) invocation.getArguments()[1];
+                        if (milestone.getUrl() == null)
+                            milestone.setUrl("http://phonyUrl.com/");
+                        milestone.setNumber(GH_MILESTONE_NUMBER);
+                        return milestone;
+                    }
+
+                });
 
         //let's get the property descriptors for the right fields
         Collection<PropertyDescriptor> propertyDescriptorsToUse =
@@ -595,6 +622,10 @@ public class ACTaskSyncTest {
         boolean detectedTheClosedMainIssue = false;
         boolean detectedTheClosedSubTaskOneIssue = false;
         boolean detectedTheClosedSubTaskTwoIssue = false;
+
+        boolean detectedTheOpenedMainIssue = false;
+        boolean detectedTheOpenedSubTaskOne = false;
+        boolean detectedTheOpenedSubTaskTwo = false;
         for (Map<Object, Object> issueMap : postCaptor.getAllValues()) {
             //we should have two issueMaps, one for the old issue, and another
             //for the new one
@@ -627,8 +658,24 @@ public class ACTaskSyncTest {
                 body.contains(GHIssue.MOVED_TO_PREFIX + otherGhRepository.generateId());
 
             } else {
-                assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
-                assertEquals(AC_TASK_NAME, issueMap.get(IssueService.FIELD_TITLE));
+                String issueTitle = (String) issueMap.get(IssueService.FIELD_TITLE);
+                switch (issueTitle) {
+                case AC_TASK_NAME:
+                    detectedTheOpenedMainIssue = true;
+                    assertEquals(AC_TASK_BODY, issueMap.get(IssueService.FIELD_BODY));
+                    break;
+                case AC_SUB_TASK_ONE_NAME:
+                    detectedTheOpenedSubTaskOne = true;
+                    break;
+                case AC_SUB_TASK_TWO_NAME:
+                    detectedTheOpenedSubTaskTwo = true;
+                    break;
+
+                default:
+                    fail("unexpected open issue caught");
+                    break;
+
+                }
 
             }
 
@@ -638,10 +685,14 @@ public class ACTaskSyncTest {
         assertTrue(detectedTheClosedSubTaskOneIssue);
         assertTrue(detectedTheClosedSubTaskTwoIssue);
 
+        assertTrue(detectedTheOpenedMainIssue);
+        assertTrue(detectedTheOpenedSubTaskOne);
+        assertTrue(detectedTheOpenedSubTaskTwo);
+
         //a creation of a GHMilestone on the other side
         verify(gitHubClient).post(Mockito.anyString(), milestoneCaptor.capture(), Mockito.eq(Milestone.class));
 
-        Milestone capturedMilestone = milestoneCaptor.capture();
+        Milestone capturedMilestone = milestoneCaptor.getValue();
         assertEquals(GH_MILESTONE_TITLE, capturedMilestone.getTitle());
 
     }

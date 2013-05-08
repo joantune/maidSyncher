@@ -17,9 +17,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import jvstm.cps.ConsistencyPredicate;
@@ -121,6 +123,51 @@ public class GHIssue extends GHIssue_Base {
 
     }
 
+    protected static List<Label> addLabelsToUse(List<Label> currentlyUsedLabels, Label... labelsToAdd) {
+        List<Label> labelsToReturn = null;
+        if (currentlyUsedLabels == null) {
+            labelsToReturn = new ArrayList<Label>();
+        } else {
+            labelsToReturn = currentlyUsedLabels;
+        }
+        for (Label labelToAdd : labelsToAdd) {
+            labelsToReturn.add(labelToAdd);
+        }
+        return labelsToReturn;
+    }
+
+    @Override
+    public void copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
+    TaskNotVisibleException {
+        super.copyPropertiesTo(dest);
+
+        //let's take care of the non simple properties i.e., Milestone and Labels
+        Issue issue = (Issue) dest;
+
+        if (getMilestone() != null) {
+            //let's get it to the issue
+            GHMilestone ghMilestone = getMilestone();
+            Milestone newMilestone = new Milestone();
+            //we only need the number in reality
+            newMilestone.setNumber(ghMilestone.getNumber());
+            issue.setMilestone(newMilestone);
+        }
+
+        List<Label> labelsToBeCopied = new ArrayList<>();
+        for (GHLabel ghLabel : getLabelsSet()) {
+            Label newLabel = new Label();
+            ghLabel.copyPropertiesTo(newLabel);
+            labelsToBeCopied.add(newLabel);
+        }
+
+        if (labelsToBeCopied.isEmpty() == false)
+            //because there is a different behaviour
+            //if the issue.getLabels returns null
+            //or an empty list
+            issue.setLabels(labelsToBeCopied);
+
+    }
+
     @Override
     public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException {
@@ -142,17 +189,19 @@ public class GHIssue extends GHIssue_Base {
 
         Set<GHLabel> ghOldLabels = new HashSet<GHLabel>(getLabelsSet());
         Set<GHLabel> newGHLabels = new HashSet<GHLabel>();
-        for (Label label : issue.getLabels()) {
-            GHLabel ghLabel = GHLabel.process(label);
-            newGHLabels.add(ghLabel);
-        }
-        if (!ObjectUtils.equals(ghOldLabels, newGHLabels))
-            changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
-        for (GHLabel ghLabel : getLabelsSet()) {
-            removeLabels(ghLabel);
-        }
-        for (GHLabel ghLabel : newGHLabels) {
-            addLabels(ghLabel);
+        if (issue.getLabels() != null) {
+            for (Label label : issue.getLabels()) {
+                GHLabel ghLabel = GHLabel.process(label);
+                newGHLabels.add(ghLabel);
+            }
+            if (!ObjectUtils.equals(ghOldLabels, newGHLabels))
+                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
+            for (GHLabel ghLabel : getLabelsSet()) {
+                removeLabels(ghLabel);
+            }
+            for (GHLabel ghLabel : newGHLabels) {
+                addLabels(ghLabel);
+            }
         }
 
         User assignee = issue.getAssignee();
@@ -413,7 +462,6 @@ public class GHIssue extends GHIssue_Base {
                 return synchableObjectsToReturn;
             }
 
-
             @Override
             public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
                 return tickedDescriptors;
@@ -440,6 +488,7 @@ public class GHIssue extends GHIssue_Base {
     }
 
     private final static String SUB_TASK_BODY_PREFIX = "Subtask of #";
+
     private String getSubTaskBodyPrefix() {
         DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
         return SUB_TASK_BODY_PREFIX + dsiSubTask.getParentIssue().getGhIssue().getNumber();
@@ -623,7 +672,7 @@ public class GHIssue extends GHIssue_Base {
 
                 }
                 if (changedMilestones) {
-                    if ( getMilestone() != null) {
+                    if (getMilestone() != null) {
 
                         //let us change the milestone on the other side.
                         //if the corresponding ACMilestone doesn't exist, reuse/create it
@@ -631,8 +680,8 @@ public class GHIssue extends GHIssue_Base {
                         //let's try to find one with the name to use
                         ACProject acProject = getProjectToUsedBasedOnCurrentLabels();
                         pt.ist.maidSyncher.domain.activeCollab.ACMilestone milestoneToUse =
-                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone
-                                .findMilestone(acProject, getMilestone().getTitle());
+                                pt.ist.maidSyncher.domain.activeCollab.ACMilestone.findMilestone(acProject, getMilestone()
+                                        .getTitle());
                         if (milestoneToUse == null) {
                             //we have to create it
                             ACMilestone acMilestoneToCreate = new ACMilestone();
@@ -728,8 +777,7 @@ public class GHIssue extends GHIssue_Base {
         //let's try to search on the current labels
         if (appliableLabels.size() != 1) {
             return ((DSIRepository) getRepository().getDSIObject()).getDefaultProject();
-        }
-        else
+        } else
             return ((DSIProject) appliableLabels.iterator().next().getDSIObject()).getAcProject();
     }
 

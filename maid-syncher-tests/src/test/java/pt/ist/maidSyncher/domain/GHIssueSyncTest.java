@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -397,10 +398,12 @@ public class GHIssueSyncTest {
             sync.sync();
             //verify the issueservice calls and the number of calls to the requestProcessor
             verify(requestProcessor, times(1)).processPost(Mockito.any(ACSubTask.class), Mockito.anyString());
-            Map<String, String> params = new HashMap();
+            Map<Object, Object> params = new HashMap<Object, Object>();
             params.put(IssueService.FIELD_BODY, ghIssueToUse.applySubTaskBodyPrefix(GHISSUE_SUBTASK_BODY));
             params.put(IssueService.FIELD_TITLE, GHISSUE_SUBTASK_TITLE);
             params.put(IssueService.FILTER_STATE, GHIssue.STATE_CLOSED);
+            params.put(IssueService.FILTER_LABELS, Collections.singletonList("blahblah")); //as the copy now also takes
+            //care of the labels
 
             verify(mockGHClient).post("/repos/test_user/test_repository/issues/0", params, Issue.class);
             verify(mockGHClient, times(1)).post(Mockito.anyString(), Mockito.any(Object.class), Mockito.any(Type.class));
