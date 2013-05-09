@@ -73,6 +73,8 @@ import com.google.common.collect.Collections2;
 @RunWith(MockitoJUnitRunner.class)
 public class ACTaskSyncTest {
 
+    static final int GH_SUBTASK_ONE_ISSUE_NUMBER = 23;
+
     private static final String GH_LABEL_SIMPLE_LABEL_NAME = "GH LABEL SIMPLE LABEL NAME";
 
     static final String AC_SUB_TASK_ONE_NAME = "AC SUB TASK ONE NAME";
@@ -713,6 +715,7 @@ public class ACTaskSyncTest {
             ghIssueAssociatedWithSubTaskOne.setRepository(ghRepositoryToUse);
             ghIssueAssociatedWithSubTaskOne.setTitle(subTaskName);
             ghIssueAssociatedWithSubTaskOne.setDsiObjectSubTask(subTaskOne);
+            ghIssueAssociatedWithSubTaskOne.setNumber(GH_SUBTASK_ONE_ISSUE_NUMBER);
         }
         return acSubTaskOne;
     }

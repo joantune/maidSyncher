@@ -124,11 +124,97 @@ public class ACSubTask extends ACSubTask_Base {
             //if we are creating an artefact on AC side, it mustn't be a SubTask, it's a Task
             syncActionWrapperToReturn = syncCreateEvent(syncEvent);
 
+        } else if (syncEvent.getTypeOfChangeEvent().equals(SyncEvent.TypeOfChangeEvent.UPDATE)) {
+            //then we should need to create a GHIssue, let's just make sure that's correct
+            if (syncEvent.getTargetSyncUniverse().equals(SyncEvent.SyncUniverse.ACTIVE_COLLAB))
+                throw new SyncEventIncogruenceBetweenOriginAndDestination("For syncEvent: " + syncEvent.toString());
+
+            //if we are creating an artefact on AC side, it mustn't be a SubTask, it's a Task
+            syncActionWrapperToReturn = syncUpdateEvent(syncEvent);
+
         }
 
         return syncActionWrapperToReturn;
     }
 
+
+    private SyncActionWrapper syncUpdateEvent(SyncEvent syncEvent) {
+        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        boolean auxChangedName = false;
+        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+            tickedDescriptors.add(changedDescriptor);
+            switch (changedDescriptor.getName()) {
+            case DSC_ID:
+            case DSC_URL:
+            case DSC_PARENTID: //this one should never change
+            case DSC_CREATED_ON:
+            case DSC_CREATED_BY_ID:
+            case DSC_UPDATED_ON:
+            case DSC_UPDATED_BY_ID:
+                //the ones above surge no changes
+                break;
+            case DSC_NAME:
+                auxChangedName = true;
+                break;
+            default:
+                tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
+                //cases, let's remove it from the ticked descriptors
+            }
+        }
+
+        final boolean changedName = auxChangedName;
+
+        return new SyncActionWrapper<SynchableObject>() {
+
+            @Override
+            public Collection<SynchableObject> sync() throws IOException {
+                if (changedName) {
+                    DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+                    GHIssue ghIssue = dsiSubTask.getGhIssue();
+                    Issue issueToUpdate = new Issue();
+                    try {
+                        ghIssue.copyPropertiesTo(issueToUpdate);
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+                        throw new Error("Error trying to prefill an Issue.", e);
+                    }
+
+                    issueToUpdate.setTitle(getName());
+
+                    IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+
+                    issueService.editIssue(ghIssue.getRepository(), issueToUpdate);
+
+                }
+
+                return Collections.emptySet();
+
+            }
+
+            @Override
+            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public SyncEvent getOriginatingSyncEvent() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Collection<DSIObject> getSyncDependedDSIObjects() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+        };
+    }
 
     private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();

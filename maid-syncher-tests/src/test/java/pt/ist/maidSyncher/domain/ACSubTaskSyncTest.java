@@ -129,4 +129,35 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
 
     }
 
+    @Test
+    @Atomic(mode = TxMode.WRITE)
+    public void updateWithAllDescriptorChange() throws IOException {
+        //let's create a subTask without the GH side
+        acSubTask = initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, true);
+        initializeACMilestone(); //shouldn't make an impact
+        initializeAssociatedGHIssue(); //needed
+
+        SyncEvent updateSubTaskEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acSubTask,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACSubTask.class)));
+
+        SyncActionWrapper sync = acSubTask.sync(updateSubTaskEvent);
+        sync.sync();
+
+        //verifications
+
+        verify(gitHubClient).post(stringPostUriCaptor.capture(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_SUB_TASK_ONE_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+        //we did an edit of an issue on the right repository
+        assertTrue(stringPostUriCaptor.getValue().contains(ghRepository.generateId()));
+
+        //for the right GHIssue
+        assertTrue(stringPostUriCaptor.getValue().contains(String.valueOf(GH_SUBTASK_ONE_ISSUE_NUMBER)));
+
+    }
+
 }
