@@ -49,6 +49,7 @@ import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAnd
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
+import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
@@ -308,25 +309,11 @@ public class ACTask extends ACTask_Base {
                 //the label corresponds to the project name, let's try to retrieve it
                 final DSIProject dsiProject = (DSIProject) getProject().getDSIObject(); //depended
 
-                GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
-                if (gitHubLabel == null) {
-                    //we have to create a new one, or reuse one that has an appropriate
-                    //name
-                    gitHubLabel = tryToFindSuitableGHLabel(ghRepository, getProject());
-                    if (gitHubLabel == null) {
-                        //we have to create one
-                        gitHubLabel = createSuitableGHLabel(ghRepository, getProject());
-                    }
-                }
+                syncGHLabelFromACProject(getProject(), ghRepository, newGHIssue);
+
                 final GHUser repoOwner = ghRepository.getOwner();
 //                LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
 
-                //We don't need to go and fetch the label to use now, we can just create it
-//                Label label = labelService.getLabel(ghRepository, gitHubLabel.getName());
-//                newGHIssue.setLabels(Collections.singletonList(label));
-                Label newLabel = new Label();
-                newLabel.setName(gitHubLabel.getName());
-                newGHIssue.setLabels(Collections.singletonList(newLabel));
 
                 //milestone
                 ACMilestone acMilestone = getMilestone();
@@ -537,20 +524,8 @@ public class ACTask extends ACTask_Base {
                     //let's try to find the GHLabel associated with this one
                     //and if it doesn't exist, create it
 
-                    DSIProject dsiProject = (DSIProject) getProject().getDSIObject();
-                    GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
-                    if (gitHubLabel == null) {
-                        gitHubLabel = tryToFindSuitableGHLabel(ghRepository, getProject());
-                        if (gitHubLabel == null) {
-                            gitHubLabel = createSuitableGHLabel(ghRepository, getProject());
-                        }
-                    }
+                    syncGHLabelFromACProject(getProject(), ghRepository, ghIssueToUpdate);
 
-                    Label newLabel = new Label();
-                    newLabel.setName(gitHubLabel.getName());
-                    List<Label> labelsToUse = addLabelsToUse(ghIssueToUpdate.getLabels(), newLabel);
-
-                    ghIssueToUpdate.setLabels(labelsToUse);
                 }
 
                 if (milestoneChanged) {
@@ -578,7 +553,7 @@ public class ACTask extends ACTask_Base {
                     GHRepository newGHRepository = dsiRepository.getGitHubRepository();
 
                     //taking care of the milestone
-                    GHMilestoneWrapper syncGHMilestoneFromACMilestone =
+                    GHObjectWrapper syncGHMilestoneFromACMilestone =
                             syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, ghIssueToUpdate);
 
                     IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
@@ -628,8 +603,7 @@ public class ACTask extends ACTask_Base {
             }
 
             private void processGHIssueFromACSubTaskMigration(GHRepository newGHRepository, GHIssue subTaskGHIssue,
-                    ACSubTask acSubTask)
-                            throws IOException {
+                    ACSubTask acSubTask) throws IOException {
                 //let's get the old issue based on the current one
                 Issue oldIssue = new Issue();
 
@@ -644,9 +618,8 @@ public class ACTask extends ACTask_Base {
                     throw new SyncActionError("Error trying to prefill the properties from the GHIssue to the bean.", e);
                 }
 
-
                 //taking care of the eventual milestone
-                GHMilestoneWrapper syncGHMilestoneFromACMilestone =
+                GHObjectWrapper syncGHMilestoneFromACMilestone =
                         syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, newIssue);
 
                 IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
@@ -677,19 +650,6 @@ public class ACTask extends ACTask_Base {
 
             }
 
-            private List<Label> addLabelsToUse(List<Label> currentlyUsedLabels, Label... labelsToAdd) {
-                List<Label> labelsToReturn = null;
-                if (currentlyUsedLabels == null) {
-                    labelsToReturn = new ArrayList<Label>();
-                } else {
-                    labelsToReturn = currentlyUsedLabels;
-                }
-                for (Label labelToAdd : labelsToAdd) {
-                    labelsToReturn.add(labelToAdd);
-                }
-                return labelsToReturn;
-            }
-
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
                 return Collections.EMPTY_LIST;
@@ -715,14 +675,53 @@ public class ACTask extends ACTask_Base {
 
     }
 
-    static class GHMilestoneWrapper {
-        public final GHMilestone ghMilestone;
+    static class GHObjectWrapper {
+        public final GHObject ghObject;
         public final boolean wasJustCreated;
 
-        public GHMilestoneWrapper(GHMilestone ghMilestone, boolean wasRecentlyCreated) {
-            this.ghMilestone = ghMilestone;
+        public GHObjectWrapper(GHObject ghObject, boolean wasRecentlyCreated) {
+            this.ghObject = ghObject;
             this.wasJustCreated = wasRecentlyCreated;
         }
+    }
+
+    private List<Label> addLabelsToUse(List<Label> currentlyUsedLabels, Label... labelsToAdd) {
+        List<Label> labelsToReturn = null;
+        if (currentlyUsedLabels == null) {
+            labelsToReturn = new ArrayList<Label>();
+        } else {
+            labelsToReturn = currentlyUsedLabels;
+        }
+        for (Label labelToAdd : labelsToAdd) {
+            labelsToReturn.add(labelToAdd);
+        }
+        return labelsToReturn;
+    }
+
+    GHObjectWrapper syncGHLabelFromACProject(pt.ist.maidSyncher.domain.activeCollab.ACProject acProject,
+            GHRepository ghRepository, Issue issueToUpdate)
+                    throws IOException {
+
+        boolean wasJustCreated = false;
+        DSIProject dsiProject = (DSIProject) acProject.getDSIObject();
+        GHLabel gitHubLabel = dsiProject.getGitHubLabelFor(ghRepository);
+        if (gitHubLabel == null) {
+            gitHubLabel = tryToFindSuitableGHLabel(ghRepository, acProject);
+            if (gitHubLabel == null) {
+                gitHubLabel = createSuitableGHLabel(ghRepository, acProject);
+                wasJustCreated = true;
+
+            }
+        }
+
+        Label newLabel = new Label();
+        newLabel.setName(gitHubLabel.getName());
+        List<Label> labelsToUse = addLabelsToUse(issueToUpdate.getLabels(), newLabel);
+
+        issueToUpdate.setLabels(labelsToUse);
+
+        return new GHObjectWrapper(gitHubLabel, wasJustCreated);
+
     }
 
     /**
@@ -736,8 +735,8 @@ public class ACTask extends ACTask_Base {
      * 
      * @throws IOException if something went wrong with the creation of a new Milestone
      */
-    GHMilestoneWrapper syncGHMilestoneFromACMilestone(ACMilestone acMilestone, GHRepository ghRepository,
-            Issue ghIssueToUpdate) throws IOException {
+    GHObjectWrapper syncGHMilestoneFromACMilestone(ACMilestone acMilestone, GHRepository ghRepository, Issue ghIssueToUpdate)
+            throws IOException {
         if (acMilestone != null) {
             checkNotNull(ghIssueToUpdate);
             checkNotNull(ghRepository);
@@ -759,7 +758,7 @@ public class ACTask extends ACTask_Base {
             milestone.setNumber(ghMilestone.getNumber());
             ghIssueToUpdate.setMilestone(milestone);
 
-            return new GHMilestoneWrapper(ghMilestone, wasCreatedANewMilestone);
+            return new GHObjectWrapper(ghMilestone, wasCreatedANewMilestone);
         }
         return null;
 

@@ -14,23 +14,33 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.eclipse.egit.github.core.Issue;
+import org.eclipse.egit.github.core.service.IssueService;
 
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.dsi.DSISubTask;
+import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
+import pt.ist.maidSyncher.domain.github.GHIssue;
+import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 
 public class ACSubTask extends ACSubTask_Base {
+    private final static String DSC_PARENTID = "parentId";
 
     public ACSubTask() {
         super();
@@ -47,7 +57,8 @@ public class ACSubTask extends ACSubTask_Base {
         Collection<PropertyDescriptor> propertyDescriptorsToReturn = super.copyPropertiesFrom(orig);
         pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask = (pt.ist.maidSyncher.api.activeCollab.ACSubTask) orig;
         if (acSubTask.getParentClass().equals(ACTask.CLASS_VALUE)) {
-            pt.ist.maidSyncher.domain.activeCollab.ACTask acTask = pt.ist.maidSyncher.domain.activeCollab.ACTask.findById(acSubTask.getParentId());
+            pt.ist.maidSyncher.domain.activeCollab.ACTask acTask =
+                    pt.ist.maidSyncher.domain.activeCollab.ACTask.findById(acSubTask.getParentId());
             pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();
             setTask(acTask);
             if (!ObjectUtils.equals(acTask, oldTask)) {
@@ -104,8 +115,114 @@ public class ACSubTask extends ACSubTask_Base {
 
     @Override
     public SyncActionWrapper sync(SyncEvent syncEvent) {
-        // TODO Auto-generated method stub
-        return null;
+        SyncActionWrapper syncActionWrapperToReturn = null;
+        if (syncEvent.getTypeOfChangeEvent().equals(SyncEvent.TypeOfChangeEvent.CREATE)) {
+            //then we should need to create a GHIssue, let's just make sure that's correct
+            if (syncEvent.getTargetSyncUniverse().equals(SyncEvent.SyncUniverse.ACTIVE_COLLAB))
+                throw new SyncEventIncogruenceBetweenOriginAndDestination("For syncEvent: " + syncEvent.toString());
+
+            //if we are creating an artefact on AC side, it mustn't be a SubTask, it's a Task
+            syncActionWrapperToReturn = syncCreateEvent(syncEvent);
+
+        }
+
+        return syncActionWrapperToReturn;
     }
 
+
+    private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
+        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+            tickedDescriptors.add(changedDescriptor);
+            switch (changedDescriptor.getName()) {
+            case DSC_ID:
+            case DSC_URL:
+            case DSC_PARENTID:
+            case DSC_NAME:
+            case DSC_CREATED_ON:
+            case DSC_CREATED_BY_ID:
+            case DSC_UPDATED_ON:
+            case DSC_UPDATED_BY_ID:
+                break;
+            default:
+                tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
+                //cases, let's remove it from the ticked descriptors
+            }
+        }
+
+        return new SyncActionWrapper<SynchableObject>() {
+
+            @Override
+            public Collection<SynchableObject> sync() throws IOException {
+
+                pt.ist.maidSyncher.domain.activeCollab.ACTask parentACTask = getTask();
+                //let's try to find out if we need to create a GHIssue (if we have an ACTaskCategory that
+                //has an DSIRepository associated, then we do)
+                ACTaskCategory acTaskCategory = parentACTask.getTaskCategory();
+                if (acTaskCategory == null || acTaskCategory.getDSIObject() == null) {
+                    return Collections.emptySet();
+                }
+
+                //let's create a new GHIssue on the other side
+                Issue issue = new Issue();
+
+
+                //let's get the parent issue
+                DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+                GHIssue parentGHIssue = dsiSubTask.getParentIssue().getGhIssue();
+
+                //the name
+                issue.setTitle(getName());
+
+                issue.setBody(GHIssue.applySubTaskBodyPrefix(null, parentGHIssue));
+
+                //set the milestones of the parent
+
+                //the repository should come from the parentACTask's ACTaskCategory
+                DSIRepository dsiRepository = (DSIRepository) acTaskCategory.getDSIObject();
+                GHRepository gitHubRepository = dsiRepository.getGitHubRepository();
+
+                parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
+
+                //taking care of the label
+                parentACTask.syncGHLabelFromACProject(parentACTask.getProject(), gitHubRepository, issue);
+
+                //let's sync it
+                IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
+                return Collections.<SynchableObject> singleton(GHIssue.process(issueService.createIssue(gitHubRepository, issue),
+                        gitHubRepository,
+                        true));
+
+            }
+
+            @Override
+            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+                return tickedDescriptors;
+            }
+
+            @Override
+            public SyncEvent getOriginatingSyncEvent() {
+                return syncEvent;
+            }
+
+            @Override
+            public Collection<DSIObject> getSyncDependedDSIObjects() {
+                Set<DSIObject> dependedOnObjects = new HashSet<DSIObject>();
+                DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+                DSIIssue parentIssue = dsiSubTask.getParentIssue();
+                dependedOnObjects.add(parentIssue);
+                return dependedOnObjects;
+            }
+
+            @Override
+            public Set<Class> getSyncDependedTypesOfDSIObjects() {
+                Set<Class> dependedOnTypesOfDSIObjects = new HashSet<>();
+                dependedOnTypesOfDSIObjects.add(DSIRepository.class);
+                return dependedOnTypesOfDSIObjects;
+            }
+        };
+
+
+
+    }
 }

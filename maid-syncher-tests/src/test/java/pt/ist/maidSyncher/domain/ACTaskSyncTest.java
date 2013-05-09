@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,7 +75,7 @@ public class ACTaskSyncTest {
 
     private static final String GH_LABEL_SIMPLE_LABEL_NAME = "GH LABEL SIMPLE LABEL NAME";
 
-    private static final String AC_SUB_TASK_ONE_NAME = "AC SUB TASK ONE NAME";
+    static final String AC_SUB_TASK_ONE_NAME = "AC SUB TASK ONE NAME";
 
     private static final String OTHER_GH_REPOSITORY_NAME = "OTHER GH REPOSITORY NAME";
 
@@ -107,11 +108,11 @@ public class ACTaskSyncTest {
 
     private final static String GH_REPOSITORY_URL = "http://smthing/repos/" + GH_REPOSITORY_ID;
 
-    private static final String AC_PROJECT_NAME = "projectName";
+    protected static final String AC_PROJECT_NAME = "projectName";
 
-    private static final int GH_MILESTONE_NUMBER = new Random().nextInt(2000);
+    static final int GH_MILESTONE_NUMBER = new Random().nextInt(2000);
 
-    private static final String GH_MILESTONE_TITLE = "gh milestone title";
+    protected static final String GH_MILESTONE_TITLE = "gh milestone title";
 
     private static final LocalTime AC_MILESTONE_DUEON = new LocalTime();
 
@@ -129,7 +130,7 @@ public class ACTaskSyncTest {
 
     GHUser repOwner;
 
-    private void initializeTaskCategoryRepositoryAndACProject() {
+    void initializeTaskCategoryRepositoryAndACProject() {
 
         acTaskCategory = new ACTaskCategory();
         acTaskCategory.setName(AC_TASK_REPOSITORY_NAME);
@@ -155,7 +156,7 @@ public class ACTaskSyncTest {
 
     }
 
-    private void initializeGHLabelAssumingRepositoryInitialized() {
+    void initializeGHLabelAssumingRepositoryInitialized() {
         //let's create a GHLabel associated with the existing project
         ghLabel = new GHLabel();
         ghLabel.setName(GHLabel.PROJECT_PREFIX + AC_PROJECT_NAME);
@@ -163,7 +164,7 @@ public class ACTaskSyncTest {
         ghLabel.setUrl(HTTP_LABEL_PHONY_URL);
     }
 
-    private void initializeGHMilestoneAssumingRepositoryInitialized() {
+    void initializeGHMilestoneAssumingRepositoryInitialized() {
         ghMilestone = new GHMilestone();
         ghMilestone.setRepository(ghRepository);
         ghMilestone.setNumber(GH_MILESTONE_NUMBER);
@@ -226,6 +227,27 @@ public class ACTaskSyncTest {
 
     @Captor
     ArgumentCaptor<Milestone> milestoneCaptor;
+
+    /**
+     * This test is to show that if no ACTaskCategory is set, nothing should be done
+     * 
+     * @throws IOException
+     */
+    @Atomic(mode = TxMode.WRITE)
+    @Test
+    public void createWithoutTaskCategory() throws IOException {
+        acTask.setTaskCategory(null);
+        SyncEvent createWithoutTaskCategoryEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acTask,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACTask.class)));
+
+        SyncActionWrapper sync = acTask.sync(createWithoutTaskCategoryEvent);
+
+        sync.sync();
+
+        verify(gitHubClient, never()).post(Mockito.anyString(), Mockito.anyObject(), Mockito.any(Type.class));
+
+    }
 
     @SuppressWarnings("static-access")
     @Test
@@ -324,7 +346,7 @@ public class ACTaskSyncTest {
 
     }
 
-    private void initializeACMilestone() {
+    void initializeACMilestone() {
         acMilestone = new ACMilestone();
         acMilestone.setDueOn(AC_MILESTONE_DUEON);
         acMilestone.setBody(AC_MILESTONE_BODY);
@@ -386,7 +408,7 @@ public class ACTaskSyncTest {
 
     }
 
-    private void initializeAssociatedGHIssue() {
+    void initializeAssociatedGHIssue() {
         ghIssue = new GHIssue();
         ghIssue.setRepository(ghRepository);
         ghIssue.setDsiObjectIssue(dsiIssue);
@@ -533,31 +555,9 @@ public class ACTaskSyncTest {
         //milestone on the other repository is created
         initializeACMilestone();
 
-        //let's create a couple of subtasks to make sure that they are also moved
-        ACSubTask acSubTaskOne = new ACSubTask();
-        GHIssue ghIssueAssociatedWithSubTaskOne = new GHIssue();
-        DSISubTask subTaskOne = new DSISubTask(dsiIssue);
+        initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, true);
 
-        acSubTaskOne.setName(AC_SUB_TASK_ONE_NAME);
-        acSubTaskOne.setTask(acTask);
-        acSubTaskOne.setDsiObjectSubTask(subTaskOne);
-
-        ghIssueAssociatedWithSubTaskOne.setRepository(ghRepository);
-        ghIssueAssociatedWithSubTaskOne.setTitle(AC_SUB_TASK_ONE_NAME);
-        ghIssueAssociatedWithSubTaskOne.setDsiObjectSubTask(subTaskOne);
-
-        ACSubTask acSubTaskTwo = new ACSubTask();
-        GHIssue ghIssueAssociatedWithSubTaskTwo = new GHIssue();
-        DSISubTask subTaskTwo = new DSISubTask(dsiIssue);
-
-        acSubTaskTwo.setName(AC_SUB_TASK_TWO_NAME);
-        ghIssueAssociatedWithSubTaskTwo.setTitle(AC_SUB_TASK_TWO_NAME);
-        acSubTaskTwo.setTask(acTask);
-        acSubTaskTwo.setDsiObjectSubTask(subTaskTwo);
-
-        ghIssueAssociatedWithSubTaskTwo.setRepository(ghRepository);
-        ghIssueAssociatedWithSubTaskTwo.setTitle(AC_SUB_TASK_TWO_NAME);
-        ghIssueAssociatedWithSubTaskTwo.setDsiObjectSubTask(subTaskTwo);
+        initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_TWO_NAME, ghRepository, true);
 
         //setup the stubs
         when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Label.class))).then(new Answer<Label>() {
@@ -695,6 +695,26 @@ public class ACTaskSyncTest {
         Milestone capturedMilestone = milestoneCaptor.getValue();
         assertEquals(GH_MILESTONE_TITLE, capturedMilestone.getTitle());
 
+    }
+
+
+    ACSubTask initializeSubTaskAndCorrespondingGHIssue(ACTask parentTask, String subTaskName, GHRepository ghRepositoryToUse,
+            boolean createCorrespondingGHSide) {
+        //let's create a couple of subtasks to make sure that they are also moved
+        ACSubTask acSubTaskOne = new ACSubTask();
+        DSISubTask subTaskOne = new DSISubTask(parentTask.getDsiObjectIssue());
+
+        acSubTaskOne.setName(subTaskName);
+        acSubTaskOne.setTask(parentTask);
+        acSubTaskOne.setDsiObjectSubTask(subTaskOne);
+        if (createCorrespondingGHSide) {
+            GHIssue ghIssueAssociatedWithSubTaskOne = new GHIssue();
+
+            ghIssueAssociatedWithSubTaskOne.setRepository(ghRepositoryToUse);
+            ghIssueAssociatedWithSubTaskOne.setTitle(subTaskName);
+            ghIssueAssociatedWithSubTaskOne.setDsiObjectSubTask(subTaskOne);
+        }
+        return acSubTaskOne;
     }
 
     @Atomic(mode = TxMode.WRITE)

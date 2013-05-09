@@ -487,11 +487,15 @@ public class GHIssue extends GHIssue_Base {
         };
     }
 
-    private final static String SUB_TASK_BODY_PREFIX = "Subtask of #";
+    public final static String SUB_TASK_BODY_PREFIX = "Subtask of #";
 
     private String getSubTaskBodyPrefix() {
         DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
         return SUB_TASK_BODY_PREFIX + dsiSubTask.getParentIssue().getGhIssue().getNumber();
+    }
+
+    private static String getSubTaskBodyPrefix(GHIssue ghParentIssue) {
+        return SUB_TASK_BODY_PREFIX + ghParentIssue.getNumber();
     }
 
     /**
@@ -502,6 +506,27 @@ public class GHIssue extends GHIssue_Base {
      */
     public String applySubTaskBodyPrefix(String body) {
         String subTaskBodyPrefixString = getSubTaskBodyPrefix();
+        String newBody = body;
+
+        //let's try to find it
+        if (StringUtils.contains(body, subTaskBodyPrefixString)) {
+            //let's remove it.
+            newBody = StringUtils.remove(body, subTaskBodyPrefixString);
+        }
+
+        newBody = subTaskBodyPrefixString + " " + newBody;
+
+        return newBody;
+    }
+
+    /**
+     * 
+     * @param body
+     * @return A string with the getSubTaskBodyPrefix in the beginning, and the rest of the body there.
+     *         If we had the subTaskBodyPrefix in any other place of the body, it moves it to the beginning
+     */
+    public static String applySubTaskBodyPrefix(String body, GHIssue parentGHIssue) {
+        String subTaskBodyPrefixString = getSubTaskBodyPrefix(parentGHIssue);
         String newBody = body;
 
         //let's try to find it
