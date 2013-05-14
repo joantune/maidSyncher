@@ -24,6 +24,8 @@ import org.joda.time.LocalTime;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -147,6 +149,12 @@ public class GHLabel extends GHLabel_Base {
         //and that must be done when both parts are synched, not
         //meanwhile Issue #12 GH
         return null;
+    }
+
+    @Override
+    public SyncActionWrapper sync(SyncEvent syncEvent) {
+        //TODO delete
+        return new EmptySyncActionWrapper(syncEvent);
     }
 
     public void delete() {

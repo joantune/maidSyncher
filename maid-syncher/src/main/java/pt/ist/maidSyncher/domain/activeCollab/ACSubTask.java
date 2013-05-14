@@ -192,8 +192,7 @@ public class ACSubTask extends ACSubTask_Base {
 
             @Override
             public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                // TODO Auto-generated method stub
-                return null;
+                return tickedDescriptors;
             }
 
             @Override
