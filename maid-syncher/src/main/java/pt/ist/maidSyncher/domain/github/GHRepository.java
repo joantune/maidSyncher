@@ -212,6 +212,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             case DSC_NAME:
                 //then we must change the name of the default project, and of all of the acTaskCategories
                 acProjectAux = preFillProjectIfNeeded(defaultACProject, acProjectAux);
+                acProjectAux.setName(getName());
                 //let's take care of the categories
                 for (ACTaskCategory acTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
                     acCategoriesToEdit.add(new ACCategory(acTaskCategory.getId(), acTaskCategory.getProject().getId(),
@@ -399,7 +400,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                         }
 
                         //now, let's remove the old ones, and add the new ones
-                for (ACTaskCategory existingAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
+                        for (ACTaskCategory existingAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
                             dsiRepository.removeAcTaskCategories(existingAcTaskCategory);
                         }
                         for (ACTaskCategory acTaskCategory : acTaskCategoriesToAssign) {
@@ -408,7 +409,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
 
                         ArrayList<SynchableObject> synchedObjects = new ArrayList<SynchableObject>();
                         synchedObjects.add(acProjectToReturn);
-                synchedObjects.addAll(dsiRepository.getAcTaskCategoriesSet());
+                        synchedObjects.addAll(dsiRepository.getAcTaskCategoriesSet());
 
                         return synchedObjects;
             }

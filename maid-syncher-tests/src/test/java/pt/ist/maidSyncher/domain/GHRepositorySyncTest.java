@@ -4,6 +4,7 @@
 package pt.ist.maidSyncher.domain;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,7 +15,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.beanutils.PropertyUtils;
-import org.eclipse.egit.github.core.Label;
+import org.eclipse.egit.github.core.Repository;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
@@ -47,6 +50,8 @@ import pt.ist.maidSyncher.domain.test.utils.TestUtils;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class GHRepositorySyncTest {
+
+    private static final String GH_REPOSITORY_ALTERNATIVE_NAME = "gh repository alternative name";
 
     private static final String GH_REPOSITORY_NAME = "gh repository name";
 
@@ -111,6 +116,9 @@ public class GHRepositorySyncTest {
 
         ACObject.setRequestProcessor(requestProcessor);
 
+        acProjectOne.setId(1);
+        acProjectTwo.setId(2);
+
     }
 
     private static final String CATEGORIES_END_URI = "/tasks/categories";
@@ -122,7 +130,7 @@ public class GHRepositorySyncTest {
 
         SyncEvent updateSyncEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghRepository,
-                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Label.class)));
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
 
         SyncActionWrapper syncActionWrapper = ghRepository.sync(updateSyncEvent);
 
@@ -151,7 +159,6 @@ public class GHRepositorySyncTest {
                 fail();
         }
 
-
     }
 
     @Test
@@ -161,11 +168,11 @@ public class GHRepositorySyncTest {
         initDefaultProject();
         initTaskCategories();
 
-        SyncEvent updateSyncEvent =
+        SyncEvent createSyncEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghRepository,
-                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Label.class)));
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
 
-        SyncActionWrapper syncActionWrapper = ghRepository.sync(updateSyncEvent);
+        SyncActionWrapper syncActionWrapper = ghRepository.sync(createSyncEvent);
 
         syncActionWrapper.sync();
 
@@ -200,6 +207,8 @@ public class GHRepositorySyncTest {
         acDefaultProject.setDsiObjectProject(dsiDefaultProject);
         acDefaultProject.setName(GH_REPOSITORY_NAME);
 
+        acDefaultProject.setId(3);
+
     }
 
     private void initTaskCategories() {
@@ -216,10 +225,76 @@ public class GHRepositorySyncTest {
         acTaskCategoryOfDefaultProject.setName(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_NAME);
         acTaskCategoryOfDefaultProject.setProject(acDefaultProject);
 
+        acTaskCategoryOfDefaultProject.setId(33);
+        acTaskCategoryOfProjectOne.setId(11);
+        acTaskCategoryOfProjectTwo.setId(22);
+
     }
 
+    @Test
+    @Atomic(mode = TxMode.WRITE)
     public void update() throws IOException {
-    }
 
+        //setting up the stub
+        when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACObject acObject = (ACObject) invocation.getArguments()[0];
+                if (acObject instanceof ACCategory) {
+                    ACCategory acCategory = (ACCategory) acObject;
+                    when(mockJSONObject.get("parent_class")).thenReturn(ACCategory.PROJECT_CLASS);
+                    when(mockJSONObject.get("parent_id")).thenReturn(acCategory.getProjectId());
+                }
+                return mockJSONObject;
+            }
+
+        });
+        initDefaultProject();
+        initTaskCategories();
+        //let's connect them
+        dsiRepository.setDefaultProject(acDefaultProject);
+        dsiRepository.addAcTaskCategories(acTaskCategoryOfDefaultProject);
+        dsiRepository.addAcTaskCategories(acTaskCategoryOfProjectOne);
+        dsiRepository.addAcTaskCategories(acTaskCategoryOfProjectTwo);
+
+        acDefaultProject.setId(321l);
+
+        ghRepository.setName(GH_REPOSITORY_ALTERNATIVE_NAME);
+        SyncEvent updateSyncEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, this.ghRepository,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
+
+        SyncActionWrapper sync = ghRepository.sync(updateSyncEvent);
+
+        sync.sync();
+
+        //now, we should have requests to change the name of all the acTaskCategories and the default project as well
+        verify(requestProcessor, times(4)).processPost(acObjectCaptor.capture(), pathCaptor.capture());
+
+        boolean gotDefaultProjectPost = false;
+        int nrTaskCategoryPosts = 0;
+        for (ACObject acObject : acObjectCaptor.getAllValues()) {
+            if (acObject instanceof pt.ist.maidSyncher.api.activeCollab.ACProject) {
+                gotDefaultProjectPost = true;
+                pt.ist.maidSyncher.api.activeCollab.ACProject acProject =
+                        (pt.ist.maidSyncher.api.activeCollab.ACProject) acObject;
+                assertEquals(321, acProject.getId());
+                assertEquals(GH_REPOSITORY_ALTERNATIVE_NAME, acProject.getName());
+
+            } else if (acObject instanceof ACCategory) {
+                nrTaskCategoryPosts++;
+                ACCategory acCategory = (ACCategory) acObject;
+                assertEquals(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_ALTERNATIVE_NAME, acCategory.getName());
+
+            } else {
+                fail();
+            }
+        }
+
+        assertTrue(gotDefaultProjectPost);
+        assertEquals(3, nrTaskCategoryPosts);
+
+    }
 
 }
