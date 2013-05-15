@@ -34,12 +34,9 @@ import org.eclipse.egit.github.core.service.MilestoneService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 
-import pt.ist.fenixWebFramework.FenixWebFramework;
+import pt.ist.fenixframework.Atomic;
+import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.fenixframework.Config;
-import pt.ist.fenixframework.FenixFrameworkPlugin;
-import pt.ist.fenixframework.artifact.FenixFrameworkArtifact;
-import pt.ist.fenixframework.project.DmlFile;
-import pt.ist.fenixframework.project.exception.FenixFrameworkProjectException;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACComment;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
@@ -71,53 +68,9 @@ public class Main {
 
     private static List<URL> urls = null;
 
-    static {
-        try {
-            ffProperties.load(Main.class.getResourceAsStream("/configuration.properties"));
-            config = new Config() {
-                {
-                    this.domainModelPaths = new String[0];
-                    this.dbAlias = ffProperties.getProperty("db.alias");
-                    this.dbUsername = ffProperties.getProperty("db.user");
-                    this.dbPassword = ffProperties.getProperty("db.pass");
-                    this.appName = ffProperties.getProperty("app.name");
-                    this.errorIfChangingDeletedObject = true;
-                    this.canCreateDomainMetaObjects = false;
-                    this.updateRepositoryStructureIfNeeded = false;
-                    this.rootClass = MaidRoot.class;
-                    this.errorfIfDeletingObjectNotDisconnected = true;
-                    this.plugins = new FenixFrameworkPlugin[0];
-                }
-
-                @Override
-                public List<URL> getDomainModelURLs() {
-                    if (urls == null) {
-                        urls = new ArrayList<URL>();
-                        try {
-                            URL remote = Thread.currentThread().getContextClassLoader().getResource("remote.dml");
-                            for (DmlFile dml : FenixFrameworkArtifact.fromName(ffProperties.getProperty("app.name"))
-                                    .getFullDmlSortedList()) {
-                                urls.add(dml.getUrl());
-                                if (remote != null && dml.getUrl().toExternalForm().endsWith("remote-plugin.dml")) {
-                                    urls.add(remote);
-                                }
-                            }
-                        } catch (FenixFrameworkProjectException | IOException e) {
-                            throw new Error(e);
-                        }
-                    }
-                    return urls;
-                }
-            };
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to load properties files.", e);
-        }
-    }
-
     // FenixFramework will try automatic initialization when first accessed
+    @Atomic(mode = TxMode.WRITE)
     public static void main(String[] args) throws IOException, SyncEventOriginObjectChanged {
-        FenixWebFramework.bootStrap(config);
-        FenixWebFramework.initialize();
         syncGitHub();
         syncActiveCollab();
         printChangesBuzz();

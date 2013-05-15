@@ -2,4 +2,5 @@
 *.class
 target
 configuration.properties
+fenix-framework.properties
 result.json
