@@ -29,9 +29,9 @@ import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 
 public class ACTaskCategory extends ACTaskCategory_Base {
 
@@ -97,19 +97,35 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         checkArgument(StringUtils.isBlank(name) == false, "Name mustn't be blank");
         MaidRoot maidRoot = MaidRoot.getInstance();
 
-        Collection<ACObject> acTaskCategories = Collections2.filter(maidRoot.getAcObjectsSet(), new Predicate<ACObject>() {
+        Collection<ACObject> existingACTaskCategories =
+                Collections2.filter(maidRoot.getAcObjectsSet(), new Predicate<ACObject>() {
+                    @Override
+                    public boolean apply(ACObject acObject) {
+                        if (acObject == null)
+                            return false;
+                        if (acObject instanceof ACTaskCategory) {
+                            ACTaskCategory acTaskCategory = (ACTaskCategory) acObject;
+                            if (acTaskCategory.getName().equalsIgnoreCase(name))
+                                return true;
+                            return false;
+                        } else
+                            return false;
+
+                    }
+                });
+        return Collections2.transform(existingACTaskCategories, new Function<ACObject, ACTaskCategory>() {
             @Override
-            public boolean apply(ACObject input) {
-                if (input instanceof ACTaskCategory) {
-                    ACTaskCategory acTaskCategory = (ACTaskCategory) input;
-                    return name.equalsIgnoreCase(acTaskCategory.getName());
-                } else
-                    return false;
+            public ACTaskCategory apply(ACObject acObject) {
+                return (ACTaskCategory) acObject;
             }
         });
-        return (Collection<ACTaskCategory>) Iterables.filter(acTaskCategories, ACTaskCategory.class);
+
 
     }
+
+
+
+
 
     @Override
     protected DSIObject getDSIObject() {

@@ -34,7 +34,7 @@ public class ACCategory extends ACObject {
 
     private long projectId;
 
-    private final static String PROJECT_CLASS = "Project";
+    public final static String PROJECT_CLASS = "Project";
 
     public ACCategory(JSONObject jsonObject) throws IOException {
         super(jsonObject);
