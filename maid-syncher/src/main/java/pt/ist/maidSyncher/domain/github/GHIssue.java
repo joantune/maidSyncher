@@ -246,6 +246,7 @@ public class GHIssue extends GHIssue_Base {
             //we cannot create ACSubTasks through GH without using a comment on an
             //already existing issue, so, we assume it's a Issue
             dsiObjectToReturn = new DSIIssue();
+            setDsiObjectIssue((DSIIssue) dsiObjectToReturn);
         }
         return dsiObjectToReturn;
     }

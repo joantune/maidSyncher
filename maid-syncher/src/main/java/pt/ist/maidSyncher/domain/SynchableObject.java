@@ -414,8 +414,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
         return propertyDescriptorsThatChanged;
     }
 
-    public void copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException,
-    NoSuchMethodException, TaskNotVisibleException {
+    public void copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
+    TaskNotVisibleException {
         Set<PropertyDescriptor> propertyDescriptorsThatChanged = new HashSet<PropertyDescriptor>();
 
         Object orig = this;
@@ -434,8 +434,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                     LOGGER.debug("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
 //                    System.out.println("OrigDescriptor PropertyType: " + origDescriptor.getPropertyType().getName());
                     //let's ignore the properties were the values are our domain packages
-                    if (valueOrigin != null
-                            && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))) {
+                    if (valueOrigin != null && (SynchableObject.class.isAssignableFrom(valueOrigin.getClass()))) {
 //                        System.out.println("Skipping");
                         continue; //let's skip these properties
                     }

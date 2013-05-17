@@ -137,6 +137,7 @@ public class ACTaskCategory extends ACTaskCategory_Base {
         DSIObject dsiObject = getDSIObject();
         if (dsiObject == null) {
             dsiObject = new DSIRepository();
+            setDsiObjectRepository((DSIRepository) dsiObject);
         }
         return dsiObject;
     }

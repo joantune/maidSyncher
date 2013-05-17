@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -124,8 +125,10 @@ public class ACProject extends ACProject_Base {
     @Override
     public DSIObject findOrCreateDSIObject() {
         DSIObject dsiObject = getDSIObject();
-        if (dsiObject == null)
+        if (dsiObject == null) {
             dsiObject = new DSIProject();
+            setDsiObjectProject((DSIProject) dsiObject);
+        }
         return dsiObject;
     }
 
@@ -212,14 +215,16 @@ public class ACProject extends ACProject_Base {
                     //let us try to reuse all of the reusable labels,
                     //[i.e. the ones already with the correct name]
                     Set<GHLabel> allExistingCorrectLabels = GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
-                    Set<GHRepository> allRepositoriesWithAlreadyCorrectLabels = (Set<GHRepository>) Collections2.transform(allExistingCorrectLabels,new Function<GHLabel, GHRepository>() {
-                        @Override
-                        public GHRepository apply(GHLabel ghLabel) {
-                            if (ghLabel == null)
-                                return null;
-                            return ghLabel.getRepository();
-                        }
-                    });
+                    Set<GHRepository> allRepositoriesWithAlreadyCorrectLabels =
+                            (Set<GHRepository>) Collections2.transform(allExistingCorrectLabels,
+                                    new Function<GHLabel, GHRepository>() {
+                                @Override
+                                public GHRepository apply(GHLabel ghLabel) {
+                                    if (ghLabel == null)
+                                        return null;
+                                    return ghLabel.getRepository();
+                                }
+                            });
 
                     Set<GHLabel> labelsToBeEdited = new HashSet<>(dsiProject.getGitHubLabelsSet());
                     for (GHLabel labelToBeEdited : labelsToBeEdited) {
@@ -228,8 +233,7 @@ public class ACProject extends ACProject_Base {
                             //let us append to this label name, a -DEPRECATED_LABEL
                             labelToEdit.setName(labelToEdit.getName() + "-DEPRECATED_LABEL");
                             labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
-                        }
-                        else {
+                        } else {
                             //we need to edit it
                             labelToEdit.setName(GHLabel.PROJECT_PREFIX + getName());
                             labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
@@ -247,14 +251,12 @@ public class ACProject extends ACProject_Base {
                     dsiProject.getGitHubLabelsSet().addAll(labelsToBeEdited);
                     syncObjectsAltered.addAll(labelsToBeEdited);
 
-
                 }
                 return syncObjectsAltered;
             }
 
             @Override
             public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                // TODO Auto-generated method stub
                 return null;
             }
 
@@ -269,6 +271,7 @@ public class ACProject extends ACProject_Base {
                 // TODO Auto-generated method stub
                 return null;
             }
+
             @Override
             public Set<java.lang.Class> getSyncDependedTypesOfDSIObjects() {
                 //say that we depend on all of the repositories being synched
@@ -353,11 +356,15 @@ public class ACProject extends ACProject_Base {
 
                         Set<GHRepository> repositoriesToCreateTaskCategoriesFor =
                                 new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
+
+                Iterator<GHRepository> repoIterator = repositoriesToCreateTaskCategoriesFor.iterator();
                         //let's see if any of them are appropriate to be used
-                        for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {
+                while (repoIterator.hasNext()) {
+                    GHRepository ghRepository = repoIterator.next();
                             String taskCategoryName = StringUtils.lowerCase(ACTaskCategory.REPOSITORY_PREFIX + ghRepository.getName());
                             if (taskCategoriesNames.contains(taskCategoryName))
-                                repositoriesToCreateTaskCategoriesFor.remove(ghRepository);
+                        repoIterator.remove();
+
                         }
 
                         for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {

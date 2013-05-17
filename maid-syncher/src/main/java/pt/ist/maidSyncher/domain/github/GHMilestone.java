@@ -269,8 +269,10 @@ public class GHMilestone extends GHMilestone_Base {
     @Override
     public DSIObject findOrCreateDSIObject() {
         DSIObject dsiObject = getDSIObject();
-        if (dsiObject == null)
+        if (dsiObject == null) {
             dsiObject = new DSIMilestone();
+            setDsiObjectMilestone((DSIMilestone) dsiObject);
+        }
         return dsiObject;
     }
 

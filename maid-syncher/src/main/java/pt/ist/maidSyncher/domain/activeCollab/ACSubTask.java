@@ -108,6 +108,7 @@ public class ACSubTask extends ACSubTask_Base {
         DSIObject dsiObject = getDSIObject();
         if (dsiObject == null) {
             dsiObject = new DSISubTask((DSIIssue) getTask().getDSIObject());
+            setDsiObjectSubTask((DSISubTask) dsiObject);
 
         }
         return dsiObject;

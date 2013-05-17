@@ -106,7 +106,7 @@ public class ACCategory extends ACObject {
                 "currently we don't support creation of other categories, only ACTaskCategory");
         String path = null;
         if (ACTaskCategory.class.equals(clazz)) {
-            path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/categories");
+            path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/categories/add");
 
         }
         else

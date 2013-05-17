@@ -16,14 +16,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.egit.github.core.client.GitHubClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.Atomic;
+import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.fenixframework.DomainRoot;
 import pt.ist.fenixframework.FenixFramework;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
@@ -47,6 +53,8 @@ public class MaidRoot extends MaidRoot_Base {
     private static GitHubClient gitHubClient;
 
     private static Properties configurationProperties;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MaidRoot.class);
 
     private static void initProperties() {
         configurationProperties = new Properties();
@@ -258,7 +266,7 @@ public class MaidRoot extends MaidRoot_Base {
                                 + dsiElement.getExternalId() + " class: " + dsiElement.getClass().getName() + " was detected");
                     }
                     break;
-                /* end of CREATE */
+                    /* end of CREATE */
 
                 case READ:
                     //the READs are pretty much neutral
@@ -297,12 +305,12 @@ public class MaidRoot extends MaidRoot_Base {
 
             }
 
-            //so, let's add if we have to, and delete the ones we should
-            if (addEvent)
-                changesBuzz.put(dsiElement, syncEvent);
-            for (SyncEvent syncEventToDelete : syncEventsToDelete) {
-                changesBuzz.remove(dsiElement, syncEventToDelete);
-            }
+        //so, let's add if we have to, and delete the ones we should
+        if (addEvent)
+            changesBuzz.put(dsiElement, syncEvent);
+        for (SyncEvent syncEventToDelete : syncEventsToDelete) {
+            changesBuzz.remove(dsiElement, syncEventToDelete);
+        }
 
         } else {
             changesBuzz.put(dsiElement, syncEvent);
@@ -346,6 +354,106 @@ public class MaidRoot extends MaidRoot_Base {
         MaidRoot.gitHubClient = gitHubClient;
     }
 
-//TODO make a getter for the ChangesBuzz
+    private static class SyncWrapper {
+        final DSIObject dsiObject;
+        final Set<SyncActionWrapper<? extends SynchableObject>> actionWrappers = new HashSet<>();
 
+        public SyncWrapper(DSIObject dsiObject) {
+            this.dsiObject = dsiObject;
+        }
+
+//        @Override
+//        public boolean equals(Object obj) {
+//            if (obj == null) {
+//                return false;
+//            }
+//            if ((obj instanceof SyncWrapper) == false)
+//                return false;
+//            SyncWrapper syncWrapperToCompareWith = (SyncWrapper) obj;
+//            return ObjectUtils.equals(dsiObject, syncWrapperToCompareWith.dsiObject);
+//        }
+//
+//        @Override
+//        public int hashCode() {
+//            return ObjectUtils.hashCode(dsiObject);
+//        }
+
+        public void addSyncAction(SyncActionWrapper<? extends SynchableObject> syncActionWrapper) {
+            this.actionWrappers.add(syncActionWrapper);
+        }
+
+        public int getNumberSyncActions() {
+            return this.actionWrappers.size();
+        }
+
+        public static int getNumberSyncActions(Collection<SyncWrapper> syncWrappers) {
+            int number = 0;
+            for (SyncWrapper syncWrapper : syncWrappers) {
+                number += syncWrapper.getNumberSyncActions();
+            }
+            return number;
+        }
+
+        public static Set<DSIObject> getDSIObjects(Collection<SyncWrapper> syncWrappers) {
+            Set<DSIObject> dsiObjects = new HashSet<>();
+            for (SyncWrapper syncWrapper : syncWrappers) {
+                dsiObjects.add(syncWrapper.dsiObject);
+            }
+            return dsiObjects;
+        }
+
+        /**
+         * Processes the SyncActions contained in the {@link #actionWrappers}. If all are consumed, true is returned
+         * 
+         * @return true if everything was processed, false otherwise
+         */
+        public boolean process(Set<DSIObject> dsiObjectsToSync) throws IOException {
+            Iterator<SyncActionWrapper<? extends SynchableObject>> actionWrappersIterator = actionWrappers.iterator();
+            while (actionWrappersIterator.hasNext()) {
+                SyncActionWrapper<? extends SynchableObject> syncActionWrapper = actionWrappersIterator.next();
+                if (SyncEvent.isAbleToRunNow(syncActionWrapper, dsiObjectsToSync)) {
+                    LOGGER.info("Running SyncActionWrapper for event: " + syncActionWrapper.getOriginatingSyncEvent().toString());
+                    syncActionWrapper.sync();
+                    actionWrappersIterator.remove();
+                }
+            }
+            return actionWrappers.isEmpty();
+        }
+
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    public void applyChangesBuzz() throws IOException {
+        Set<SyncWrapper> syncWrappers = new HashSet<>();
+
+        Map<DSIObject, Collection<SyncEvent>> changesMap = getChangesBuzz().asMap();
+        for (DSIObject dsiObject : changesMap.keySet()) {
+            SyncWrapper syncWrapper = new SyncWrapper(dsiObject);
+            for (SyncEvent syncEvent : changesMap.get(dsiObject)) {
+                SyncActionWrapper syncActionWrapper = syncEvent.getOriginObject().sync(syncEvent);
+                //TODO verified that the ticked descriptors have all of the changed descriptors
+                if (syncActionWrapper != null) {
+                    syncWrapper.addSyncAction(syncActionWrapper);
+                }
+            }
+            syncWrappers.add(syncWrapper);
+        }
+
+        LOGGER.info("Number of SyncActions Generated: " + SyncWrapper.getNumberSyncActions(syncWrappers));
+
+        while (syncWrappers.isEmpty() == false) {
+            Iterator<SyncWrapper> syncWrappersIterator = syncWrappers.iterator();
+            while (syncWrappersIterator.hasNext()) {
+                SyncWrapper syncWrapper = syncWrappersIterator.next();
+
+                if (syncWrapper.process(SyncWrapper.getDSIObjects(syncWrappers))) {
+                    //then we can remove it
+                    syncWrappersIterator.remove();
+                }
+            }
+        }
+
+        LOGGER.info("Applied all SyncActions");
+
+    }
 }

@@ -23,12 +23,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.joda.time.LocalTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.domain.activeCollab.ACObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 4 de Mar de 2013
@@ -36,6 +42,7 @@ import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
  * 
  */
 public class SyncEvent {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SyncEvent.class);
 
     public static enum TypeOfChangeEvent {
         CREATE, READ, UPDATE, DELETE;
@@ -152,5 +159,44 @@ public class SyncEvent {
     public APIObjectWrapper getApiObjectWrapper() {
         return apiObjectWrapper;
     }
+
+    public static boolean isAbleToRunNow(SyncActionWrapper<? extends SynchableObject> syncActionWrapper,
+            Set<DSIObject> dsiObjectsToSync) {
+        checkNotNull(dsiObjectsToSync);
+        checkNotNull(syncActionWrapper);
+
+        //let's check the classes of depended objects first, as the getSyncDependedOn might fail
+
+        final Set<Class> syncDependedTypesOfDSIObjects = syncActionWrapper.getSyncDependedTypesOfDSIObjects();
+
+        if (Iterables.any(dsiObjectsToSync, new Predicate<DSIObject>() {
+            @Override
+            public boolean apply(DSIObject input) {
+                if (input == null)
+                    return false;
+                if (syncDependedTypesOfDSIObjects.contains(input.getClass()))
+                    return true;
+                return false;
+
+            }
+        }))
+            return false;
+
+        try {
+            Collection<DSIObject> syncDependedDSIObjects = syncActionWrapper.getSyncDependedDSIObjects();
+            if (Collections.disjoint(syncDependedDSIObjects, dsiObjectsToSync) == false)
+                return false;
+        }
+        catch (NullPointerException ex) {
+            LOGGER.warn("Got an NPE retrieving syncDependedDSIObjects. SyncEvent of the SyncActionWrapper: "
+                    + syncActionWrapper.getOriginatingSyncEvent().toString(), ex);
+            return false;
+        }
+
+
+        return true;
+
+    }
+
 
 }

@@ -121,9 +121,11 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     @Override
     public DSIObject findOrCreateDSIObject() {
         DSIObject dsiObject = getDSIObject();
-        if (dsiObject == null)
+        if (dsiObject == null) {
             dsiObject = new DSIRepository();//let's take care of the
-        //default project and the task category on the sync
+            //default project and the task category on the sync
+            setDsiObjectRepository((DSIRepository) dsiObject);
+        }
         return dsiObject;
     }
 

@@ -69,17 +69,30 @@ public class Main {
     private static List<URL> urls = null;
 
     // FenixFramework will try automatic initialization when first accessed
-    @Atomic(mode = TxMode.WRITE)
     public static void main(String[] args) throws IOException, SyncEventOriginObjectChanged {
-        syncGitHub();
-        syncActiveCollab();
+        retrieveAndCreateSyncEvents();
         printChangesBuzz();
+        applyChanges();
         //MaidRoot.getInstance().processChangesBuzz(true);
     }
 
+    @Atomic(mode = TxMode.WRITE)
+    private static void applyChanges() throws IOException {
+        MaidRoot.getInstance().applyChangesBuzz();
+    }
+
+
+    @Atomic(mode = TxMode.WRITE)
+    private static void retrieveAndCreateSyncEvents() throws IOException {
+        syncGitHub();
+        syncActiveCollab();
+
+    }
+
+    @Atomic(mode = TxMode.WRITE)
     private static void printChangesBuzz() {
         System.out.println("Printing changes buzz: ");
-        for (SyncEvent syncEvent :  MaidRoot.getChangesBuzz().values()) {
+        for (SyncEvent syncEvent : MaidRoot.getChangesBuzz().values()) {
             System.out.println(syncEvent);
 
         }
@@ -105,7 +118,6 @@ public class Main {
             pt.ist.maidSyncher.domain.activeCollab.ACUser.process(user);
         }
 
-
         //let's proccess all of the project labels
         for (ACProjectLabel acProjectLabel : acContext.getACProjectLabels()) {
             System.out.println("ACProjectLabel: " + acProjectLabel.getName());
@@ -121,7 +133,7 @@ public class Main {
         // load ActiveCollab project
         List<ACProject> acProjects = acContext.getProjects();
         Iterator<ACProject> it = acProjects.iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             ACProject project = it.next();
             System.out
             .println(" Project " + project.getId() + " " + project.getName() + " updated on: " + project.getUpdatedOn());
@@ -144,7 +156,7 @@ public class Main {
 
             List<ACTask> acTasks = project.getTasks();
             Iterator<ACTask> itt = acTasks.iterator();
-            while(itt.hasNext()) {
+            while (itt.hasNext()) {
                 ACTask task = itt.next();
                 System.out.println("\tTask " + task.getId() + " " + task.getName() + " " + task.getDueOn() + " updated on: "
                         + task.getUpdatedOn());
@@ -208,7 +220,6 @@ public class Main {
  */
     }
 
-
     private static void syncGitHub() {
 
         //this is the first sync task, so let us reset the changesBuzz
@@ -243,7 +254,6 @@ public class Main {
 
             orgMembers = organizationService.getMembers(organizationName);
 
-
             orgMembers.addAll(organizationService.getPublicMembers(organizationName));
 
             User organization = organizationService.getOrganization(organizationName);
@@ -274,13 +284,11 @@ public class Main {
                 }
                 GHMilestone.process(milestones, repository);
 
-
-
                 List<Issue> issues = issueService.getIssues(repository, new HashMap<String, String>());
                 HashMap<String, String> stateClosedMap = new HashMap<>();
                 stateClosedMap.put("state", "closed");
                 issues.addAll(issueService.getIssues(repository, stateClosedMap));
-                System.out.println(" Has " + issues.size()+" issues, listing them");
+                System.out.println(" Has " + issues.size() + " issues, listing them");
                 for (Issue issue : issues) {
                     Milestone milestone = issue.getMilestone();
                     String milestoneString = milestone == null ? "-" : milestone.getTitle();
@@ -293,8 +301,7 @@ public class Main {
                     System.out.println();
 
                     int comments = issue.getComments();
-                    if (comments > 0)
-                    {
+                    if (comments > 0) {
                         System.out.println("    got " + comments + " comments. Showing them:");
                         List<Comment> commentsCollection = issueService.getComments(repository, issue.getNumber());
                         for (Comment comment : commentsCollection) {
@@ -304,14 +311,12 @@ public class Main {
                     }
                 }
 
-
             }
 
         } catch (IOException e) {
             e.printStackTrace();
             throw new Error(e);
         }
-
 
         if (orgMembers != null && orgMembers.isEmpty() == false) {
             System.out.println("List of members:");
@@ -321,7 +326,6 @@ public class Main {
         }
 
     }
-
 
 //    @Atomic
 //    public static void frameworkInit() {
