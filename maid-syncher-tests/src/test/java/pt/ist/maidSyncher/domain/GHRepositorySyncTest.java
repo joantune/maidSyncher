@@ -13,8 +13,11 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.json.simple.JSONObject;
 import org.junit.Before;
@@ -88,6 +91,7 @@ public class GHRepositorySyncTest {
 
     @Captor
     ArgumentCaptor<String> pathCaptor;
+    final Random randomIDGenerator = new Random();
 
     @Before
     @Atomic
@@ -109,7 +113,13 @@ public class GHRepositorySyncTest {
         acProjectOne.setDsiObjectProject(dsiProjectOne);
         acProjectTwo.setDsiObjectProject(dsiProjectTwo);
 
-        when(mockJSONObject.get("id")).thenReturn(123l);
+        acProjectOne.setName("AC project one");
+        acProjectTwo.setName("AC project two");
+
+        acProjectOne.setId(1);
+        acProjectTwo.setId(2);
+
+        when(mockJSONObject.get("id")).thenReturn(randomIDGenerator.nextInt(12000));
         when(mockJSONObject.get("is_archived")).thenReturn(0);
         when(mockJSONObject.get("parent_class")).thenReturn(ACCategory.PROJECT_CLASS);
         when(requestProcessor.processPost(Mockito.any(ACObject.class), Mockito.anyString())).thenReturn(mockJSONObject);
@@ -128,6 +138,36 @@ public class GHRepositorySyncTest {
     @Atomic(mode = TxMode.WRITE)
     public void createWithoutReusableTaskCategoriesOrProject() throws IOException {
 
+        when(requestProcessor.getBasicUrlForPath(Mockito.anyString())).thenAnswer(new Answer<String>() {
+
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return (String) invocation.getArguments()[0];
+            }
+        });
+
+        when(requestProcessor.processPost(Mockito.isA(ACCategory.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACCategory acCategory = (ACCategory) invocation.getArguments()[0];
+                String uriString = (String) invocation.getArguments()[1];
+
+                Integer projectId = Integer.valueOf(StringUtils.substringBetween(uriString, "projects/", "/tasks"));
+
+                //let's return an appropriate random id
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("id", randomIDGenerator.nextInt(2000));
+                jsonObject.put("is_archived", 0);
+                jsonObject.put("parent_class", ACCategory.PROJECT_CLASS);
+                jsonObject.put("parent_id", projectId);
+                jsonObject.put("name", acCategory.getName());
+                return jsonObject;
+
+            }
+        });
+
+
         SyncEvent updateSyncEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghRepository,
                         Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
@@ -136,14 +176,9 @@ public class GHRepositorySyncTest {
 
         syncActionWrapper.sync();
 
-        //so, we should have two creates
+        //so, we should have three creates of categories, and one create of project
 
-        verify(requestProcessor, times(3)).processPost(acObjectCaptor.capture(), pathCaptor.capture());
-
-//        for (String pathString : pathCaptor.getAllValues()) {
-//            if (assert)
-//            assertTrue(pathString.endsWith(CATEGORIES_END_URI));
-//        }
+        verify(requestProcessor, times(4)).processPost(acObjectCaptor.capture(), pathCaptor.capture());
 
         //now let's make sure that the categories posted are correct
         for (ACObject acObject : acObjectCaptor.getAllValues()) {
@@ -157,6 +192,24 @@ public class GHRepositorySyncTest {
 
             } else
                 fail();
+        }
+
+        //let's make sure that all of the active projects have task categories for the
+        //repository
+        Set<ACProject> activeProjects = ACProject.getActiveProjects();
+        assertEquals(3, activeProjects.size()); //one for each project and another for the default
+        //that should have been made
+
+        //now let's verify that each project has the needed task category
+        for (ACProject acProject : activeProjects) {
+            boolean foundTaskCategory = false;
+            for (ACTaskCategory acTaskCategory : acProject.getTaskCategoriesDefinedSet()) {
+                if (acTaskCategory.getName().equalsIgnoreCase(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_NAME)) {
+                    foundTaskCategory = true;
+                }
+            }
+            assertTrue("ACProject name: " + acProject.getName() + " nr task categories: "
+                    + acProject.getTaskCategoriesDefinedSet().size(), foundTaskCategory);
         }
 
     }

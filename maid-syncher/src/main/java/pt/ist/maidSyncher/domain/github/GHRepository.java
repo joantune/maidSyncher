@@ -349,11 +349,6 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             }
         }
 
-        //let's gather all of the active ACProjects
-        final Set<pt.ist.maidSyncher.domain.activeCollab.ACProject> activeProjects =
-                pt.ist.maidSyncher.domain.activeCollab.ACProject.getActiveProjects();
-        //and for each, we should have an ACTaskCategory created or assigned
-
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
@@ -372,6 +367,11 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                     acProjectToReturn =
                             pt.ist.maidSyncher.domain.activeCollab.ACProject.process(ACProject.create(newAcProject), true);
                 }
+
+                //let's gather all of the active ACProjects
+                final Set<pt.ist.maidSyncher.domain.activeCollab.ACProject> activeProjects =
+                        pt.ist.maidSyncher.domain.activeCollab.ACProject.getActiveProjects();
+                //and for each, we should have an ACTaskCategory created or assigned
 
                 DSIRepository dsiRepository = (DSIRepository) getDSIObject();
                 dsiRepository.setDefaultProject(acProjectToReturn);
@@ -396,18 +396,13 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                             acNewCategory.setName(ACTaskCategory.REPOSITORY_PREFIX + getName());
                             acNewCategory = ACCategory.create(acNewCategory, acProjectToCreateTCategoryFor.getId(), ACTaskCategory.class);
                             ACTaskCategory newlyCreatedACTaskCategory =
-                                    ACTaskCategory.process(acNewCategory, acProjectToReturn.getId(), true);
+                            ACTaskCategory.process(acNewCategory, acProjectToCreateTCategoryFor.getId(), true);
                             acTaskCategoriesToAssign.add(newlyCreatedACTaskCategory);
-
                         }
 
                         //now, let's remove the old ones, and add the new ones
-                        for (ACTaskCategory existingAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
-                            dsiRepository.removeAcTaskCategories(existingAcTaskCategory);
-                        }
-                        for (ACTaskCategory acTaskCategory : acTaskCategoriesToAssign) {
-                            dsiRepository.addAcTaskCategories(acTaskCategory);
-                        }
+                        dsiRepository.getAcTaskCategoriesSet().clear();
+                        dsiRepository.getAcTaskCategoriesSet().addAll(acTaskCategoriesToAssign);
 
                         ArrayList<SynchableObject> synchedObjects = new ArrayList<SynchableObject>();
                         synchedObjects.add(acProjectToReturn);
