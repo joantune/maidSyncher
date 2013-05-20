@@ -314,7 +314,6 @@ public class ACTask extends ACTask_Base {
                 final GHUser repoOwner = ghRepository.getOwner();
 //                LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
 
-
                 //milestone
                 ACMilestone acMilestone = getMilestone();
                 if (acMilestone != null) {
@@ -362,7 +361,8 @@ public class ACTask extends ACTask_Base {
             public Collection<DSIObject> getSyncDependedDSIObjects() {
                 Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
                 dsiObjectsDependedOn.add(getProject().getDSIObject());
-                dsiObjectsDependedOn.add(getMilestone().getDSIObject());
+                if (getMilestone() != null)
+                    dsiObjectsDependedOn.add(getMilestone().getDSIObject());
                 return dsiObjectsDependedOn;
             }
 
@@ -699,8 +699,7 @@ public class ACTask extends ACTask_Base {
     }
 
     GHObjectWrapper syncGHLabelFromACProject(pt.ist.maidSyncher.domain.activeCollab.ACProject acProject,
-            GHRepository ghRepository, Issue issueToUpdate)
-                    throws IOException {
+            GHRepository ghRepository, Issue issueToUpdate) throws IOException {
 
         boolean wasJustCreated = false;
         DSIProject dsiProject = (DSIProject) acProject.getDSIObject();

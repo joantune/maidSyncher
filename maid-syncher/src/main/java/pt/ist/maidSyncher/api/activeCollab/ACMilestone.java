@@ -164,12 +164,12 @@ public class ACMilestone extends ACObject {
     public String toJSONString()
     {
         StringBuilder postData = new StringBuilder();
-        JsonRest.setString(postData, "task[name]", _name);
-        JsonRest.setString(postData, "task[body]", _body);
-        JsonRest.setInt(postData, "task[priority]", _priority);
-        JsonRest.setInt(postData, "task[assignee_id]", _assigneeId);
-        JsonRest.setDate(postData, "task[start_on]", _startOn);
-        JsonRest.setDate(postData, "task[due_on]", _dueOn);
+        JsonRest.setString(postData, "milestone[name]", _name);
+        JsonRest.setString(postData, "milestone[body]", _body);
+        JsonRest.setInt(postData, "milestone[priority]", _priority);
+        JsonRest.setInt(postData, "milestone[assignee_id]", _assigneeId);
+        JsonRest.setDate(postData, "milestone[start_on]", _startOn);
+        JsonRest.setDate(postData, "milestone[due_on]", _dueOn);
         return postData.toString();
     }
 

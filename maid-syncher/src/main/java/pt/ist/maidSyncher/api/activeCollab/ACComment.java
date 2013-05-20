@@ -51,7 +51,7 @@ public class ACComment extends ACObject {
     @Override
     public String toJSONString() {
         StringBuilder postData = new StringBuilder();
-        JsonRest.setString(postData, "task[body]", getBody());
+        JsonRest.setString(postData, "comment[body]", getBody());
         return postData.toString();
     }
 

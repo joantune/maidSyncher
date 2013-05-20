@@ -45,14 +45,11 @@ public class ACTask extends ACObject {
 
     private boolean archived;
 
-
-    public ACTask()
-    {
+    public ACTask() {
         super();
     }
 
-    public ACTask(JSONObject jsonObj) throws IOException
-    {
+    public ACTask(JSONObject jsonObj) throws IOException {
         super(jsonObj);
 
     }
@@ -69,12 +66,12 @@ public class ACTask extends ACObject {
         _priority = JsonRest.getInt(jsonObj, "priority");
         _assigneeId = JsonRest.getInt(jsonObj, "assignee_id");
         _dueOn = JsonRest.getDate(jsonObj, "due_on");
-        if(_dueOn != null) {
+        if (_dueOn != null) {
             Calendar cal = Calendar.getInstance();
             cal.setTime(_dueOn);
-            cal.set(Calendar.HOUR_OF_DAY,23);
-            cal.set(Calendar.MINUTE,59);
-            cal.set(Calendar.SECOND,59);
+            cal.set(Calendar.HOUR_OF_DAY, 23);
+            cal.set(Calendar.MINUTE, 59);
+            cal.set(Calendar.SECOND, 59);
             _dueOn = cal.getTime();
         }
 //        getSubTasks();
@@ -95,8 +92,6 @@ public class ACTask extends ACObject {
 
         setProjectId(JsonRest.getInt(jsonObj, "project_id"));
 
-
-
     }
 
     static public ACTask moveTo(long taskId, long currentProjectId, long newProjectId) throws IOException {
@@ -110,8 +105,7 @@ public class ACTask extends ACObject {
     }
 
     @Override
-    public String toJSONString()
-    {
+    public String toJSONString() {
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "task[name]", _name);
         JsonRest.setString(postData, "task[body]", _body);
@@ -122,6 +116,9 @@ public class ACTask extends ACObject {
         JsonRest.setInt(postData, "task[priority]", _priority);
         JsonRest.setInt(postData, "task[assignee_id]", _assigneeId);
         JsonRest.setDate(postData, "task[due_on]", _dueOn);
+        if (complete != null)
+            JsonRest.setIntFromBoolean(postData, "task[is_complete]", complete); //? not sure
+        //if it should be done through this or through the {context}/complete API call
         return postData.toString();
     }
 
@@ -220,11 +217,10 @@ public class ACTask extends ACObject {
         _dueOn = dueOn;
     }
 
-    public Set<ACSubTask> getSubTasks() throws IOException
-    {
+    public Set<ACSubTask> getSubTasks() throws IOException {
         Set<ACSubTask> subtasks = new HashSet<ACSubTask>();
         JSONArray jsonArr = (JSONArray) getRequestProcessor().processGet(getUrl() + "/subtasks");
-        if(jsonArr != null) {
+        if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObject = (JSONObject) object;
                 subtasks.add(new ACSubTask(jsonObject));

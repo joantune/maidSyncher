@@ -146,13 +146,8 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             //validate the SyncUniverse
             if (syncEvent.getTargetSyncUniverse().equals(SyncEvent.SyncUniverse.GITHUB))
                 throw new SyncEventIncogruenceBetweenOriginAndDestination("For syncEvent: " + syncEvent.toString());
-            //let's try to see if an ACProject already exists or not
-            pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject =
-                    pt.ist.maidSyncher.domain.activeCollab.ACProject.findByName(getName());
-            Collection<ACTaskCategory> existingACTaskCategories =
-                    ACTaskCategory.getByName(ACTaskCategory.REPOSITORY_PREFIX + getName());
 
-            syncActionWrapperToReturn = syncCreateEvent(acExistingProject, existingACTaskCategories, syncEvent);
+            syncActionWrapperToReturn = syncCreateEvent(syncEvent);
 
         } else if (syncEvent.getTypeOfChangeEvent().equals(SyncEvent.TypeOfChangeEvent.UPDATE)) {
             //let's retrieve the default project, and the task category:
@@ -316,8 +311,9 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     }
 
     // owner hasDownloads gitUrl hasIssues masterBranch description hasWiki pushedAt updatedAt name openIssues sshUrl svnUrl cloneUrl createdAt htmlUrl
-    private SyncActionWrapper syncCreateEvent(final pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject,
-            final Collection<ACTaskCategory> existingACTaskCategories, final SyncEvent syncEvent) {
+//    private SyncActionWrapper syncCreateEvent(final pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject,
+//            final Collection<ACTaskCategory> existingACTaskCategories, final SyncEvent syncEvent) {
+    private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
         for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
@@ -353,6 +349,10 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
 
             @Override
             public Collection<SynchableObject> sync() throws IOException {
+                //let's try to see if an ACProject already exists or not
+                pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject =
+                        pt.ist.maidSyncher.domain.activeCollab.ACProject.findByName(getName());
+
                 //let's assert if we need to create the project
                 pt.ist.maidSyncher.domain.activeCollab.ACProject acProjectToReturn = null;
                 if (acExistingProject == null) {
@@ -382,6 +382,8 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                 Set<pt.ist.maidSyncher.domain.activeCollab.ACProject> projectsToCreateTaskCategoriesFor =
                         new HashSet<>(activeProjects);
 
+                        Collection<ACTaskCategory> existingACTaskCategories =
+                                ACTaskCategory.getByName(ACTaskCategory.REPOSITORY_PREFIX + getName());
                         for (ACTaskCategory existingCategory : existingACTaskCategories) {
                             if (existingCategory.getProject().getArchived() == false) {
                                 projectsToCreateTaskCategoriesFor.remove(existingCategory.getProject());
@@ -396,7 +398,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                             acNewCategory.setName(ACTaskCategory.REPOSITORY_PREFIX + getName());
                             acNewCategory = ACCategory.create(acNewCategory, acProjectToCreateTCategoryFor.getId(), ACTaskCategory.class);
                             ACTaskCategory newlyCreatedACTaskCategory =
-                            ACTaskCategory.process(acNewCategory, acProjectToCreateTCategoryFor.getId(), true);
+                                    ACTaskCategory.process(acNewCategory, acProjectToCreateTCategoryFor.getId(), true);
                             acTaskCategoriesToAssign.add(newlyCreatedACTaskCategory);
                         }
 

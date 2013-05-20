@@ -927,6 +927,8 @@ public class GHIssue extends GHIssue_Base {
                     Set<DSIObject> dsiObjectsDependedOn = new HashSet<>();
 //                dsiObjectsDependedOn.add(getMilestone().getDSIObject());
                     dsiObjectsDependedOn.add(getRepository().getDSIObject());
+                    dsiObjectsDependedOn.add(((DSIRepository) getRepository().getDSIObject()).getDefaultProject()
+                            .getDsiObjectProject());
                     dsiObjectsDependedOn.add(null); //null - means all of the GHLabel's should be synched
                     return dsiObjectsDependedOn;
                 }

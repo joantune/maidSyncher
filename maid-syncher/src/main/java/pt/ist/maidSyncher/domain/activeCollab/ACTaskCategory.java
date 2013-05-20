@@ -25,7 +25,6 @@ import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
-import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
@@ -134,12 +133,13 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 
     @Override
     public DSIObject findOrCreateDSIObject() {
-        DSIObject dsiObject = getDSIObject();
-        if (dsiObject == null) {
-            dsiObject = new DSIRepository();
-            setDsiObjectRepository((DSIRepository) dsiObject);
-        }
-        return dsiObject;
+//        DSIObject dsiObject = getDSIObject();
+//        if (dsiObject == null) {
+//            dsiObject = new DSIRepository();
+//            setDsiObjectRepository((DSIRepository) dsiObject);
+//        }
+//        return dsiObject;
+        throw new UnsupportedOperationException();
     }
 
     @Override

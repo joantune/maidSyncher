@@ -261,7 +261,8 @@ public class GHMilestone extends GHMilestone_Base {
         ACMilestone acMilestone = new ACMilestone();
         acMilestone.setName(getTitle());
         acMilestone.setBody(getDescription());
-        acMilestone.setDueOn(getDueOn().toDateTimeToday().toDate());
+        if (getDueOn() != null)
+            acMilestone.setDueOn(getDueOn().toDateTimeToday().toDate());
         acMilestone.setProjectId(projectId);
         return acMilestone;
     }
