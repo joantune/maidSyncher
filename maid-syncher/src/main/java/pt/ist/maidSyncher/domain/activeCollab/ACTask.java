@@ -298,7 +298,7 @@ public class ACTask extends ACTask_Base {
                 //let's try to find out if we need to create a GHIssue (if we have an ACTaskCategory that
                 //has an DSIRepository associated, then we do)
                 ACTaskCategory acTaskCategory = getTaskCategory();
-                if (acTaskCategory == null || acTaskCategory.getDSIObject() == null) {
+                if (ACTaskCategory.hasGHSide(acTaskCategory) == false) {
                     return Collections.emptySet();
                 }
 
@@ -533,7 +533,8 @@ public class ACTask extends ACTask_Base {
                     syncGHMilestoneFromACMilestone(getMilestone(), ghRepository, ghIssueToUpdate);
                 }
 
-                if (taskCategoryChanged) {
+                if (taskCategoryChanged && ACTaskCategory.hasGHSide(getTaskCategory())) {
+
 
                     //let's create the new Issue
                     Issue newIssue = new Issue();

@@ -137,6 +137,7 @@ public class ACTaskSyncTest {
         acTaskCategory = new ACTaskCategory();
         acTaskCategory.setName(AC_TASK_REPOSITORY_NAME);
         dsiRepository = new DSIRepository();
+        dsiRepository.addAcTaskCategories(acTaskCategory);
 
         repOwner = new GHUser();
         repOwner.setLogin(GH_REP_OWNER_LOGIN);

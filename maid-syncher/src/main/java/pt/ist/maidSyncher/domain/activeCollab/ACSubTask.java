@@ -245,7 +245,7 @@ public class ACSubTask extends ACSubTask_Base {
                 //let's try to find out if we need to create a GHIssue (if we have an ACTaskCategory that
                 //has an DSIRepository associated, then we do)
                 ACTaskCategory acTaskCategory = parentACTask.getTaskCategory();
-                if (acTaskCategory == null || acTaskCategory.getDSIObject() == null) {
+                if (ACTaskCategory.hasGHSide(acTaskCategory) == false) {
                     return Collections.emptySet();
                 }
 

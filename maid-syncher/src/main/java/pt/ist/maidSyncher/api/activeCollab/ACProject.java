@@ -42,6 +42,7 @@ public class ACProject extends ACObject {
         _companyId = -1;
         _leaderId = -1;
         _labelId = -1;
+        _budget = -1;
         this.setArchived(false);
     }
 
@@ -159,12 +160,12 @@ public class ACProject extends ACObject {
         StringBuilder postData = new StringBuilder();
         JsonRest.setString(postData, "project[name]", _name);
         JsonRest.setString(postData, "project[overview]", _overview);
-        JsonRest.setInt(postData, "project[category_id]", _categoryId);
-        JsonRest.setInt(postData, "project[company_id]", _companyId);
-        JsonRest.setInt(postData, "project[leader_id]", _leaderId);
+        JsonRest.setIntIfInitialized(postData, "project[category_id]", _categoryId);
+        JsonRest.setIntIfInitialized(postData, "project[company_id]", _companyId);
+        JsonRest.setIntIfInitialized(postData, "project[leader_id]", _leaderId);
         JsonRest.setString(postData, "project[status]", _status);
-        JsonRest.setFloat(postData, "project[budget]", _budget);
-        JsonRest.setInt(postData, "project[label_id]", _labelId);
+        JsonRest.setFloatIfInitialized(postData, "project[budget]", _budget);
+        JsonRest.setIntIfInitialized(postData, "project[label_id]", _labelId);
         return postData.toString();
     }
 

@@ -25,6 +25,7 @@ import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
@@ -122,7 +123,19 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 
     }
 
+    public static boolean hasGHSide(ACTaskCategory acTaskCategory) {
+        if (acTaskCategory == null)
+            return false;
+        else
+            return acTaskCategory.hasGHSide();
 
+    }
+
+    public boolean hasGHSide() {
+        if (getDSIObject() == null || ((DSIRepository) getDSIObject()).getGitHubRepository() == null)
+            return false;
+        return true;
+    }
 
 
 
@@ -139,6 +152,7 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 //            setDsiObjectRepository((DSIRepository) dsiObject);
 //        }
 //        return dsiObject;
+        //it will be done by the Synching of the GHRepository
         throw new UnsupportedOperationException();
     }
 

@@ -31,6 +31,11 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
 public class JsonRest {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(JsonRest.class);
@@ -43,18 +48,16 @@ public class JsonRest {
         return (JSONArray) jsonObject.get(key);
     }
 
-    public static int getInt(JSONObject jsonObj, String key)
-    {
+    public static int getInt(JSONObject jsonObj, String key) {
         int value = -1;
         Object obj = jsonObj.get(key);
-        if(obj != null)
+        if (obj != null)
             value = ((java.lang.Number) obj).intValue();
         return value;
     }
 
-    public static void setInt(StringBuilder postData, String key, int value)
-    {
-        if(postData.length() > 0)
+    public static void setInt(StringBuilder postData, String key, int value) {
+        if (postData.length() > 0)
             postData.append("&");
         postData.append(key + "=" + value);
     }
@@ -65,25 +68,21 @@ public class JsonRest {
         postData.append(key + "=" + (value ? "1" : "0"));
     }
 
-    public static float getFloat(JSONObject jsonObj, String key)
-    {
+    public static float getFloat(JSONObject jsonObj, String key) {
         float value = 0.F;
         Object obj = jsonObj.get(key);
-        if(obj != null)
+        if (obj != null)
             value = ((java.lang.Number) obj).floatValue();
         return value;
     }
 
-    public static void setFloat(StringBuilder postData, String key, float value)
-    {
-        if(postData.length() > 0)
+    public static void setFloat(StringBuilder postData, String key, float value) {
+        if (postData.length() > 0)
             postData.append("&");
         postData.append(key + "=" + value);
     }
 
-
-    public static String getString(JSONObject jsonObj, String key)
-    {
+    public static String getString(JSONObject jsonObj, String key) {
         String value;
         value = (String) jsonObj.get(key);
         return value;
@@ -98,10 +97,9 @@ public class JsonRest {
         return (Boolean) jsonObj.get(key);
     }
 
-    public static void setString(StringBuilder postData, String key, String value)
-    {
-        if(value != null) {
-            if(postData.length() > 0)
+    public static void setString(StringBuilder postData, String key, String value) {
+        if (value != null) {
+            if (postData.length() > 0)
                 postData.append("&");
             try {
                 postData.append(key + "=" + URLEncoder.encode(value, "utf-8"));
@@ -111,36 +109,34 @@ public class JsonRest {
         }
     }
 
-    public static Date getDate(JSONObject jsonObj, String key)
-    {
+    public static Date getDate(JSONObject jsonObj, String key) {
         Date value = null;
-        if(jsonObj != null) {
+        if (jsonObj != null) {
             JSONObject jsonObj2 = (JSONObject) jsonObj.get(key);
-            if(jsonObj2 != null) {
+            if (jsonObj2 != null) {
                 Object obj = jsonObj2.get("timestamp");
-                if(obj != null) {
+                if (obj != null) {
                     long number;
                     number = (((java.lang.Number) obj).longValue());
-                    value = new Date(1000*number);
+                    value = new Date(1000 * number);
                 }
             }
         }
         return value;
     }
 
-    public static void setDate(StringBuilder postData, String key, Date value)
-    {
-        if(value != null) {
-            if(postData.length() > 0)
+    public static void setDate(StringBuilder postData, String key, Date value) {
+        if (value != null) {
+            if (postData.length() > 0)
                 postData.append("&");
             postData.append(key + "=");
             Calendar cal = Calendar.getInstance();
             cal.setTime(value);
             postData.append(cal.get(Calendar.YEAR) + "-");
-            if(cal.get(Calendar.MONTH) < 10)
+            if (cal.get(Calendar.MONTH) < 10)
                 postData.append("0");
-            postData.append((1+cal.get(Calendar.MONTH)) + "-");
-            if(cal.get(Calendar.DAY_OF_MONTH) < 10)
+            postData.append((1 + cal.get(Calendar.MONTH)) + "-");
+            if (cal.get(Calendar.DAY_OF_MONTH) < 10)
                 postData.append("0");
             postData.append(cal.get(Calendar.DAY_OF_MONTH));
         }
@@ -154,8 +150,7 @@ public class JsonRest {
         return sb.toString();
     }
 
-    public static Object processGet(String urlStr) throws IOException
-    {
+    public static Object processGet(String urlStr) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDoOutput(true);
@@ -177,9 +172,7 @@ public class JsonRest {
         }
     }
 
-
-    public static Object processPost(String content, String urlStr) throws IOException
-    {
+    public static Object processPost(String content, String urlStr) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDoOutput(true);
@@ -189,44 +182,76 @@ public class JsonRest {
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         conn.setRequestProperty("charset", "utf-8");
         conn.setRequestProperty("Content-Length", "" + Integer.toString(content.getBytes("utf-8").length));
-        conn.setUseCaches (false);
+        conn.setUseCaches(false);
         conn.connect();
 
         //Send request
         DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-        wr.writeBytes (content);
-        wr.flush ();
-        wr.close ();
+        wr.writeBytes(content);
+        wr.flush();
+        wr.close();
 
         LOGGER.trace("ACURL [" + url + "]");
-        InputStream is = conn.getInputStream();
+
+        InputStream is = null;
         try {
+            is = conn.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("utf-8")));
             String jsonText = readAll(rd);
             return JSONValue.parse(jsonText);
+        } catch (IOException ex) {
+            int responseCode = conn.getResponseCode();
+            if ((responseCode / 100) != 2) {
+                InputStream errorStream = conn.getErrorStream();
+                try {
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(errorStream, Charset.forName("utf-8")));
+                    Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+                    JsonElement jsonElement = new JsonParser().parse(rd);
+                    LOGGER.error(gsonBuilder.toJson(jsonElement));
+                } finally {
+                    errorStream.close();
+                    conn.disconnect();
+                }
+
+            }
+            throw ex;
         } finally {
-            is.close();
+            if (is != null)
+                is.close();
             conn.disconnect();
         }
     }
 
+    public static void setIntIfInitialized(StringBuilder postData, String key, int value) {
+        if (value != -1)
+            setInt(postData, key, value);
+        else
+            return;
+    }
 
-    /*
-	public static Object processPost(String urlStr, Map<String,String> para) throws IOException
-	{
-		StringBuilder urlPara = new StringBuilder();
-		boolean notFirst = false;
-		for(Iterator<Map.Entry<String,String>> it = para.entrySet().iterator(); it.hasNext(); ) {
-			Map.Entry<String,String> e = (Map.Entry<String,String>) it.next();
-			if(notFirst)
-				urlPara.append("&");
-			else
-				notFirst = true;
-			urlPara.append(URLEncoder.encode((String)e.getKey(), "utf-8"));
-			urlPara.append("=");
-			urlPara.append(URLEncoder.encode((String)e.getValue(), "utf-8"));
-		}
-		return processPost(urlStr, urlPara.toString());
-	}
-     */
+    public static void setFloatIfInitialized(StringBuilder postData, String key, float value) {
+        if (value != -1) {
+            setFloat(postData, key, value);
+        }
+
+    }
+
+/*
+    public static Object processPost(String urlStr, Map<String,String> para) throws IOException
+    {
+    	StringBuilder urlPara = new StringBuilder();
+    	boolean notFirst = false;
+    	for(Iterator<Map.Entry<String,String>> it = para.entrySet().iterator(); it.hasNext(); ) {
+    		Map.Entry<String,String> e = (Map.Entry<String,String>) it.next();
+    		if(notFirst)
+    			urlPara.append("&");
+    		else
+    			notFirst = true;
+    		urlPara.append(URLEncoder.encode((String)e.getKey(), "utf-8"));
+    		urlPara.append("=");
+    		urlPara.append(URLEncoder.encode((String)e.getValue(), "utf-8"));
+    	}
+    	return processPost(urlStr, urlPara.toString());
+    }
+ */
 }
