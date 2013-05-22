@@ -206,8 +206,9 @@ public class JsonRest {
                 try {
                     BufferedReader rd = new BufferedReader(new InputStreamReader(errorStream, Charset.forName("utf-8")));
                     Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-                    JsonElement jsonElement = new JsonParser().parse(rd);
-                    LOGGER.error(gsonBuilder.toJson(jsonElement));
+                    JsonElement jsonErrorBody = new JsonParser().parse(rd);
+                    LOGGER.error("Error: \n" + gsonBuilder.toJson(jsonErrorBody) + "\nOriginal request body:\n" + content
+                            + "\nURL: " + url);
                 } finally {
                     errorStream.close();
                     conn.disconnect();

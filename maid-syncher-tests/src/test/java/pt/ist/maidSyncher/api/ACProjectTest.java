@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
 import org.junit.After;
-import org.junit.Test;
 
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 
@@ -19,7 +18,6 @@ public class ACProjectTest extends ACLiveTests {
 
     private static ACProject createdACProject;
 
-    @Test
     public void createProject() throws IOException {
         ACProject acProject = new ACProject();
         acProject.setName(AC_TEST_PROJECT_CREATION_NAME);

@@ -357,21 +357,24 @@ public class ACProject extends ACProject_Base {
                         Set<GHRepository> repositoriesToCreateTaskCategoriesFor =
                                 new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
 
-                Iterator<GHRepository> repoIterator = repositoriesToCreateTaskCategoriesFor.iterator();
+                        Iterator<GHRepository> repoIterator = repositoriesToCreateTaskCategoriesFor.iterator();
                         //let's see if any of them are appropriate to be used
-                while (repoIterator.hasNext()) {
-                    GHRepository ghRepository = repoIterator.next();
+                        while (repoIterator.hasNext()) {
+                            GHRepository ghRepository = repoIterator.next();
                             String taskCategoryName = StringUtils.lowerCase(ACTaskCategory.REPOSITORY_PREFIX + ghRepository.getName());
                             if (taskCategoriesNames.contains(taskCategoryName))
-                        repoIterator.remove();
+                                repoIterator.remove();
 
                         }
 
                         for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {
-                            ACCategory acCategory = new ACCategory();
-                            acCategory.setName(ACTaskCategory.REPOSITORY_PREFIX + getName());
-                            synchableObjectsToReturn.add(ACTaskCategory.process(
-                                    ACCategory.create(acCategory, getId(), ACTaskCategory.class), getId(), true));
+                            String taskCategoryToCreateName = ACTaskCategory.REPOSITORY_PREFIX + getName();
+                            if (taskCategoriesNames.contains(StringUtils.lowerCase(taskCategoryToCreateName)) == false) {
+                                ACCategory acCategory = new ACCategory();
+                                acCategory.setName(taskCategoryToCreateName);
+                                synchableObjectsToReturn.add(ACTaskCategory.process(
+                                        ACCategory.create(acCategory, getId(), ACTaskCategory.class), getId(), true));
+                            }
 
                         }
 
