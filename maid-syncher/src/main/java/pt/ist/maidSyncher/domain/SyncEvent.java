@@ -38,7 +38,7 @@ import com.google.common.collect.Iterables;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 4 de Mar de 2013
- *
+ * 
  * 
  */
 public class SyncEvent {
@@ -87,8 +87,7 @@ public class SyncEvent {
     private final SynchableObject originObject;
 
     public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<PropertyDescriptor> propertyDescriptors,
-            DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse,
-            SynchableObject origin) {
+            DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse, SynchableObject origin) {
         this.dateOfChange = dateOfChange;
         this.typeOfChangeEvent = changeEvent;
         this.changedPropertyDescriptors = new HashSet<PropertyDescriptor>(propertyDescriptors);
@@ -151,9 +150,20 @@ public class SyncEvent {
 
     @Override
     public String toString() {
-        return "Sync event, DSIElement: " + getDsiElement().getExternalId() + " (" + getDsiElement().getClass().getSimpleName()
-                + ")" + " Type: " + getTypeOfChangeEvent() + " targetUniverse: " + getTargetSyncUniverse() + " originObject: "
-                + getOriginObject().getClass().getSimpleName();
+        String stringToReturn =
+                "Sync event, DSIElement: " + getDsiElement().getExternalId() + " (" + getDsiElement().getClass().getSimpleName()
+                + ")" + " Type: " + getTypeOfChangeEvent() + " targetUniverse: " + getTargetSyncUniverse()
+                + " originObject: " + getOriginObject().getClass().getSimpleName();
+
+        if (getChangedPropertyDescriptors() != null && getChangedPropertyDescriptors().isEmpty() == false) {
+            //let's add the property descriptors changed
+            stringToReturn += " Changed descriptors: ";
+            for (PropertyDescriptor propertyDescriptor : getChangedPropertyDescriptors()) {
+                stringToReturn += " " + propertyDescriptor.getName();
+            }
+        }
+
+        return stringToReturn;
     }
 
     public APIObjectWrapper getApiObjectWrapper() {
@@ -186,17 +196,24 @@ public class SyncEvent {
             Collection<DSIObject> syncDependedDSIObjects = syncActionWrapper.getSyncDependedDSIObjects();
             if (Collections.disjoint(syncDependedDSIObjects, dsiObjectsToSync) == false)
                 return false;
-        }
-        catch (NullPointerException ex) {
-            LOGGER.warn("Got an NPE retrieving syncDependedDSIObjects. SyncEvent of the SyncActionWrapper: "
-                    + syncActionWrapper.getOriginatingSyncEvent().toString(), ex);
+        } catch (NullPointerException ex) {
+            String loggerWarnString = "Got an NPE retrieving syncDependedDSIObjects";
+            if (syncActionWrapper == null) {
+                loggerWarnString += ". SyncActionWrapper was null!!";
+            } else if (syncActionWrapper.getOriginatingSyncEvent() == null) {
+                loggerWarnString +=
+                        ". Originating SyncEvent of SyncActionWrapper is null! SyncActionWrapper class: "
+                                + syncActionWrapper.getClass().getName();
+            } else {
+                loggerWarnString +=
+                        ". SyncEvent of the SyncActionWrapper: " + syncActionWrapper.getOriginatingSyncEvent().toString();
+            }
+            LOGGER.warn(loggerWarnString, ex);
             return false;
         }
-
 
         return true;
 
     }
-
 
 }

@@ -140,11 +140,8 @@ public class ACProject extends ACProject_Base {
             //let's try to find the already existing GHLabels that can fit as GHLabels
             //associated with this DSIProject
             MaidRoot maidRoot = MaidRoot.getInstance();
-            final Set<GHLabel> appliableAndAlreadyExistingLabels = GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
 
-            final Set<GHRepository> repositoriesToCreateLabelFor = maidRoot.getGhRepositoriesSet();
-
-            syncActionWrapperToReturn = syncCreateEvent(appliableAndAlreadyExistingLabels, syncEvent);
+            syncActionWrapperToReturn = syncCreateEvent(syncEvent);
 
         } else if (syncEvent.getTypeOfChangeEvent().equals(SyncEvent.TypeOfChangeEvent.UPDATE)) {
             syncActionWrapperToReturn = syncUpdateEvent(syncEvent);
@@ -257,19 +254,17 @@ public class ACProject extends ACProject_Base {
 
             @Override
             public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return null;
+                return tickedDescriptors;
             }
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
-                // TODO Auto-generated method stub
-                return null;
+                return syncEvent;
             }
 
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
-                // TODO Auto-generated method stub
-                return null;
+                return Collections.emptySet();
             }
 
             @Override
@@ -281,7 +276,7 @@ public class ACProject extends ACProject_Base {
         };
     }
 
-    private SyncActionWrapper syncCreateEvent(final Set<GHLabel> appliableAndAlreadyExistingLabels, final SyncEvent syncEvent) {
+    private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
         final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
         for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
             tickedDescriptors.add(changedDescriptor);
@@ -317,6 +312,8 @@ public class ACProject extends ACProject_Base {
                 Set<GHRepository> repositoriesWeNeedToCreateLabelsFor =
                         new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
 
+                final Set<GHLabel> appliableAndAlreadyExistingLabels =
+                        GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
                 for (GHLabel ghLabel : appliableAndAlreadyExistingLabels) {
                     repositoriesWeNeedToCreateLabelsFor.remove(ghLabel.getRepository());
                     labelsToAssignToDSIProject.add(ghLabel);

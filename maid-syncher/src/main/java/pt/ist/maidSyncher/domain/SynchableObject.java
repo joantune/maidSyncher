@@ -227,6 +227,15 @@ public abstract class SynchableObject extends SynchableObject_Base {
             //we changed something, let's create and add the syncEvent to the ChangesBuzz
             generateSyncEvent(toProccessAndReturn, changedDescriptors, object);
         }
+ else if (skipGenerateSyncEvent == true && toProccessAndReturn.getDSIObject() == null) {
+            //we should create the DSIObject on this file
+            try {
+                toProccessAndReturn.findOrCreateDSIObject();
+            } catch (UnsupportedOperationException ex) {
+                //continue silently
+            }
+
+        }
 
         return toProccessAndReturn;
 
