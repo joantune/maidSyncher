@@ -227,7 +227,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
             //we changed something, let's create and add the syncEvent to the ChangesBuzz
             generateSyncEvent(toProccessAndReturn, changedDescriptors, object);
         }
- else if (skipGenerateSyncEvent == true && toProccessAndReturn.getDSIObject() == null) {
+        else if (skipGenerateSyncEvent == true && toProccessAndReturn.getDSIObject() == null) {
             //we should create the DSIObject on this file
             try {
                 toProccessAndReturn.findOrCreateDSIObject();
@@ -263,7 +263,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         final SynchableObject originObject = toProccessAndReturn;
         SyncEvent.TypeOfChangeEvent typeOfChange = null;
         DSIObject dsiObject = toProccessAndReturn.getDSIObject();
-        if (dsiObject == null) {
+        if (dsiObject == null || dsiObject.getLastSynchedAt() == null) {
             typeOfChange = TypeOfChangeEvent.CREATE;
         }
         try {
@@ -272,7 +272,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         } catch (UnsupportedOperationException ex) {
             LOGGER.debug(toProccessAndReturn.getClass().getName() + " doesn't support Synch");
         }
-        if (dsiObject != null) {
+        if (dsiObject != null && dsiObject.getLastSynchedAt() != null) {
             if (typeOfChange == null) {
                 typeOfChange = TypeOfChangeEvent.UPDATE;
             }

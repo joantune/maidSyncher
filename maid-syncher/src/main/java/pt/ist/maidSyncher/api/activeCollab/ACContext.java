@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -88,7 +89,13 @@ public class ACContext implements RequestProcessor {
     @Override
     public JSONObject processPost(String content, String path) throws IOException {
         //let's add the submitted=submitted that makes it work
-        String toUse = content + "&submitted=submitted";
+        String toUse = "";
+        if (content != null && StringUtils.isBlank(content) == false) {
+            toUse = content + "&submitted=submitted";
+        }
+        else {
+            toUse = "submitted=submitted";
+        }
         return (JSONObject) JsonRest.processPost(toUse, buildUrl(path));
     }
 

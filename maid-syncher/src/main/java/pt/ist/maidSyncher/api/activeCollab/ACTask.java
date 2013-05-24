@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -128,8 +129,35 @@ public class ACTask extends ACObject {
 
     public static ACTask createTask(ACTask preliminarObject, long projectId) throws IOException {
         String path = getRequestProcessor().getBasicUrlForPath("projects/" + projectId + "/tasks/add");
-        return new ACTask(postObject(path, preliminarObject));
 
+        ACTask recentlyCreatedACTask = new ACTask(postObject(path, preliminarObject));
+        if (preliminarObject.getComplete() != null && preliminarObject.getComplete() == true) {
+            if (ObjectUtils.equals(preliminarObject.getComplete(), recentlyCreatedACTask.getComplete()) == false) {
+                //time to make the recentlyCreatedACTask complete
+                recentlyCreatedACTask = recentlyCreatedACTask.postComplete();
+            }
+        }
+        return recentlyCreatedACTask;
+    }
+
+    /**
+     * Posts to {context}/complete and returns the new ACTask
+     * 
+     * @throws IOException In case something goes wrong with the post
+     */
+    public ACTask postComplete() throws IOException {
+        String urlToUse = getUrl() + "/complete";
+        return new ACTask(getRequestProcessor().processPost(urlToUse, null));
+    }
+
+    /**
+     * Posts to {context}/reopen and returns the new ACTask
+     * 
+     * @throws IOException In case something goes wrong with the post
+     */
+    public ACTask postReopen() throws IOException {
+        String urlToUse = getUrl() + "/reopen";
+        return new ACTask(getRequestProcessor().processPost(urlToUse, null));
     }
 
     /**

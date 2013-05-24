@@ -1,7 +1,7 @@
 package pt.ist.maidSyncher.domain.dsi;
 
 class DSIObject {
-	LocalTime lastUpdatedAt;
+	LocalTime lastSynchedAt;
 }
 
 // Repository:
