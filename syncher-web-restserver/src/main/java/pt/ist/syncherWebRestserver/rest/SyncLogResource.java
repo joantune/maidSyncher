@@ -5,16 +5,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.bennu.core.rest.BennuRestResource;
 
 @Path("test")
-public class SyncLogResource {
+public class SyncLogResource extends BennuRestResource {
+
+    public static int counter = 0;
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String view() {
-        return MaidRoot.getInstance().getGhRepositoriesSet().iterator().next().getName();
+        return String.valueOf(counter);
 //        return "espectacular";
     }
+
 
 }
