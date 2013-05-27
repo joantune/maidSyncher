@@ -1,3 +1,4 @@
+var selfThing = this;
 /* The dataTable binding */
 (function($) {
     ko.bindingHandlers.dataTable = {
@@ -9,8 +10,6 @@
             if (binding.options) {
                 $(element).dataTable(binding.options);
             }
-            //let's add the custom callback for each row
-            console.log(element);
             
         },
         update : function(element, valueAccessor) {
@@ -29,16 +28,41 @@
             // Rebuild table from data source specified in binding
             $(element).dataTable().fnAddData(binding.data());
             
-            $(element).find("tr").click(function(clickedEl) {
-               window.console(clickedEl); 
-            });
+            
+            //let's add the custom callback for each row, if it exists
+            if (binding.trClick) {
+                $(element).find("tr").click(binding.trClick);
+            }
+            
+            if (binding.rowFunction) {
+                $(element).find("tr").each(binding.rowFunction);
+            }
         }
     };
 })(jQuery);
 
 /* The ViewModel */
 var dataTableExampleViewModel = {
-    tableData : ko.observableArray([ [ "Existing", "Data" ], [ "In An", "observableArray" ], [ "Existing", "Data" ],
+            rowClickHandler: function(event) {
+               console.log(event); 
+            },
+            rowColorize: function(index, row) {
+                $(row).children("td").each(function (index, td) {
+                    var tdContent = $(td).text();
+                    console.log(tdContent);
+                    if (tdContent != undefined) {
+                        if (tdContent.indexOf('Success') != -1 ) {
+                            $(row).addClass("success");
+                            return false;
+                        }
+                        else if (tdContent.indexOf('Fail') != -1) {
+                            $(row).addClass('error');
+                            return false;
+                        }
+                    }
+                });
+            },
+    tableData : ko.observableArray([ [ "20/10/2013", "Success" ], [ "20/12/2013", "Fail" ], [ "20/05/2012", "Success" ],
             [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ],
             [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ],
             [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ],
