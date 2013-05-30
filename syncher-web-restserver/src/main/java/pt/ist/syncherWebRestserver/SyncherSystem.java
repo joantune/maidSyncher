@@ -3,6 +3,9 @@
  */
 package pt.ist.syncherWebRestserver;
 
+import java.io.IOException;
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +25,7 @@ public class SyncherSystem {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncherSystem.class);
 
     @Atomic(mode = TxMode.WRITE)
-    public static void init() {
+    public static void init() throws IOException {
         SchedulerSystem schedulerSystem = SchedulerSystem.getInstance();
         if (schedulerSystem.getLoggingStorage() == null) {
             LOGGER.info("initing File Storage system for scheduler");
@@ -36,18 +39,28 @@ public class SyncherSystem {
 
     }
 
-    static void initSchedule() {
+    static void initSchedule() throws IOException {
+        Properties schedulerConfigurationProperties = new Properties();
+        schedulerConfigurationProperties.load(SyncherSystem.class.getResourceAsStream("/configuration.properties"));
+        String schedule = schedulerConfigurationProperties.getProperty("sync.task.cron.schedule");
         LOGGER.debug("Finding existing task");
         boolean systemAlreadyInited = false;
         for (TaskSchedule taskSchedule : SchedulerSystem.getInstance().getTaskScheduleSet()) {
             if (taskSchedule.getTaskClassName().equalsIgnoreCase(SyncherTask.class.getName())) {
-                systemAlreadyInited = true;
+                if (taskSchedule.getSchedule().equalsIgnoreCase(schedule) == false) {
+                    LOGGER.info("Found the task scheduled but with a different schedule. Previous schedule: "
+                            + taskSchedule.getSchedule() + " new Schedule: " + schedule);
+                    taskSchedule.delete();
+                } else {
+                    systemAlreadyInited = true;
+
+                }
                 break;
             }
         }
         if (systemAlreadyInited == false) {
             LOGGER.info("Adding syncher task");
-            new TaskSchedule(SyncherTask.class.getName(), "* * * * *");
+            new TaskSchedule(SyncherTask.class.getName(), schedule);
 
         } else {
             LOGGER.info("Syncher task already added previously");

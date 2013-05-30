@@ -33,6 +33,7 @@ import org.eclipse.egit.github.core.service.LabelService;
 import org.eclipse.egit.github.core.service.MilestoneService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
+import org.joda.time.LocalTime;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
@@ -52,6 +53,7 @@ import pt.ist.maidSyncher.api.activeCollab.ACUser;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
+import pt.ist.maidSyncher.domain.dsi.SyncLog;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHComment;
 import pt.ist.maidSyncher.domain.github.GHIssue;
@@ -67,6 +69,8 @@ public class Main {
     static final Properties ffProperties = new Properties();
 
     private static List<URL> urls = null;
+
+    private static SyncLog currentSyncLog;
 
     // FenixFramework will try automatic initialization when first accessed
     public static void main(String[] args) throws IOException, SyncEventOriginObjectChanged {
@@ -84,6 +88,7 @@ public class Main {
 
     @Atomic(mode = TxMode.WRITE)
     private static void retrieveAndCreateSyncEvents() throws IOException {
+        currentSyncLog = new SyncLog();
         syncGitHub();
         syncActiveCollab();
 
@@ -221,7 +226,7 @@ public class Main {
     }
 
     private static void syncGitHub() {
-
+        currentSyncLog.setSyncGHStartTime(new LocalTime());
         //this is the first sync task, so let us reset the changesBuzz
         //MaidRoot.getInstance().resetSyncEvents();
 

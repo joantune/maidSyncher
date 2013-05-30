@@ -1,0 +1,62 @@
+package pt.ist.maidSyncher.domain.dsi;
+
+enum pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent as TypeOfChangeEvent;
+enum pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse as SyncUniverse;
+
+class SyncLog {
+	LocalTime syncStartTime;
+	
+	int numberGHRequestsAtStartSync;
+	int numberGHRequestsAtEndSync;
+	int numberGHRequestsAtEndActions;
+	
+	LocalTime syncGHStartTime;
+	LocalTime syncGHEndTime;
+	
+	LocalTime syncACStartTime;
+	LocalTime syncACEndTime;
+	
+	
+	LocalTime syncActionsStartTime;
+	LocalTime syncActionsEndTime;
+	
+	Boolean success (REQUIRED);
+}
+
+class SyncActionLog {
+	LocalTime syncStartTime;
+	LocalTime syncEndTime;
+	TypeOfChangeEvent typeOfChangeEvent;
+	SyncUniverse targetUniverse;
+	Boolean success (REQUIRED);
+	String urlOriginObject;
+}
+
+
+relation MaidRootSyncLog {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {
+		multiplicity 1..1;
+	}
+	SyncLog playsRole syncLogs {
+		multiplicity *;
+	}
+}
+
+relation SyncLogSyncActionLog {
+	SyncLog playsRole syncLog {
+		multiplicity 1..1;
+	}
+	SyncActionLog playsRole syncActionLogs {
+		multiplicity *;
+	}
+}
+
+relation DSIObjectSyncActionLog {
+	.pt.ist.maidSyncher.domain.dsi.DSIObject playsRole dsiObject {
+		multiplicity 1..1;
+	}
+	SyncActionLog playsRole syncActionLogs {
+		multiplicity *;
+	}
+}
+	
