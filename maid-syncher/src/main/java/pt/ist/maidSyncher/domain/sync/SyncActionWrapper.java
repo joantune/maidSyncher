@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 

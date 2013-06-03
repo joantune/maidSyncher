@@ -14,7 +14,7 @@
  */
 package pt.ist.maidSyncher.domain.exceptions;
 
-import pt.ist.maidSyncher.domain.SyncEvent;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 13 de Mar de 2013

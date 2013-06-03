@@ -23,10 +23,10 @@ import org.apache.commons.lang.StringUtils;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
 import com.google.common.base.Function;
@@ -140,7 +140,7 @@ public class ACTaskCategory extends ACTaskCategory_Base {
 
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return getDsiObjectRepository();
     }
 

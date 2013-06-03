@@ -27,11 +27,12 @@ import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
-import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
+import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 /**

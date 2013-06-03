@@ -24,8 +24,8 @@ import org.eclipse.egit.github.core.Issue;
 import org.joda.time.LocalTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class GHComment extends GHComment_Base {
 
@@ -84,7 +84,7 @@ public class GHComment extends GHComment_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         if (getDsiObjectComment() != null)
             return getDsiObjectComment();
         if (getDsiObjectLoggedTime() != null)

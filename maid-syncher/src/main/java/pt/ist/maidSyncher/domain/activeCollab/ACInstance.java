@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class ACInstance extends ACInstance_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(ACInstance.class);
@@ -60,7 +60,7 @@ public class ACInstance extends ACInstance_Base {
 
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return null;
     }
 

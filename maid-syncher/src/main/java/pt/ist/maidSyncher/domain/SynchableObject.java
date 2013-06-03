@@ -43,8 +43,6 @@ import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
-import pt.ist.maidSyncher.domain.SyncEvent.SyncUniverse;
-import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIllegalConflict;
@@ -52,6 +50,9 @@ import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
+import pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse;
+import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
 import com.google.common.base.Objects;
@@ -72,7 +73,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         super();
     }
 
-    protected abstract DSIObject getDSIObject();
+    public abstract DSIObject getDSIObject();
 
     public abstract DSIObject findOrCreateDSIObject();
 
@@ -226,8 +227,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         if (!skipGenerateSyncEvent && changedDescriptors.isEmpty() == false) {
             //we changed something, let's create and add the syncEvent to the ChangesBuzz
             generateSyncEvent(toProccessAndReturn, changedDescriptors, object);
-        }
-        else if (skipGenerateSyncEvent == true && toProccessAndReturn.getDSIObject() == null) {
+        } else if (skipGenerateSyncEvent == true && toProccessAndReturn.getDSIObject() == null) {
             //we should create the DSIObject on this file
             try {
                 toProccessAndReturn.findOrCreateDSIObject();
@@ -345,7 +345,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         }
     }
 
-    protected static void addSyncEvent(SyncEvent syncEvent) {
+    public static void addSyncEvent(SyncEvent syncEvent) {
         MaidRoot.getInstance().addSyncEvent(syncEvent);
         logSync(syncEvent);
     }

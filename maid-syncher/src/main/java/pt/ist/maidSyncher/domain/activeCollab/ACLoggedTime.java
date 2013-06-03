@@ -25,11 +25,11 @@ import org.apache.commons.lang.ObjectUtils;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSILoggedTime;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class ACLoggedTime extends ACLoggedTime_Base {
 
@@ -106,7 +106,7 @@ public class ACLoggedTime extends ACLoggedTime_Base {
 
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return getDsiObjectLoggedTime();
     }
 

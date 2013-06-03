@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACInstance;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
@@ -45,6 +44,7 @@ import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -114,7 +114,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return super.getDsiObjectRepository();
     }
 

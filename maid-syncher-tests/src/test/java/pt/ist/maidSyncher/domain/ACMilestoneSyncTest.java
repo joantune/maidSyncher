@@ -34,13 +34,14 @@ import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
-import pt.ist.maidSyncher.domain.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
+import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 /**

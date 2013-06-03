@@ -12,28 +12,27 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain;
+package pt.ist.maidSyncher.domain.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.beans.PropertyDescriptor;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHObject;
-import pt.ist.maidSyncher.domain.sync.APIObjectWrapper;
-import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 /**
@@ -41,7 +40,7 @@ import com.google.common.collect.Iterables;
  * 
  * 
  */
-public class SyncEvent {
+public class SyncEvent extends SyncEvent_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncEvent.class);
 
     public static enum TypeOfChangeEvent {
@@ -70,32 +69,21 @@ public class SyncEvent {
      * The instant of then the change occurred (it should be read from the GH/AC api object, field either created on or updated
      * at)
      */
-    private final LocalTime dateOfChange;
-
-    private final TypeOfChangeEvent typeOfChangeEvent;
-
-    private final Set<PropertyDescriptor> changedPropertyDescriptors;
-
-    private final DSIObject dsiElement;
-
-    private final APIObjectWrapper apiObjectWrapper;
-
-    private final SyncUniverse targetSyncUniverse;
-
-//    private final SynchableObject targetObject;
-
-    private final SynchableObject originObject;
 
     public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<PropertyDescriptor> propertyDescriptors,
             DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse, SynchableObject origin) {
-        this.dateOfChange = dateOfChange;
-        this.typeOfChangeEvent = changeEvent;
-        this.changedPropertyDescriptors = new HashSet<PropertyDescriptor>(propertyDescriptors);
-        this.dsiElement = dsiObject;
-        this.apiObjectWrapper = apiObjectWrapper;
-        this.targetSyncUniverse = targetSyncUniverse;
-        this.originObject = origin;
+        checkNotNull(apiObjectWrapper);
+        checkNotNull(apiObjectWrapper.getAPIObject());
+        checkNotNull(origin);
 
+        setDateOfChange(dateOfChange);
+        setTypeOfChangeEvent(changeEvent);
+        getChangedPropertyDescriptorsSet().addAll(PersistentDescriptor.convert(propertyDescriptors, origin.getClass()));
+
+        setDsiElement(dsiObject);
+        setApiObjectClassName(apiObjectWrapper.getAPIObject().getClass().getName());
+        setTargetSyncUniverse(targetSyncUniverse);
+        setOriginObject(origin);
     }
 
     public static SyncEvent createAndAddADeleteEventWithoutAPIObj(SynchableObject removedObject) {
@@ -120,32 +108,17 @@ public class SyncEvent {
 
     }
 
-    public LocalTime getDateOfChange() {
-        return dateOfChange;
-    }
+    private ImmutableSet<PropertyDescriptor> propertyDescriptors;
 
-    public TypeOfChangeEvent getTypeOfChangeEvent() {
-        return typeOfChangeEvent;
-    }
+    public ImmutableSet<PropertyDescriptor> getChangedPropertyDescriptors() {
+        if (propertyDescriptors == null) {
+            //let's initialize it
+            propertyDescriptors =
+                    ImmutableSet.<PropertyDescriptor> builder()
+                    .addAll(PersistentDescriptor.convert(getChangedPropertyDescriptorsSet())).build();
+        }
+        return propertyDescriptors;
 
-    public Set<PropertyDescriptor> getChangedPropertyDescriptors() {
-        return changedPropertyDescriptors;
-    }
-
-    public DSIObject getDsiElement() {
-        return dsiElement;
-    }
-
-//    public SynchableObject getTargetObject() {
-//        return targetObject;
-//    }
-
-    public SynchableObject getOriginObject() {
-        return originObject;
-    }
-
-    public SyncUniverse getTargetSyncUniverse() {
-        return targetSyncUniverse;
     }
 
     @Override
@@ -164,10 +137,6 @@ public class SyncEvent {
         }
 
         return stringToReturn;
-    }
-
-    public APIObjectWrapper getApiObjectWrapper() {
-        return apiObjectWrapper;
     }
 
     public static boolean isAbleToRunNow(SyncActionWrapper<? extends SynchableObject> syncActionWrapper,
@@ -213,6 +182,17 @@ public class SyncEvent {
         }
 
         return true;
+
+    }
+
+    public void delete() {
+        setOriginObject(null);
+        setMaidRoot(null);
+        setDsiElement(null);
+        for (PersistentDescriptor persistentDescriptor : getChangedPropertyDescriptorsSet()) {
+            persistentDescriptor.delete();
+        }
+        deleteDomainObject();
 
     }
 

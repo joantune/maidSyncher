@@ -22,10 +22,10 @@ import org.eclipse.egit.github.core.User;
 import org.joda.time.LocalTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIUser;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class GHUser extends GHUser_Base {
 
@@ -65,7 +65,7 @@ public class GHUser extends GHUser_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return getDsiObjectUser();
     }
 

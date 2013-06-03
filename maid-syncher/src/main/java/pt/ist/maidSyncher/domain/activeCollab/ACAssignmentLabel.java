@@ -22,7 +22,7 @@ public class ACAssignmentLabel extends ACAssignmentLabel_Base {
 
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return null;
     }
 

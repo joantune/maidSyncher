@@ -42,7 +42,6 @@ import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
@@ -57,6 +56,7 @@ import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -230,7 +230,7 @@ public class GHIssue extends GHIssue_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         if (getDsiObjectIssue() != null)
             return getDsiObjectIssue();
         else

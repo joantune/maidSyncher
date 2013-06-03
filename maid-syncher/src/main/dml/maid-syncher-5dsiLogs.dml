@@ -1,0 +1,111 @@
+package pt.ist.maidSyncher.domain.sync.logs;
+
+
+class SyncLog {
+	LocalTime syncStartTime;
+	
+	int numberGHRequestsAtStartSync;
+	int numberGHRequestsAtEndSync;
+	int numberGHRequestsAtEndActions;
+	
+	LocalTime syncGHStartTime;
+	LocalTime syncGHEndTime;
+	
+	LocalTime syncACStartTime;
+	LocalTime syncACEndTime;
+	
+	
+	LocalTime syncActionsStartTime;
+	LocalTime syncActionsEndTime;
+	
+	LocalTime syncEndTime;
+	
+	String serializedStackTrace;
+	
+	int nrGeneratedSyncActions;
+	
+	String status (REQUIRED);
+}
+
+class SyncActionLog {
+	LocalTime syncStartTime;
+	LocalTime syncEndTime;
+	Boolean success (REQUIRED);
+	String urlOriginObject;
+	String errorDescription;
+	String actionDescription;
+}
+
+// START SyncEventConflictLog area
+
+class SyncEventConflictLog {
+	TypeOfChangeEvent eventOneTypeOfChangeEvent (REQUIRED);
+	TypeOfChangeEvent eventTwoTypeOfChangeEvent (REQUIRED);
+}
+
+relation SynchableObjectSyncEventConflictLogEventOne {
+	.pt.ist.maidSyncher.domain.SynchableObject playsRole eventOneOriginator;
+	SyncEventConflictLog playsRole syncConflictLogsEventOne {
+		multiplicity *;
+	}
+}
+
+relation SynchableObjectSyncEventConflictLogEventTwo {
+	.pt.ist.maidSyncher.domain.SynchableObject playsRole eventTwoOriginator;
+	SyncEventConflictLog playsRole syncConflictLogsEventTwo {
+		multiplicity *;
+	}
+}
+
+relation SynchableObjectSyncEventConflictLogWinner {
+	.pt.ist.maidSyncher.domain.SynchableObject playsRole winnerObject;
+	SyncEventConflictLog playsRole syncConflictWinnerLogs {
+		multiplicity *;
+	}
+}
+
+relation SyncEventConflictLogSyncLog {
+	SyncLog playsRole syncLog;
+	SyncEventConflictLog playsRole syncConflictLogs {
+		multiplicity *;
+	}
+}
+
+// END SyncEventConflicLog area
+
+relation MaidRootSyncLog {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {
+		multiplicity 1..1;
+	}
+	SyncLog playsRole syncLogs {
+		multiplicity *;
+	}
+}
+
+relation MaidRootCurrentSyncLog {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole currentSyncLogMaidRoot {
+		multiplicity 0..1;
+	}
+	SyncLog playsRole currentSyncLog {
+		multiplicity 0..1;
+	}
+}
+
+relation SyncLogSyncActionLog {
+	SyncLog playsRole syncLog {
+		multiplicity 1..1;
+	}
+	SyncActionLog playsRole syncActionLogs {
+		multiplicity *;
+	}
+}
+
+relation DSIObjectSyncActionLog {
+	.pt.ist.maidSyncher.domain.dsi.DSIObject playsRole dsiObject {
+		multiplicity 1..1;
+	}
+	SyncActionLog playsRole syncActionLogs {
+		multiplicity *;
+	}
+}
+	

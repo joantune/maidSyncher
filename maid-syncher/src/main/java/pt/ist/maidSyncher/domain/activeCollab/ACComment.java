@@ -86,7 +86,7 @@ public class ACComment extends ACComment_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return getDsiObjectComment();
     }
 

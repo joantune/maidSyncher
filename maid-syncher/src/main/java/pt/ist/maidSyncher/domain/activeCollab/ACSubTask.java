@@ -27,7 +27,6 @@ import org.eclipse.egit.github.core.service.IssueService;
 
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
@@ -38,6 +37,7 @@ import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAnd
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class ACSubTask extends ACSubTask_Base {
     private final static String DSC_PARENTID = "parentId";
@@ -99,7 +99,7 @@ public class ACSubTask extends ACSubTask_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
         return getDsiObjectSubTask();
     }
 

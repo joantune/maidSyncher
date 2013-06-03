@@ -14,8 +14,8 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import org.joda.time.LocalTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 
 public abstract class ACObject extends ACObject_Base {

@@ -1,0 +1,62 @@
+package pt.ist.maidSyncher.domain.sync;
+
+enum pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent as TypeOfChangeEvent;
+enum pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse as SyncUniverse;
+
+class SyncEvent {
+	LocalTime dateOfChange (REQUIRED);
+	TypeOfChangeEvent typeOfChangeEvent (REQUIRED);
+	String apiObjectClassName (REQUIRED);
+	SyncUniverse targetSyncUniverse (REQUIRED);
+}
+
+// SyncEvent: Origin object
+relation SyncEventSynchableObject {
+	SyncEvent playsRole syncEventOriginObject {
+		multiplicity *;
+	}
+	.pt.ist.maidSyncher.domain.SynchableObject playsRole originObject {
+		multiplicity 1..1;
+	}
+}
+
+// SyncEvent: DSIElement
+relation SyncEventDSIObject {
+	SyncEvent playsRole syncEventDSIElements {
+		multiplicity *;
+	}
+	.pt.ist.maidSyncher.domain.dsi.DSIObject playsRole dsiElement {
+		multiplicity 0..1;
+	}
+}  
+
+
+class PersistentDescriptor {
+	String className;
+	String propertyName;
+}
+
+
+relation SyncEventPersistentDescriptor {
+	SyncEvent playsRole syncEvent {
+		multiplicity 1..1;
+	}
+	PersistentDescriptor playsRole changedPropertyDescriptors {
+		multiplicity 1..*;
+	}
+}
+
+relation MaidRootSyncEvent {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {
+		multiplicity 1..1;
+	}
+	SyncEvent playsRole syncEventsToProcess {
+		multiplicity *;
+	}
+}
+	
+	
+
+
+
+	

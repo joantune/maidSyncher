@@ -14,8 +14,8 @@ package pt.ist.maidSyncher.domain.github;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public abstract class GHObject extends GHObject_Base {
 

@@ -34,10 +34,13 @@ import org.eclipse.egit.github.core.service.MilestoneService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.joda.time.LocalTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.fenixframework.Config;
+import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACComment;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
@@ -50,19 +53,21 @@ import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTaskLabel;
 import pt.ist.maidSyncher.api.activeCollab.ACUser;
+import pt.ist.maidSyncher.api.github.RateLimitingService;
+import pt.ist.maidSyncher.api.github.RateLimitingService.RateLimits;
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
-import pt.ist.maidSyncher.domain.dsi.SyncLog;
-import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHComment;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHOrganization;
 import pt.ist.maidSyncher.domain.github.GHRepository;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
+import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
 
 public class Main {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     private static Config config = null;
 
@@ -73,24 +78,37 @@ public class Main {
     private static SyncLog currentSyncLog;
 
     // FenixFramework will try automatic initialization when first accessed
-    public static void main(String[] args) throws IOException, SyncEventOriginObjectChanged {
+    public static void main(String[] args) throws Exception {
         retrieveAndCreateSyncEvents();
         printChangesBuzz();
         applyChanges();
         //MaidRoot.getInstance().processChangesBuzz(true);
     }
 
-    @Atomic(mode = TxMode.WRITE)
-    private static void applyChanges() throws IOException {
-        MaidRoot.getInstance().applyChangesBuzz();
+    @Atomic(mode = TxMode.READ)
+    private static void applyChanges() throws Exception {
+        try {
+            MaidRoot.getInstance().applyChangesBuzz();
+        } catch (Exception ex) {
+            if(ex.getCause() instanceof WriteOnReadError) {
+                throw (WriteOnReadError) ex.getCause();
+            } else {
+                currentSyncLog.registerExceptionAndMarkAsFailed(ex);
+            }
+        }
     }
 
-
     @Atomic(mode = TxMode.WRITE)
-    private static void retrieveAndCreateSyncEvents() throws IOException {
+    private static void retrieveAndCreateSyncEvents() {
         currentSyncLog = new SyncLog();
-        syncGitHub();
-        syncActiveCollab();
+        MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
+        try {
+            syncGitHub();
+            syncActiveCollab();
+        } catch (IOException exception) {
+            LOGGER.error("caught an IO exception", exception);
+            throw new Error(exception);
+        }
 
     }
 
@@ -105,6 +123,9 @@ public class Main {
     }
 
     private static void syncActiveCollab() throws IOException {
+
+        currentSyncLog.setSyncACStartTime(new LocalTime());
+
         // setup ActiveCollab
         Properties acConfigurationProperties = new Properties();
         acConfigurationProperties.load(Main.class.getResourceAsStream("/configuration.properties"));
@@ -202,6 +223,7 @@ public class Main {
             }
         }
 
+        currentSyncLog.setSyncACEndTime(new LocalTime());
 /*
         List<ACTask> acTasks = acp.getTasks();
         Iterator<ACTask> it = acTasks.iterator();
@@ -225,7 +247,7 @@ public class Main {
  */
     }
 
-    private static void syncGitHub() {
+    private static void syncGitHub() throws IOException {
         currentSyncLog.setSyncGHStartTime(new LocalTime());
         //this is the first sync task, so let us reset the changesBuzz
         //MaidRoot.getInstance().resetSyncEvents();
@@ -233,11 +255,7 @@ public class Main {
         //let's try to connect to the GH Account
         Properties configurationProperties = new Properties();
         InputStream configurationInputStream = Main.class.getResourceAsStream("/configuration.properties");
-        try {
-            configurationProperties.load(configurationInputStream);
-        } catch (IOException e) {
-            throw new Error(e);
-        }
+        configurationProperties.load(configurationInputStream);
 
         //let's try to authenticate and get the user and repository list
 
@@ -253,75 +271,77 @@ public class Main {
         MilestoneService milestoneServiceService = new MilestoneService(client);
         LabelService labelService = new LabelService(client);
 
+        RateLimitingService rateLimitingService = new RateLimitingService(client);
+
         List<User> orgMembers = null;
         List<Repository> repositories = null;
-        try {
 
-            orgMembers = organizationService.getMembers(organizationName);
+        RateLimits remainingHits = rateLimitingService.getRemainingHits();
+        currentSyncLog.setNumberGHRequestsAtStartSync(remainingHits.getRemaining());
 
-            orgMembers.addAll(organizationService.getPublicMembers(organizationName));
+        orgMembers = organizationService.getMembers(organizationName);
 
-            User organization = organizationService.getOrganization(organizationName);
-            GHOrganization.process(organization);
+        orgMembers.addAll(organizationService.getPublicMembers(organizationName));
 
-            repositories = repositoryService.getRepositories(organization.getLogin());
+        User organization = organizationService.getOrganization(organizationName);
+        GHOrganization.process(organization);
 
-            System.out.println("List of repositories:");
-            for (Repository repository : repositories) {
-                System.out.println(repository.getName());
-                GHRepository.process(repository);
+        repositories = repositoryService.getRepositories(organization.getLogin());
 
-                List<Label> labels = labelService.getLabels(repository);
-                System.out.println(" Has " + labels.size() + " labels, listing them");
-                for (Label label : labels) {
-                    System.out.println("  Label: " + label.getName());
+        System.out.println("List of repositories:");
+        for (Repository repository : repositories) {
+            System.out.println(repository.getName());
+            GHRepository.process(repository);
+
+            List<Label> labels = labelService.getLabels(repository);
+            System.out.println(" Has " + labels.size() + " labels, listing them");
+            for (Label label : labels) {
+                System.out.println("  Label: " + label.getName());
+            }
+            GHLabel.process(labels, repository);
+
+            List<Milestone> milestones = new ArrayList<Milestone>(milestoneServiceService.getMilestones(repository, "open"));
+
+            milestones.addAll(milestoneServiceService.getMilestones(repository, "closed"));
+
+            System.out.println(" Got " + milestones.size() + " milestones, listing them");
+            for (Milestone milestone : milestones) {
+                System.out.println("  Milestone " + milestone.getTitle() + " url: " + milestone.getUrl() + " closed issues: "
+                        + milestone.getClosedIssues() + " open issues: " + milestone.getOpenIssues());
+            }
+            GHMilestone.process(milestones, repository);
+
+            List<Issue> issues = issueService.getIssues(repository, new HashMap<String, String>());
+            HashMap<String, String> stateClosedMap = new HashMap<>();
+            stateClosedMap.put("state", "closed");
+            issues.addAll(issueService.getIssues(repository, stateClosedMap));
+            System.out.println(" Has " + issues.size() + " issues, listing them");
+            for (Issue issue : issues) {
+                Milestone milestone = issue.getMilestone();
+                String milestoneString = milestone == null ? "-" : milestone.getTitle();
+                System.out.print("  Issue " + issue.getNumber() + " name: " + issue.getTitle() + " milestone: " + milestoneString
+                        + " labels: ");
+                GHIssue.process(issue, repository);
+                for (Label label : issue.getLabels()) {
+                    System.out.print(label.getName() + " ");
                 }
-                GHLabel.process(labels, repository);
+                System.out.println();
 
-                List<Milestone> milestones = new ArrayList<Milestone>(milestoneServiceService.getMilestones(repository, "open"));
-
-                milestones.addAll(milestoneServiceService.getMilestones(repository, "closed"));
-
-                System.out.println(" Got " + milestones.size() + " milestones, listing them");
-                for (Milestone milestone : milestones) {
-                    System.out.println("  Milestone " + milestone.getTitle() + " url: " + milestone.getUrl() + " closed issues: "
-                            + milestone.getClosedIssues() + " open issues: " + milestone.getOpenIssues());
-                }
-                GHMilestone.process(milestones, repository);
-
-                List<Issue> issues = issueService.getIssues(repository, new HashMap<String, String>());
-                HashMap<String, String> stateClosedMap = new HashMap<>();
-                stateClosedMap.put("state", "closed");
-                issues.addAll(issueService.getIssues(repository, stateClosedMap));
-                System.out.println(" Has " + issues.size() + " issues, listing them");
-                for (Issue issue : issues) {
-                    Milestone milestone = issue.getMilestone();
-                    String milestoneString = milestone == null ? "-" : milestone.getTitle();
-                    System.out.print("  Issue " + issue.getNumber() + " name: " + issue.getTitle() + " milestone: "
-                            + milestoneString + " labels: ");
-                    GHIssue.process(issue, repository);
-                    for (Label label : issue.getLabels()) {
-                        System.out.print(label.getName() + " ");
+                int comments = issue.getComments();
+                if (comments > 0) {
+                    System.out.println("    got " + comments + " comments. Showing them:");
+                    List<Comment> commentsCollection = issueService.getComments(repository, issue.getNumber());
+                    for (Comment comment : commentsCollection) {
+                        System.out.println("      Comment " + comment.getId() + " " + comment.getBody());
                     }
-                    System.out.println();
-
-                    int comments = issue.getComments();
-                    if (comments > 0) {
-                        System.out.println("    got " + comments + " comments. Showing them:");
-                        List<Comment> commentsCollection = issueService.getComments(repository, issue.getNumber());
-                        for (Comment comment : commentsCollection) {
-                            System.out.println("      Comment " + comment.getId() + " " + comment.getBody());
-                        }
-                        GHComment.process(commentsCollection, issue);
-                    }
+                    GHComment.process(commentsCollection, issue);
                 }
-
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new Error(e);
         }
+
+        remainingHits = rateLimitingService.getRemainingHits();
+        currentSyncLog.setNumberGHRequestsAtEndSync(remainingHits.getRemaining());
 
         if (orgMembers != null && orgMembers.isEmpty() == false) {
             System.out.println("List of members:");
@@ -329,6 +349,8 @@ public class Main {
                 System.out.println(user.getName() + user.getCompany() + user.getLogin());
             }
         }
+
+        currentSyncLog.setSyncGHEndTime(new LocalTime());
 
     }
 

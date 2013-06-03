@@ -22,10 +22,10 @@ import org.eclipse.egit.github.core.Repository;
 import org.joda.time.LocalTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
-import pt.ist.maidSyncher.domain.SyncEvent;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -134,7 +134,7 @@ public class GHLabel extends GHLabel_Base {
     }
 
     @Override
-    protected DSIObject getDSIObject() {
+    public DSIObject getDSIObject() {
 
         return getDsiObjectProject();
     }
