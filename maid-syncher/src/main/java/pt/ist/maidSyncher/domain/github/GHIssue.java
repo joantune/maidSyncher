@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -169,12 +168,12 @@ public class GHIssue extends GHIssue_Base {
     }
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException, NoSuchMethodException {
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    NoSuchMethodException {
         checkNotNull(orig);
         checkArgument(orig instanceof Issue, "provided object must be an instance of " + Issue.class.getName());
 
-        Set<PropertyDescriptor> changedPropertyDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
+        Set<String> changedPropertyDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         Issue issue = (Issue) orig;
         //now let's take care of the relations with the other objects
@@ -183,7 +182,7 @@ public class GHIssue extends GHIssue_Base {
         if (milestone != null) {
             GHMilestone ghMilestone = GHMilestone.process(milestone);
             if (!ObjectUtils.equals(getMilestone(), ghMilestone))
-                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "milestone"));
+                changedPropertyDescriptors.add(getPropertyDescriptorNameAndCheckItExists(issue, "milestone"));
             setMilestone(ghMilestone);
         }
 
@@ -195,7 +194,7 @@ public class GHIssue extends GHIssue_Base {
                 newGHLabels.add(ghLabel);
             }
             if (!ObjectUtils.equals(ghOldLabels, newGHLabels))
-                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "labels"));
+                changedPropertyDescriptors.add(getPropertyDescriptorNameAndCheckItExists(issue, "labels"));
             for (GHLabel ghLabel : getLabelsSet()) {
                 removeLabels(ghLabel);
             }
@@ -210,7 +209,7 @@ public class GHIssue extends GHIssue_Base {
             ghNewAssignee = GHUser.process(assignee);
         GHUser ghOldAssignee = getAssignee();
         if (!ObjectUtils.equals(ghNewAssignee, ghOldAssignee))
-            changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(issue, "assignee"));
+            changedPropertyDescriptors.add(getPropertyDescriptorNameAndCheckItExists(issue, "assignee"));
         setAssignee(ghNewAssignee);
         return changedPropertyDescriptors;
     }
@@ -354,14 +353,14 @@ public class GHIssue extends GHIssue_Base {
     }
 
     private SyncActionWrapper syncUpdateSubTaskEvent(ACSubTask newAcSubTask, DSISubTask dsiSubTask, final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedLabels = false;
         boolean auxChangedState = false;
         boolean auxChangedBody = false;
         boolean auxChangedTitle = false;
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_HTML_URL:
@@ -464,11 +463,6 @@ public class GHIssue extends GHIssue_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -484,6 +478,11 @@ public class GHIssue extends GHIssue_Base {
                 classesDependedOn.add(GHLabel.class);
                 classesDependedOn.add(pt.ist.maidSyncher.domain.activeCollab.ACSubTask.class);
                 return classesDependedOn;
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
     }
@@ -625,15 +624,15 @@ public class GHIssue extends GHIssue_Base {
 //    }
 
     private SyncActionWrapper syncUpdateTaskEvent(ACTask newAcTask, DSIIssue dsiIssue, final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedMilestones = false;
         boolean auxChangedLabels = false;
         boolean auxChangedState = false;
         boolean auxChangedBody = false;
         boolean auxChangedTitle = false;
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_HTML_URL:
@@ -759,11 +758,6 @@ public class GHIssue extends GHIssue_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -781,6 +775,11 @@ public class GHIssue extends GHIssue_Base {
                 classesDependedOn.add(GHMilestone.class);
                 classesDependedOn.add(GHLabel.class);
                 return Collections.singleton((Class) ACProject.class);
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
     }
@@ -808,10 +807,10 @@ public class GHIssue extends GHIssue_Base {
     }
 
     private SyncActionWrapper syncCreateEvent(final ACTask newAcTask, final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        final Set<String> tickedDescriptors = new HashSet<>();
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_HTML_URL:
@@ -934,11 +933,6 @@ public class GHIssue extends GHIssue_Base {
                 }
 
                 @Override
-                public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                    return tickedDescriptors;
-                }
-
-                @Override
                 public SyncEvent getOriginatingSyncEvent() {
                     return syncEvent;
                 }
@@ -950,6 +944,11 @@ public class GHIssue extends GHIssue_Base {
                     dependedOnDSIClasses.add(DSIProject.class);
                     dependedOnDSIClasses.add(DSIRepository.class);
                     return dependedOnDSIClasses;
+                }
+
+                @Override
+                public Collection getPropertyDescriptorNamesTicked() {
+                    return tickedDescriptors;
                 }
             };
             return toReturnActionWrapper;

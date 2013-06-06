@@ -3,11 +3,20 @@ package pt.ist.maidSyncher.domain.sync;
 enum pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent as TypeOfChangeEvent;
 enum pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse as SyncUniverse;
 
+valueType pt.utl.ist.fenix.tools.util.Strings as Strings {
+    externalizeWith {
+        String exportAsString();
+    }
+
+    internalizeWith importFromString();
+}
+
 class SyncEvent {
 	LocalTime dateOfChange (REQUIRED);
 	TypeOfChangeEvent typeOfChangeEvent (REQUIRED);
 	String apiObjectClassName (REQUIRED);
 	SyncUniverse targetSyncUniverse (REQUIRED);
+	Strings changedPropertyDescriptorNames;
 }
 
 // SyncEvent: Origin object
@@ -31,20 +40,6 @@ relation SyncEventDSIObject {
 }  
 
 
-class PersistentDescriptor {
-	String className;
-	String propertyName;
-}
-
-
-relation SyncEventPersistentDescriptor {
-	SyncEvent playsRole syncEvent {
-		multiplicity 1..1;
-	}
-	PersistentDescriptor playsRole changedPropertyDescriptors {
-		multiplicity 1..*;
-	}
-}
 
 relation MaidRootSyncEvent {
 	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {

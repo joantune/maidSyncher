@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -113,14 +112,14 @@ public class GHMilestone extends GHMilestone_Base {
     static final String DSC_DUEON = "dueOn";
 
     private SyncActionWrapper<GHMilestone> syncUpdateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedDescription = false;
         boolean auxChangedDueOn = false;
         boolean auxChangedTitle = false;
 
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_URL:
             case DSC_CREATED_AT:
             case DSC_CLOSED_ISSUES:
@@ -195,10 +194,6 @@ public class GHMilestone extends GHMilestone_Base {
                 return Collections.emptyList();
             }
 
-            @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
@@ -213,6 +208,11 @@ public class GHMilestone extends GHMilestone_Base {
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
                 return Collections.singleton((Class) GHIssue.class);
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
     }

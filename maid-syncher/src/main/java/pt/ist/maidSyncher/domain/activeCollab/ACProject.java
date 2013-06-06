@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -157,12 +156,12 @@ public class ACProject extends ACProject_Base {
     }
 
     private SyncActionWrapper syncUpdateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean isNowArchivedAux = false;
         boolean nameChangedAux = false;
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_CREATED_ON:
             case DSC_OVERVIEW:
@@ -253,11 +252,6 @@ public class ACProject extends ACProject_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -272,15 +266,20 @@ public class ACProject extends ACProject_Base {
                 //say that we depend on all of the repositories being synched
                 return Collections.singleton((Class) DSIRepository.class);
 
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             };
         };
     }
 
     private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        final Set<String> tickedDescriptors = new HashSet<>();
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_CREATED_ON:
             case DSC_OVERVIEW:
@@ -378,8 +377,9 @@ public class ACProject extends ACProject_Base {
                         return synchableObjectsToReturn;
             }
 
+
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+            public Collection<String> getPropertyDescriptorNamesTicked() {
                 return tickedDescriptors;
             }
 

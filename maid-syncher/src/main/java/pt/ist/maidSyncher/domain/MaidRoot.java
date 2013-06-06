@@ -13,7 +13,6 @@ package pt.ist.maidSyncher.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import pt.ist.maidSyncher.domain.sync.logs.SyncEventConflictLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.gag.annotation.remark.ShoutOutTo;
 
@@ -164,8 +162,9 @@ public class MaidRoot extends MaidRoot_Base {
                 //let's now sync this
                 SyncActionWrapper syncAction = syncEvent.getOriginObject().sync(syncEvent);
                 if (syncAction != null) {
-                    Collection<PropertyDescriptor> propertyDescriptorsTicked = syncAction.getPropertyDescriptorsTicked();
-                    Set<PropertyDescriptor> changedPropertyDescriptors = syncEvent.getChangedPropertyDescriptors();
+                    Collection<Set> propertyDescriptorsTicked = syncAction.getPropertyDescriptorNamesTicked();
+                    Collection<String> changedPropertyDescriptors =
+                            syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList();
                     if (propertyDescriptorsTicked.containsAll(changedPropertyDescriptors) == false)
                         throw new Error("Not all of the changed fields were considering when processing "
                                 + syncEvent.getApiObjectClassName() + " " + syncEvent);
@@ -530,7 +529,7 @@ public class MaidRoot extends MaidRoot_Base {
     @ShoutOutTo(value = { "the guy that thought that including a null was a good idea" })
     private void validate(SyncActionWrapper syncActionWrapper, SyncEvent syncEvent) {
         checkNotNull(syncActionWrapper.getOriginatingSyncEvent());
-        checkNotNull(syncActionWrapper.getPropertyDescriptorsTicked());
+        checkNotNull(syncActionWrapper.getPropertyDescriptorNamesTicked());
         checkNotNull(syncActionWrapper.getSyncDependedDSIObjects());
         checkNotNull(syncActionWrapper.getSyncDependedTypesOfDSIObjects());
 
@@ -538,17 +537,17 @@ public class MaidRoot extends MaidRoot_Base {
             throw new IllegalArgumentException("Sync events from wrapper and original event differ");
         }
 
-        Collection propertyDescriptorsTicked = syncActionWrapper.getPropertyDescriptorsTicked();
-        ImmutableSet<PropertyDescriptor> changedPropertyDescriptors =
-                syncActionWrapper.getOriginatingSyncEvent().getChangedPropertyDescriptors();
+        Collection propertyDescriptorsTicked = syncActionWrapper.getPropertyDescriptorNamesTicked();
+        Collection<String> changedPropertyDescriptors =
+                syncActionWrapper.getOriginatingSyncEvent().getChangedPropertyDescriptorNames().getUnmodifiableList();
         if (!propertyDescriptorsTicked.containsAll(changedPropertyDescriptors)) {
             StringBuilder exceptionMessageBuilder = new StringBuilder();
             exceptionMessageBuilder
             .append("One forgot to consider a property descriptor change. Property descriptors not ticked: ");
-            HashSet<PropertyDescriptor> copyOfChangedDescriptors = new HashSet<>(changedPropertyDescriptors);
+            HashSet<String> copyOfChangedDescriptors = new HashSet<>(changedPropertyDescriptors);
             copyOfChangedDescriptors.removeAll(propertyDescriptorsTicked);
-            for (PropertyDescriptor propertyDescriptor : copyOfChangedDescriptors) {
-                exceptionMessageBuilder.append(propertyDescriptor.getName() + " ");
+            for (String propertyDescriptor : copyOfChangedDescriptors) {
+                exceptionMessageBuilder.append(propertyDescriptor + " ");
             }
             throw new IllegalArgumentException(copyOfChangedDescriptors.toString());
         }

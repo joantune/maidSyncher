@@ -30,6 +30,7 @@ import pt.ist.maidSyncher.domain.activeCollab.ACObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHObject;
+import pt.utl.ist.fenix.tools.util.Strings;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
@@ -70,7 +71,7 @@ public class SyncEvent extends SyncEvent_Base {
      * at)
      */
 
-    public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<PropertyDescriptor> propertyDescriptors,
+    public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<String> propertyDescriptors,
             DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse, SynchableObject origin) {
         checkNotNull(apiObjectWrapper);
         checkNotNull(apiObjectWrapper.getAPIObject());
@@ -78,7 +79,8 @@ public class SyncEvent extends SyncEvent_Base {
 
         setDateOfChange(dateOfChange);
         setTypeOfChangeEvent(changeEvent);
-        getChangedPropertyDescriptorsSet().addAll(PersistentDescriptor.convert(propertyDescriptors, origin.getClass()));
+//TODO take care of the property descriptors
+        setChangedPropertyDescriptorNames(new Strings(propertyDescriptors));
 
         setDsiElement(dsiObject);
         setApiObjectClassName(apiObjectWrapper.getAPIObject().getClass().getName());
@@ -89,8 +91,8 @@ public class SyncEvent extends SyncEvent_Base {
     public static SyncEvent createAndAddADeleteEventWithoutAPIObj(SynchableObject removedObject) {
         SyncUniverse syncUniverseToUse = SyncUniverse.getTargetSyncUniverse(removedObject);
         SyncEvent syncEvent =
-                new SyncEvent(removedObject.getUpdatedAtDate(), TypeOfChangeEvent.DELETE,
-                        Collections.<PropertyDescriptor> emptySet(), removedObject.getDSIObject(), new APIObjectWrapper() {
+                new SyncEvent(removedObject.getUpdatedAtDate(), TypeOfChangeEvent.DELETE, Collections.<String> emptySet(),
+                        removedObject.getDSIObject(), new APIObjectWrapper() {
 
                     @Override
                     public void validateAPIObject() throws SyncEventOriginObjectChanged {
@@ -110,17 +112,6 @@ public class SyncEvent extends SyncEvent_Base {
 
     private ImmutableSet<PropertyDescriptor> propertyDescriptors;
 
-    public ImmutableSet<PropertyDescriptor> getChangedPropertyDescriptors() {
-        if (propertyDescriptors == null) {
-            //let's initialize it
-            propertyDescriptors =
-                    ImmutableSet.<PropertyDescriptor> builder()
-                    .addAll(PersistentDescriptor.convert(getChangedPropertyDescriptorsSet())).build();
-        }
-        return propertyDescriptors;
-
-    }
-
     @Override
     public String toString() {
         String stringToReturn =
@@ -128,11 +119,11 @@ public class SyncEvent extends SyncEvent_Base {
                 + ")" + " Type: " + getTypeOfChangeEvent() + " targetUniverse: " + getTargetSyncUniverse()
                 + " originObject: " + getOriginObject().getClass().getSimpleName();
 
-        if (getChangedPropertyDescriptors() != null && getChangedPropertyDescriptors().isEmpty() == false) {
+        if (getChangedPropertyDescriptorNames() != null && getChangedPropertyDescriptorNames().isEmpty() == false) {
             //let's add the property descriptors changed
             stringToReturn += " Changed descriptors: ";
-            for (PropertyDescriptor propertyDescriptor : getChangedPropertyDescriptors()) {
-                stringToReturn += " " + propertyDescriptor.getName();
+            for (String propertyDescriptorName : getChangedPropertyDescriptorNames().getUnmodifiableList()) {
+                stringToReturn += " " + propertyDescriptorName;
             }
         }
 
@@ -189,9 +180,6 @@ public class SyncEvent extends SyncEvent_Base {
         setOriginObject(null);
         setMaidRoot(null);
         setDsiElement(null);
-        for (PersistentDescriptor persistentDescriptor : getChangedPropertyDescriptorsSet()) {
-            persistentDescriptor.delete();
-        }
         deleteDomainObject();
 
     }

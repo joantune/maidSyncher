@@ -14,7 +14,6 @@
  */
 package pt.ist.maidSyncher.domain.sync;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
@@ -32,7 +31,7 @@ public interface SyncActionWrapper<T extends SynchableObject> {
 
     public Collection<T> sync() throws IOException;
 
-    public Collection<PropertyDescriptor> getPropertyDescriptorsTicked();
+    public Collection<String> getPropertyDescriptorNamesTicked();
 
     public SyncEvent getOriginatingSyncEvent();
 

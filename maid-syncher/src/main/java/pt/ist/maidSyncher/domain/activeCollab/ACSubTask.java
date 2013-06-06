@@ -13,7 +13,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -52,9 +51,9 @@ public class ACSubTask extends ACSubTask_Base {
     }
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<PropertyDescriptor> propertyDescriptorsToReturn = super.copyPropertiesFrom(orig);
+        Collection<String> propertyDescriptorsToReturn = super.copyPropertiesFrom(orig);
         pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask = (pt.ist.maidSyncher.api.activeCollab.ACSubTask) orig;
         if (acSubTask.getParentClass().equals(ACTask.CLASS_VALUE)) {
             pt.ist.maidSyncher.domain.activeCollab.ACTask acTask =
@@ -63,7 +62,7 @@ public class ACSubTask extends ACSubTask_Base {
             setTask(acTask);
             if (!ObjectUtils.equals(acTask, oldTask)) {
                 //let's add the PropertyDescriptor
-                propertyDescriptorsToReturn.add(getPropertyDescriptorAndCheckItExists(acSubTask, "parentId"));
+                propertyDescriptorsToReturn.add(getPropertyDescriptorNameAndCheckItExists(acSubTask, "parentId"));
 
             }
         }
@@ -140,11 +139,11 @@ public class ACSubTask extends ACSubTask_Base {
 
 
     private SyncActionWrapper syncUpdateEvent(SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedName = false;
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_PARENTID: //this one should never change
@@ -192,11 +191,6 @@ public class ACSubTask extends ACSubTask_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 // TODO Auto-generated method stub
                 return null;
@@ -213,14 +207,19 @@ public class ACSubTask extends ACSubTask_Base {
                 // TODO Auto-generated method stub
                 return null;
             }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
+            }
         };
     }
 
     private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        final Set<String> tickedDescriptors = new HashSet<>();
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_PARENTID:
@@ -282,11 +281,6 @@ public class ACSubTask extends ACSubTask_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -305,6 +299,11 @@ public class ACSubTask extends ACSubTask_Base {
                 Set<Class> dependedOnTypesOfDSIObjects = new HashSet<>();
                 dependedOnTypesOfDSIObjects.add(DSIRepository.class);
                 return dependedOnTypesOfDSIObjects;
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
 

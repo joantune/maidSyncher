@@ -153,8 +153,8 @@ public class GHIssueSyncTest {
         mockACProject.addTaskCategoriesDefined(acTaskCategory);
         mockDSIRepository.addAcTaskCategories(acTaskCategory);
 
-        createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse);
-        updateSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse);
+        createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, ghIssueToUse, new Issue());
+        updateSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, ghIssueToUse, new Issue());
 
     }
 

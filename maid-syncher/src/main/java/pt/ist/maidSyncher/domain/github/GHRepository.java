@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.github;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -79,9 +78,9 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     protected static final String DSC_HTML_URL = "htmlUrl";
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<PropertyDescriptor> changedPropertyDescriptors = super.copyPropertiesFrom(orig);
+        Collection<String> changedPropertyDescriptors = super.copyPropertiesFrom(orig);
         //let's take care of the Owner
         Repository repository = (Repository) orig;
         User owner = repository.getOwner();
@@ -90,14 +89,14 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             GHUser oldOwner = getOwner();
             setOwner(ghUser);
             if (ObjectUtils.equals(ghUser, oldOwner) == false)
-                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(orig, DSC_OWNER));
+                changedPropertyDescriptors.add(getPropertyDescriptorNameAndCheckItExists(orig, DSC_OWNER));
 
         } else {
             GHOrganization ghOrg = GHOrganization.process(owner);
             GHUser oldOwner = getOwner();
             setOwner(ghOrg);
             if (ObjectUtils.equals(ghOrg, oldOwner) == false)
-                changedPropertyDescriptors.add(getPropertyDescriptorAndCheckItExists(orig, DSC_OWNER));
+                changedPropertyDescriptors.add(getPropertyDescriptorNameAndCheckItExists(orig, DSC_OWNER));
 
         }
         return changedPropertyDescriptors;
@@ -177,11 +176,11 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
         final DSIRepository dsiRepository = (DSIRepository) getDSIObject();
 
         final Set<ACCategory> acCategoriesToEdit = new HashSet<ACCategory>();
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
 
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_OWNER:
             case DSC_HAS_DOWNLOADS:
@@ -270,10 +269,6 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                 return synchedObjects;
             }
 
-            @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
@@ -288,6 +283,11 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
                 return Collections.singleton((Class) DSIProject.class);
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
     }
@@ -314,10 +314,10 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
 //    private SyncActionWrapper syncCreateEvent(final pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject,
 //            final Collection<ACTaskCategory> existingACTaskCategories, final SyncEvent syncEvent) {
     private SyncActionWrapper syncCreateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        final Set<String> tickedDescriptors = new HashSet<>();
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_OWNER:
             case DSC_HAS_DOWNLOADS:
@@ -414,11 +414,6 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -431,6 +426,11 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
                 return Collections.emptySet();
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
     }

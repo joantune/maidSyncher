@@ -75,7 +75,6 @@ public class GHMilestoneSyncTest {
         ghMilestone.setDescription(GH_MILESTONE_DESCRIPTION);
         ghMilestone.setDueOn(GH_MILESTONE_DUE_ON_LT);
 
-
         pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestoneOne =
                 new pt.ist.maidSyncher.domain.activeCollab.ACMilestone();
 
@@ -96,9 +95,6 @@ public class GHMilestoneSyncTest {
         acProject.addMilestones(acMilestoneTwo);
         acProject.addMilestones(acMilestoneOne);
         acProject.setId(AC_PROJECT_ID);
-
-
-
 
 //        ghMilestone.setTitle(GH_MILESTONE_TITLE);
 //        ghMilestone.setDescription(GH_MILESTONE_DESCRIPTION);
@@ -135,12 +131,12 @@ public class GHMilestoneSyncTest {
             assertEquals(GH_MILESTONE_DUE_ON_LT.toDateTimeToday().toDate(), acMilestone.getDueOn());
         }
 
-
     }
 
     @Test
+    @Atomic(mode = TxMode.WRITE)
     public void create() throws IOException {
-        SyncEvent createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghMilestone);
+        SyncEvent createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghMilestone, new Milestone());
 
         ACObject.setRequestProcessor(requestProcessor);
 
@@ -148,12 +144,10 @@ public class GHMilestoneSyncTest {
 
         syncActionWrapper.sync();
 
-
         verify(requestProcessor, never()).processPost(Mockito.any(ACObject.class), Mockito.anyString());
         verify(requestProcessor, never()).processPost(Mockito.anyString(), Mockito.anyString());
         verify(requestProcessor, never()).processGet(Mockito.anyString());
         assertEquals(EmptySyncActionWrapper.class, syncActionWrapper.getClass());
     }
-
 
 }

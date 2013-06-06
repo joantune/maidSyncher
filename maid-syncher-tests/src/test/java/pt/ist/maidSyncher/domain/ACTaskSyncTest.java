@@ -722,6 +722,7 @@ public class ACTaskSyncTest {
         return acSubTaskOne;
     }
 
+    @SuppressWarnings("static-access")
     @Atomic(mode = TxMode.WRITE)
     @Test
     public void updateWithMilestoneChange() throws IOException {

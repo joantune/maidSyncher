@@ -55,9 +55,11 @@ import pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 
 public abstract class SynchableObject extends SynchableObject_Base {
@@ -213,7 +215,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
         }
 
         //let's copy the values
-        HashSet<PropertyDescriptor> changedDescriptors = new HashSet<>();
+        HashSet<String> changedDescriptors = new HashSet<>();
         try {
             changedDescriptors.addAll(toProccessAndReturn.copyPropertiesFrom(object));
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
@@ -259,7 +261,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
     private static RequestProcessor acRequestProcessor = ACContext.getInstance();
 
     private static void generateSyncEvent(final SynchableObject toProccessAndReturn,
-            final Collection<PropertyDescriptor> changedDescriptors, final Object apiObject) throws SyncEventIllegalConflict {
+            final Collection<String> changedDescriptors,
+            final Object apiObject) throws SyncEventIllegalConflict {
         final SynchableObject originObject = toProccessAndReturn;
         SyncEvent.TypeOfChangeEvent typeOfChange = null;
         DSIObject dsiObject = toProccessAndReturn.getDSIObject();
@@ -306,7 +309,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                                 } else {
                                     //if it's not an active collab one, let's assume it's a GH
                                     GitHubRequest gitHubRequest = new GitHubRequest();
-                                    getPropertyDescriptorAndCheckItExists(apiObject, "url");
+                                            getPropertyDescriptorNameAndCheckItExists(apiObject, "url");
                                     String uri = null;
                                     uri = (String) PropertyUtils.getSimpleProperty(apiObject, "url");
                                     gitHubRequest.setUri(uri);
@@ -352,12 +355,12 @@ public abstract class SynchableObject extends SynchableObject_Base {
 
     private static void logSync(SyncEvent syncEvent) {
         SynchableObject originObject = syncEvent.getOriginObject();
-        Set<PropertyDescriptor> changedPropertyDescriptors = syncEvent.getChangedPropertyDescriptors();
+        Collection<String> changedPropertyDescriptors = syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList();
         String logContent =
                 "Added Sync event with origin object: " + originObject.getExternalId() + " class: "
                         + originObject.getClass().getName() + " changed properties: ";
-        for (PropertyDescriptor descriptor : changedPropertyDescriptors) {
-            logContent += " " + descriptor.getName();
+        for (String descriptorName : changedPropertyDescriptors) {
+            logContent += " " + descriptorName;
         }
         logContent += " type: " + syncEvent.getTypeOfChangeEvent();
         LOGGER.debug(logContent);
@@ -384,7 +387,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
      * @throws NoSuchMethodException
      * @throws TaskNotVisibleException
      */
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
         Set<PropertyDescriptor> propertyDescriptorsThatChanged = new HashSet<PropertyDescriptor>();
 
@@ -420,7 +423,16 @@ public abstract class SynchableObject extends SynchableObject_Base {
             }
         }
 
-        return propertyDescriptorsThatChanged;
+        return Collections2.transform(propertyDescriptorsThatChanged, new Function<PropertyDescriptor, String>() {
+            @Override
+            public String apply(PropertyDescriptor propertyDescriptor) {
+                if (propertyDescriptor == null) {
+                    return null;
+                }
+                return propertyDescriptor.getName();
+
+            }
+        });
     }
 
     public void copyPropertiesTo(Object dest) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
@@ -543,7 +555,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                 && valueObject1.getClass().getPackage().getName().equalsIgnoreCase("org.eclipse.egit.github.core");
     }
 
-    protected static PropertyDescriptor getPropertyDescriptorAndCheckItExists(Object bean, String propertyName) {
+    protected static String getPropertyDescriptorNameAndCheckItExists(Object bean, String propertyName) {
         PropertyDescriptor propertyDescriptor;
         try {
             propertyDescriptor = PropertyUtils.getPropertyDescriptor(bean, propertyName);
@@ -551,6 +563,6 @@ public abstract class SynchableObject extends SynchableObject_Base {
             throw new Error(e);
         }
         checkNotNull(propertyDescriptor);
-        return propertyDescriptor;
+        return propertyDescriptor.getName();
     }
 }

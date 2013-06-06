@@ -14,7 +14,6 @@
  */
 package pt.ist.maidSyncher.domain.sync;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,12 +45,9 @@ public class EmptySyncActionWrapper implements SyncActionWrapper {
         return Collections.emptySet();
     }
 
-    /* (non-Javadoc)
-     * @see pt.ist.maidSyncher.domain.sync.SyncActionWrapper#getPropertyDescriptorsTicked()
-     */
     @Override
-    public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-        return syncEvent.getChangedPropertyDescriptors();
+    public Collection getPropertyDescriptorNamesTicked() {
+        return syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList();
     }
 
     /* (non-Javadoc)

@@ -32,19 +32,20 @@ public class TestUtils {
     }
 
 
-    public static SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject) {
+    public static SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject,
+            final Object apiObject) {
         return syncEventGenerator(typeOfChangeEvent, originObject, Collections.<PropertyDescriptor> emptySet());
     }
 
     public static SyncEvent syncEventGenerator(final TypeOfChangeEvent typeOfChangeEvent, final SynchableObject originObject,
             Collection<PropertyDescriptor> changedDescriptors) {
         //let's make sure the changedDescriptors don't have certain, illegal descriptors
-        Set<PropertyDescriptor> propertyDescriptorsToUse = new HashSet<>();
-        for (PropertyDescriptor propertyDescriptor : propertyDescriptorsToUse) {
+        Set<String> propertyDescriptorsToUse = new HashSet<>();
+        for (PropertyDescriptor propertyDescriptor : changedDescriptors) {
             if (propertyDescriptor.getName().equalsIgnoreCase("class")) {
                 //do nothing
             } else {
-                propertyDescriptorsToUse.add(propertyDescriptor);
+                propertyDescriptorsToUse.add(propertyDescriptor.getName());
             }
 
         }
@@ -78,6 +79,8 @@ public class TestUtils {
 //        instance.getGhOrganization().
         instance.getGhRepositoriesSet().clear();
         instance.getGhUsersSet().clear();
+        instance.getSyncEventsToProcessSet().clear();
+        instance.getSyncLogsSet().clear();
 
     }
 }

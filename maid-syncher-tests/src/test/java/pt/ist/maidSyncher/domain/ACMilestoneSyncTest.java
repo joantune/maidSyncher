@@ -175,8 +175,11 @@ public class ACMilestoneSyncTest {
     }
 
     @Test
+    @Atomic(mode = TxMode.WRITE)
     public void create() throws IOException {
-        SyncEvent createSyncEvent = TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acMilestone);
+        SyncEvent createSyncEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acMilestone,
+                        new pt.ist.maidSyncher.api.activeCollab.ACMilestone());
         when(gitHubClient.get(Mockito.any(GitHubRequest.class))).thenReturn(response);
 
         SyncActionWrapper syncActionWrapper = acMilestone.sync(createSyncEvent);

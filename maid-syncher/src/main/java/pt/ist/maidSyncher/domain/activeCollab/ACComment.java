@@ -13,7 +13,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -40,9 +39,9 @@ public class ACComment extends ACComment_Base {
     }
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<PropertyDescriptor> changedDescriptorsToReturn = super.copyPropertiesFrom(orig);
+        Collection<String> changedDescriptorsToReturn = super.copyPropertiesFrom(orig);
         pt.ist.maidSyncher.api.activeCollab.ACComment acComment = (pt.ist.maidSyncher.api.activeCollab.ACComment) orig;
         if (acComment.getParentClass().equals(ACTask.CLASS_VALUE)) {
             pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();
@@ -50,7 +49,7 @@ public class ACComment extends ACComment_Base {
                     pt.ist.maidSyncher.domain.activeCollab.ACTask.findById(acComment.getParentId());
             setTask(newTask);
             if (!ObjectUtils.equals(newTask, oldTask)) {
-                changedDescriptorsToReturn.add(getPropertyDescriptorAndCheckItExists(acComment, "parentId"));
+                changedDescriptorsToReturn.add(getPropertyDescriptorNameAndCheckItExists(acComment, "parentId"));
             }
         }
         return changedDescriptorsToReturn;

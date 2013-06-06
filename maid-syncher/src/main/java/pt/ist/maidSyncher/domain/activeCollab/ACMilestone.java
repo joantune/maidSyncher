@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -140,14 +139,14 @@ public class ACMilestone extends ACMilestone_Base {
     }
 
     private SyncActionWrapper<GHMilestone> syncUpdateEvent(final SyncEvent syncEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedName = false;
         boolean auxChangedDueOn = false;
         boolean auxChangedBody = false;
 
-        for (PropertyDescriptor changedDescriptor : syncEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_ID:
             case DSC_URL:
             case DSC_PRIORITY:
@@ -225,11 +224,6 @@ public class ACMilestone extends ACMilestone_Base {
 
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
-                return tickedDescriptors;
-            }
-
-            @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return syncEvent;
             }
@@ -244,6 +238,11 @@ public class ACMilestone extends ACMilestone_Base {
                 Set<Class> classesDependedOn = new HashSet<>();
                 classesDependedOn.add(GHRepository.class);
                 return classesDependedOn;
+            }
+
+            @Override
+            public Collection<String> getPropertyDescriptorNamesTicked() {
+                return tickedDescriptors;
             }
         };
 

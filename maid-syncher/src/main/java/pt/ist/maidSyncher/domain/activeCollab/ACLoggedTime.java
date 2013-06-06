@@ -13,7 +13,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -38,10 +37,10 @@ public class ACLoggedTime extends ACLoggedTime_Base {
     }
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException,
     NoSuchMethodException, TaskNotVisibleException {
-        HashSet<PropertyDescriptor> changedPropertyDescriptor = new HashSet<PropertyDescriptor>(super.copyPropertiesFrom(orig));
+        HashSet<String> changedPropertyDescriptor = new HashSet<>(super.copyPropertiesFrom(orig));
         pt.ist.maidSyncher.api.activeCollab.ACLoggedTime acLoggedTime = (pt.ist.maidSyncher.api.activeCollab.ACLoggedTime) orig;
 
         //let's get the relevant parent
@@ -56,7 +55,7 @@ public class ACLoggedTime extends ACLoggedTime_Base {
             pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();
             setTask(task);
             if (!ObjectUtils.equals(oldTask, task)) {
-                changedPropertyDescriptor.add(getPropertyDescriptorAndCheckItExists(orig, "parentId"));
+                changedPropertyDescriptor.add(getPropertyDescriptorNameAndCheckItExists(orig, "parentId"));
             }
             break;
         case ACProject.CLASS_VALUE:
@@ -65,7 +64,7 @@ public class ACLoggedTime extends ACLoggedTime_Base {
             pt.ist.maidSyncher.domain.activeCollab.ACProject oldProject = getProject();
             setProject(project);
             if (!ObjectUtils.equals(oldProject, project)) {
-                changedPropertyDescriptor.add(getPropertyDescriptorAndCheckItExists(orig, "parentId"));
+                changedPropertyDescriptor.add(getPropertyDescriptorNameAndCheckItExists(orig, "parentId"));
             }
 
             break;

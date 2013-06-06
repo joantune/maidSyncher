@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -62,16 +61,17 @@ public class ACTask extends ACTask_Base {
         super();
     }
 
-    private Collection<PropertyDescriptor> processMainAssignee(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processMainAssignee(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
 
         ACUser acUser = ACUser.findById(acTask.getAssigneeId());
         ACUser oldMainAssignee = getMainAssignee();
         setMainAssignee(acUser);
-        return !ObjectUtils.equals(acUser, oldMainAssignee) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask,
+        return !ObjectUtils.equals(acUser, oldMainAssignee) ? Collections.singleton(getPropertyDescriptorNameAndCheckItExists(
+                acTask,
                 "assigneeId")) : Collections.EMPTY_SET;
     }
 
-    private Collection<PropertyDescriptor> processOtherAssignees(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processOtherAssignees(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
 
         boolean somethingChanged = false;
         Set<ACUser> newOtherAssigneesSet = new HashSet<ACUser>();
@@ -98,22 +98,22 @@ public class ACTask extends ACTask_Base {
 
         for (ACUser user : newOtherAssigneesSet)
             addOtherAssignees(user);
-        return somethingChanged ? Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask, "otherAssigneesId")) : Collections.EMPTY_SET;
+        return somethingChanged ? Collections.singleton(getPropertyDescriptorNameAndCheckItExists(acTask, "otherAssigneesId")) : Collections.EMPTY_SET;
     }
 
-    private Collection<PropertyDescriptor> processMilestone(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processMilestone(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACMilestone newMilestone = ACMilestone.findById(acTask.getMilestoneId());
         ACMilestone oldMilestone = getMilestone();
         setMilestone(newMilestone);
-        return !ObjectUtils.equals(oldMilestone, newMilestone) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(
+        return !ObjectUtils.equals(oldMilestone, newMilestone) ? Collections.singleton(getPropertyDescriptorNameAndCheckItExists(
                 acTask, "milestoneId")) : Collections.EMPTY_SET;
 
     }
 
     @Override
-    public Collection<PropertyDescriptor> copyPropertiesFrom(Object orig) throws IllegalAccessException,
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException {
-        HashSet<PropertyDescriptor> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
+        Set<String> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         pt.ist.maidSyncher.api.activeCollab.ACTask acTask = (pt.ist.maidSyncher.api.activeCollab.ACTask) orig;
         //now let's take care of the milestone, main assignee and other assignees
@@ -134,7 +134,7 @@ public class ACTask extends ACTask_Base {
 
     }
 
-    private Collection<PropertyDescriptor> processProject(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processProject(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         //let's get the projectid
         int projectId = acTask.getProjectId();
         checkArgument(projectId > 0);
@@ -144,7 +144,7 @@ public class ACTask extends ACTask_Base {
 
         if (ObjectUtils.equals(acCurrentProject, acOldProject) == false) {
             setProject(acCurrentProject);
-            return Collections.singleton(getPropertyDescriptorAndCheckItExists(acTask, DSC_PROJECT_ID));
+            return Collections.singleton(getPropertyDescriptorNameAndCheckItExists(acTask, DSC_PROJECT_ID));
         } else
             return Collections.emptySet();
     }
@@ -153,21 +153,21 @@ public class ACTask extends ACTask_Base {
         return (ACTask) MiscUtils.findACObjectsById(id, ACTask.class);
     }
 
-    private Collection<PropertyDescriptor> processLabel(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processLabel(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACTaskLabel newTaskLabel = ACTaskLabel.findById(acTask.getLabelId());
         ACTaskLabel oldTaskLabel = getLabel();
         setLabel(newTaskLabel);
-        return !ObjectUtils.equals(newTaskLabel, oldTaskLabel) ? Collections.singleton(getPropertyDescriptorAndCheckItExists(
+        return !ObjectUtils.equals(newTaskLabel, oldTaskLabel) ? Collections.singleton(getPropertyDescriptorNameAndCheckItExists(
                 acTask, "labelId")) : Collections.EMPTY_SET;
 
     }
 
-    private Collection<PropertyDescriptor> processCategory(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
+    private Collection<String> processCategory(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACTaskCategory newTaskCategory = ACTaskCategory.findById(acTask.getCategoryId());
         ACTaskCategory oldTaskCategory = getTaskCategory();
         setTaskCategory(newTaskCategory);
         return !ObjectUtils.equals(newTaskCategory, oldTaskCategory) ? Collections
-                .singleton(getPropertyDescriptorAndCheckItExists(acTask, "categoryId")) : Collections.EMPTY_SET;
+                .singleton(getPropertyDescriptorNameAndCheckItExists(acTask, "categoryId")) : Collections.EMPTY_SET;
     }
 
     static ACTask process(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) throws TaskNotVisibleException {
@@ -255,10 +255,10 @@ public class ACTask extends ACTask_Base {
     public static final String DSC_PROJECT_ID = "projectId";
 
     private SyncActionWrapper syncCreateEvent(final Issue newGHIssue, final SyncEvent triggerEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
-        for (PropertyDescriptor changedDescriptor : triggerEvent.getChangedPropertyDescriptors()) {
+        final Set<String> tickedDescriptors = new HashSet<>();
+        for (String changedDescriptor : triggerEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
             case DSC_OTHER_ASSIGNEES_ID:
             case DSC_ASSIGNEE_ID:
             case DSC_ID:
@@ -367,7 +367,7 @@ public class ACTask extends ACTask_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+            public Collection<String> getPropertyDescriptorNamesTicked() {
                 return tickedDescriptors;
             }
 
@@ -435,13 +435,13 @@ public class ACTask extends ACTask_Base {
     }
 
     private SyncActionWrapper syncUpdateEvent(final Issue ghIssueToUpdate, final GHIssue ghIssue, final SyncEvent triggerEvent) {
-        final Set<PropertyDescriptor> tickedDescriptors = new HashSet<>();
+        final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxProjectChanged = false;
         boolean auxMilestoneChanged = false;
         boolean auxTaskCategoryChanged = false;
-        for (PropertyDescriptor changedDescriptor : triggerEvent.getChangedPropertyDescriptors()) {
+        for (String changedDescriptor : triggerEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
-            switch (changedDescriptor.getName()) {
+            switch (changedDescriptor) {
 
             case DSC_OTHER_ASSIGNEES_ID:
                 //let us just ignore the other assignees for now
@@ -657,10 +657,9 @@ public class ACTask extends ACTask_Base {
             }
 
             @Override
-            public Collection<PropertyDescriptor> getPropertyDescriptorsTicked() {
+            public Collection getPropertyDescriptorNamesTicked() {
                 return tickedDescriptors;
             }
-
             @Override
             public SyncEvent getOriginatingSyncEvent() {
                 return triggerEvent;
