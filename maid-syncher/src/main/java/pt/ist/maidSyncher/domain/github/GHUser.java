@@ -29,7 +29,7 @@ import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class GHUser extends GHUser_Base {
 
-    public  GHUser() {
+    public GHUser() {
         super();
         if (!(this instanceof GHOrganization))
             MaidRoot.getInstance().addGhUsers(this);
@@ -53,7 +53,6 @@ public class GHUser extends GHUser_Base {
         }
 
     }
-
 
     @ConsistencyPredicate
     protected boolean checkHasRelationWithMaidRoot() {
@@ -82,7 +81,14 @@ public class GHUser extends GHUser_Base {
         /*we have no updated at filed (which is no big deal, so, let's make
          * this have less priority [either return the creation date or
          * the date of the last time it was synched] */
-        return getLastSynchTime() == null ? getCreatedAt() : getLastSynchTime();
+        if (getLastSynchTime() == null) {
+            if (getCreatedAt() == null) {
+                return new LocalTime();
+            } else
+                return getCreatedAt();
+        } else {
+            return getLastSynchTime();
+        }
     }
 
     @Override

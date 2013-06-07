@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="pt.ist" level="INFO">
+    <logger name="pt.ist" level="TRACE">
         <appender-ref ref="STDOUT" />
     </logger>
 

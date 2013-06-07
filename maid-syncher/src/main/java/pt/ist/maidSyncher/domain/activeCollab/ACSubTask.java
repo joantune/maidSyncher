@@ -51,9 +51,10 @@ public class ACSubTask extends ACSubTask_Base {
     }
 
     @Override
-    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<String> propertyDescriptorsToReturn = super.copyPropertiesFrom(orig);
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    NoSuchMethodException, TaskNotVisibleException {
+        HashSet<String> propertyDescriptorsToReturn = new HashSet<>();
+        propertyDescriptorsToReturn.addAll(super.copyPropertiesFrom(orig));
         pt.ist.maidSyncher.api.activeCollab.ACSubTask acSubTask = (pt.ist.maidSyncher.api.activeCollab.ACSubTask) orig;
         if (acSubTask.getParentClass().equals(ACTask.CLASS_VALUE)) {
             pt.ist.maidSyncher.domain.activeCollab.ACTask acTask =
@@ -136,7 +137,6 @@ public class ACSubTask extends ACSubTask_Base {
 
         return syncActionWrapperToReturn;
     }
-
 
     private SyncActionWrapper syncUpdateEvent(SyncEvent syncEvent) {
         final Set<String> tickedDescriptors = new HashSet<>();
@@ -251,7 +251,6 @@ public class ACSubTask extends ACSubTask_Base {
                 //let's create a new GHIssue on the other side
                 Issue issue = new Issue();
 
-
                 //let's get the parent issue
                 DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
                 GHIssue parentGHIssue = dsiSubTask.getParentIssue().getGhIssue();
@@ -275,8 +274,7 @@ public class ACSubTask extends ACSubTask_Base {
                 //let's sync it
                 IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
                 return Collections.<SynchableObject> singleton(GHIssue.process(issueService.createIssue(gitHubRepository, issue),
-                        gitHubRepository,
-                        true));
+                        gitHubRepository, true));
 
             }
 
@@ -306,8 +304,6 @@ public class ACSubTask extends ACSubTask_Base {
                 return tickedDescriptors;
             }
         };
-
-
 
     }
 }

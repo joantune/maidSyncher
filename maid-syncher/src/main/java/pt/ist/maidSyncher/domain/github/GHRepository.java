@@ -80,7 +80,8 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     @Override
     public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<String> changedPropertyDescriptors = super.copyPropertiesFrom(orig);
+        Set<String> changedPropertyDescriptors = new HashSet();
+        changedPropertyDescriptors.addAll(super.copyPropertiesFrom(orig));
         //let's take care of the Owner
         Repository repository = (Repository) orig;
         User owner = repository.getOwner();

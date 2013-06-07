@@ -260,8 +260,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
 
     private static RequestProcessor acRequestProcessor = ACContext.getInstance();
 
-    private static void generateSyncEvent(final SynchableObject toProccessAndReturn,
-            final Collection<String> changedDescriptors,
+    private static void generateSyncEvent(final SynchableObject toProccessAndReturn, final Collection<String> changedDescriptors,
             final Object apiObject) throws SyncEventIllegalConflict {
         final SynchableObject originObject = toProccessAndReturn;
         SyncEvent.TypeOfChangeEvent typeOfChange = null;
@@ -276,6 +275,9 @@ public abstract class SynchableObject extends SynchableObject_Base {
             LOGGER.debug(toProccessAndReturn.getClass().getName() + " doesn't support Synch");
         }
         if (dsiObject != null && dsiObject.getLastSynchedAt() != null) {
+            typeOfChange = TypeOfChangeEvent.UPDATE;
+        }
+        if (dsiObject != null) {
             if (typeOfChange == null) {
                 typeOfChange = TypeOfChangeEvent.UPDATE;
             }
@@ -309,7 +311,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                                 } else {
                                     //if it's not an active collab one, let's assume it's a GH
                                     GitHubRequest gitHubRequest = new GitHubRequest();
-                                            getPropertyDescriptorNameAndCheckItExists(apiObject, "url");
+                                    getPropertyDescriptorNameAndCheckItExists(apiObject, "url");
                                     String uri = null;
                                     uri = (String) PropertyUtils.getSimpleProperty(apiObject, "url");
                                     gitHubRequest.setUri(uri);
@@ -387,8 +389,8 @@ public abstract class SynchableObject extends SynchableObject_Base {
      * @throws NoSuchMethodException
      * @throws TaskNotVisibleException
      */
-    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    NoSuchMethodException, TaskNotVisibleException {
         Set<PropertyDescriptor> propertyDescriptorsThatChanged = new HashSet<PropertyDescriptor>();
 
         Object dest = this;

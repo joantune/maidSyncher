@@ -41,7 +41,8 @@ public class ACComment extends ACComment_Base {
     @Override
     public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
     InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
-        Collection<String> changedDescriptorsToReturn = super.copyPropertiesFrom(orig);
+        HashSet<String> changedDescriptorsToReturn = new HashSet<>();
+        changedDescriptorsToReturn.addAll(super.copyPropertiesFrom(orig));
         pt.ist.maidSyncher.api.activeCollab.ACComment acComment = (pt.ist.maidSyncher.api.activeCollab.ACComment) orig;
         if (acComment.getParentClass().equals(ACTask.CLASS_VALUE)) {
             pt.ist.maidSyncher.domain.activeCollab.ACTask oldTask = getTask();

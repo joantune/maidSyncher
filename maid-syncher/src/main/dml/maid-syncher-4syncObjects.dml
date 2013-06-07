@@ -40,10 +40,18 @@ relation SyncEventDSIObject {
 }  
 
 
-
 relation MaidRootSyncEvent {
 	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot {
 		multiplicity 1..1;
+	}
+	SyncEvent playsRole syncEvents {
+		multiplicity *;
+	}
+}
+
+relation MaidRootSyncEventToProcess {
+	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromToProcess {
+		multiplicity 0..1;
 	}
 	SyncEvent playsRole syncEventsToProcess {
 		multiplicity *;

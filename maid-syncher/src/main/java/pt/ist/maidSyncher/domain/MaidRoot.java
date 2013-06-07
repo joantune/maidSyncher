@@ -37,9 +37,7 @@ import pt.ist.fenixframework.FenixFramework;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.domain.activeCollab.ACInstance;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
-import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIllegalConflict;
-import pt.ist.maidSyncher.domain.exceptions.SyncEventOriginObjectChanged;
 import pt.ist.maidSyncher.domain.github.GHOrganization;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
@@ -142,51 +140,6 @@ public class MaidRoot extends MaidRoot_Base {
 
     }
 
-    /**
-     * Applies the changes in the changes buzz, by calling {@link SynchableObject#sync(SyncEvent)}
-     * 
-     * If any of those methods does not take care of one of the property descriptors, that event is logged
-     * 
-     * @throws SyncEventOriginObjectChanged if there was a change in one of the objects meanwhile
-     */
-    public void processChangesBuzz() throws SyncEventOriginObjectChanged {
-        processChangesBuzz(false);
-    }
-
-    public void processChangesBuzz(boolean dryRun) throws SyncEventOriginObjectChanged {
-        //ok, let's validate the current changes buzz before doing anything
-        checkChangesBuzzApiObjectsAreEqual();
-        List<SyncActionWrapper> syncActions = new ArrayList<>();
-        for (DSIObject keyDSIObject : changesBuzz.keySet()) {
-            for (SyncEvent syncEvent : changesBuzz.get(keyDSIObject)) {
-                //let's now sync this
-                SyncActionWrapper syncAction = syncEvent.getOriginObject().sync(syncEvent);
-                if (syncAction != null) {
-                    Collection<Set> propertyDescriptorsTicked = syncAction.getPropertyDescriptorNamesTicked();
-                    Collection<String> changedPropertyDescriptors =
-                            syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList();
-                    if (propertyDescriptorsTicked.containsAll(changedPropertyDescriptors) == false)
-                        throw new Error("Not all of the changed fields were considering when processing "
-                                + syncEvent.getApiObjectClassName() + " " + syncEvent);
-                    syncActions.add(syncAction);
-
-                }
-            }
-        }
-
-        //let's apply the changes
-        for (SyncActionWrapper actionWrapper : syncActions) {
-//            actionWrapper.getOriginatingSyncEvent().getApiObjectWrapper().validateAPIObject();
-            if (!dryRun)
-                try {
-                    actionWrapper.sync();
-                } catch (IOException e) {
-                    throw new SyncActionError("trying to sync. SyncEvent: " + actionWrapper.getOriginatingSyncEvent(), e);
-                }
-        }
-
-    }
-
     private void checkChangesBuzzApiObjectsAreEqual() {
         //TODO issue #6
 //        //ok, let's iterate through all of them
@@ -244,7 +197,6 @@ public class MaidRoot extends MaidRoot_Base {
         List<SyncEvent> syncEventsToDelete = new ArrayList<>();
         if (dsiElement == null) {
             changesBuzz.put(null, syncEvent);
-            getSyncEventsToProcessSet().add(syncEvent);
         } else if (changesBuzz.containsKey(dsiElement)) {
             scanExistingEvents: for (SyncEvent syncEventAlreadyPresent : changesBuzz.get(dsiElement)) {
                 switch (syncEvent.getTypeOfChangeEvent()) {
@@ -275,7 +227,7 @@ public class MaidRoot extends MaidRoot_Base {
                                 + dsiElement.getExternalId() + " class: " + dsiElement.getClass().getName() + " was detected");
                     }
                     break;
-                    /* end of CREATE */
+                /* end of CREATE */
 
                 case READ:
                     //the READs are pretty much neutral
@@ -314,20 +266,17 @@ public class MaidRoot extends MaidRoot_Base {
 
             }
 
-        //so, let's add if we have to, and delete the ones we should
-        if (addEvent) {
-            changesBuzz.put(dsiElement, syncEvent);
-            getSyncEventsToProcessSet().add(syncEvent);
-        }
-        for (SyncEvent syncEventToDelete : syncEventsToDelete) {
-            changesBuzz.remove(dsiElement, syncEventToDelete);
-            getSyncEventsToProcessSet().remove(syncEventToDelete);
-            syncEventToDelete.delete();
-        }
+            //so, let's add if we have to, and delete the ones we should
+            if (addEvent) {
+                changesBuzz.put(dsiElement, syncEvent);
+            }
+            for (SyncEvent syncEventToDelete : syncEventsToDelete) {
+                changesBuzz.remove(dsiElement, syncEventToDelete);
+                syncEventToDelete.delete();
+            }
 
         } else {
             changesBuzz.put(dsiElement, syncEvent);
-            getSyncEventsToProcessSet().add(syncEvent);
         }
     }
 
@@ -374,7 +323,7 @@ public class MaidRoot extends MaidRoot_Base {
 
     private static class SyncWrapper {
         final DSIObject dsiObject;
-        final Set<SyncActionWrapper<? extends SynchableObject>> actionWrappers = new HashSet<>();
+        private final Set<SyncActionWrapper<? extends SynchableObject>> actionWrappers = new HashSet<>();
 
         public SyncWrapper(DSIObject dsiObject) {
             this.dsiObject = dsiObject;
@@ -397,11 +346,11 @@ public class MaidRoot extends MaidRoot_Base {
 //        }
 
         public void addSyncAction(SyncActionWrapper<? extends SynchableObject> syncActionWrapper) {
-            this.actionWrappers.add(syncActionWrapper);
+            this.getActionWrappers().add(syncActionWrapper);
         }
 
         public int getNumberSyncActions() {
-            return this.actionWrappers.size();
+            return this.getActionWrappers().size();
         }
 
         public static int getNumberSyncActions(Collection<SyncWrapper> syncWrappers) {
@@ -427,7 +376,7 @@ public class MaidRoot extends MaidRoot_Base {
          */
         @Atomic(mode = TxMode.READ)
         public boolean process(Set<DSIObject> dsiObjectsToSync) {
-            Iterator<SyncActionWrapper<? extends SynchableObject>> actionWrappersIterator = actionWrappers.iterator();
+            Iterator<SyncActionWrapper<? extends SynchableObject>> actionWrappersIterator = getActionWrappers().iterator();
             while (actionWrappersIterator.hasNext()) {
                 SyncActionWrapper<? extends SynchableObject> syncActionWrapper = actionWrappersIterator.next();
                 if (SyncEvent.isAbleToRunNow(syncActionWrapper, dsiObjectsToSync)) {
@@ -441,7 +390,7 @@ public class MaidRoot extends MaidRoot_Base {
                     }
                 }
             }
-            return actionWrappers.isEmpty();
+            return getActionWrappers().isEmpty();
         }
 
         @Atomic(mode = TxMode.WRITE)
@@ -452,8 +401,9 @@ public class MaidRoot extends MaidRoot_Base {
         @Atomic(mode = TxMode.WRITE)
         private SyncActionLog logSyncStart(SyncActionWrapper<? extends SynchableObject> syncActionWrapper) {
             SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
-            SyncActionLog syncActionLog = new SyncActionLog(currentSyncLog, syncActionWrapper.getOriginatingSyncEvent().getOriginObject()
-                    .getUrl(), syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
+            SyncActionLog syncActionLog =
+                    new SyncActionLog(currentSyncLog, syncActionWrapper.getOriginatingSyncEvent().getOriginObject().getUrl(),
+                            syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
             syncActionLog.markStartOfSync();
             return syncActionLog;
 
@@ -474,27 +424,34 @@ public class MaidRoot extends MaidRoot_Base {
             syncActionWrapper.sync();
 
         }
+
+        public Set<SyncActionWrapper<? extends SynchableObject>> getActionWrappers() {
+            return actionWrappers;
+        }
     }
 
     @Atomic(mode = TxMode.READ)
     public void applyChangesBuzz() throws IOException {
-        Set<SyncWrapper> syncWrappers = new HashSet<>();
-
-        Map<DSIObject, Collection<SyncEvent>> changesMap = getChangesBuzz().asMap();
-        for (DSIObject dsiObject : changesMap.keySet()) {
-            SyncWrapper syncWrapper = new SyncWrapper(dsiObject);
-            for (SyncEvent syncEvent : changesMap.get(dsiObject)) {
-                SyncActionWrapper syncActionWrapper = syncEvent.getOriginObject().sync(syncEvent);
-                if (syncActionWrapper != null) {
-                    validate(syncActionWrapper, syncEvent);
-                    syncWrapper.addSyncAction(syncActionWrapper);
-                }
-            }
-            syncWrappers.add(syncWrapper);
+        if (getSyncEventsToProcessSet().isEmpty() == false) {
+            throw new IllegalStateException("The maidRoot still has SyncEvents to "
+                    + "process, that should be processed before calling this method");
         }
+        Map<DSIObject, Collection<SyncEvent>> changesMap = getChangesBuzz().asMap();
+        Set<SyncWrapper> syncWrappers = createSyncWrappers(changesMap);
 
         registerNumberGeneratedSyncActions(syncWrappers);
 
+        //after everything is validated, let's add the SyncEvents to the
+        //to process queue of the MaidRoot
+        addSyncEventsToProcessQueue(syncWrappers);
+
+        processSyncWrappers(syncWrappers);
+
+        LOGGER.info("Applied all SyncActions");
+
+    }
+
+    private void processSyncWrappers(Set<SyncWrapper> syncWrappers) {
         while (syncWrappers.isEmpty() == false) {
             Iterator<SyncWrapper> syncWrappersIterator = syncWrappers.iterator();
             while (syncWrappersIterator.hasNext()) {
@@ -507,7 +464,66 @@ public class MaidRoot extends MaidRoot_Base {
             }
         }
 
-        LOGGER.info("Applied all SyncActions");
+    }
+
+    /**
+     * Tries to process any remaining {@link SyncEvent} that might still be
+     * in {@link #getSyncEventsToProcessSet()}.
+     * 
+     */
+    @Atomic(mode = TxMode.READ)
+    public void processRemainingInstances() {
+        //based on the events we have, let's create the map
+        Set<SyncWrapper> syncWrappers = createSyncWrappers(getMultiMapFromSyncEvents(getSyncEventsSet()).asMap());
+
+        registerNumberOfGeneratedSyncActionsForUnprocessedEvents(syncWrappers);
+
+        processSyncWrappers(syncWrappers);
+
+        LOGGER.info("Applied all SyncActions of the unprocessed SyncEvents");
+
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    private void registerNumberOfGeneratedSyncActionsForUnprocessedEvents(Set<SyncWrapper> syncWrappers) {
+        int numberSyncActions = SyncWrapper.getNumberSyncActions(syncWrappers);
+        getCurrentSyncLog().setNrGeneratedSyncActionsFromRemainingSyncEvents(numberSyncActions);
+        LOGGER.info("Number of SyncActions from unprocessed Sync Events Generated: " + numberSyncActions);
+
+    }
+
+    private Set<SyncWrapper> createSyncWrappers(Map<DSIObject, Collection<SyncEvent>> changesMap) {
+        Set<SyncWrapper> syncWrappers = new HashSet<>();
+
+        for (DSIObject dsiObject : changesMap.keySet()) {
+            SyncWrapper syncWrapper = new SyncWrapper(dsiObject);
+            for (SyncEvent syncEvent : changesMap.get(dsiObject)) {
+                SyncActionWrapper syncActionWrapper = syncEvent.getOriginObject().sync(syncEvent);
+                if (syncActionWrapper != null) {
+                    validate(syncActionWrapper, syncEvent);
+                    syncWrapper.addSyncAction(syncActionWrapper);
+                }
+            }
+            syncWrappers.add(syncWrapper);
+        }
+        return syncWrappers;
+    }
+
+    private static Multimap<DSIObject, SyncEvent> getMultiMapFromSyncEvents(Collection<SyncEvent> syncEvents) {
+        Multimap<DSIObject, SyncEvent> multimap = HashMultimap.create();
+        for (SyncEvent syncEvent : syncEvents) {
+            multimap.put(syncEvent.getDsiElement(), syncEvent);
+        }
+        return multimap;
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    private void addSyncEventsToProcessQueue(Set<SyncWrapper> syncWrappers) {
+        for (SyncWrapper syncWrapper : syncWrappers) {
+            for (SyncActionWrapper<? extends SynchableObject> syncActionWrapper : syncWrapper.getActionWrappers()) {
+                getSyncEventsToProcessSet().add(syncActionWrapper.getOriginatingSyncEvent());
+            }
+        }
 
     }
 
@@ -542,14 +558,19 @@ public class MaidRoot extends MaidRoot_Base {
                 syncActionWrapper.getOriginatingSyncEvent().getChangedPropertyDescriptorNames().getUnmodifiableList();
         if (!propertyDescriptorsTicked.containsAll(changedPropertyDescriptors)) {
             StringBuilder exceptionMessageBuilder = new StringBuilder();
-            exceptionMessageBuilder
-            .append("One forgot to consider a property descriptor change. Property descriptors not ticked: ");
+            exceptionMessageBuilder.append("One didn't consider a property descriptor change. Property descriptors not ticked: ");
             HashSet<String> copyOfChangedDescriptors = new HashSet<>(changedPropertyDescriptors);
             copyOfChangedDescriptors.removeAll(propertyDescriptorsTicked);
             for (String propertyDescriptor : copyOfChangedDescriptors) {
                 exceptionMessageBuilder.append(propertyDescriptor + " ");
             }
-            throw new IllegalArgumentException(copyOfChangedDescriptors.toString());
+            if (syncEvent != null && syncEvent.getOriginObject() != null) {
+                exceptionMessageBuilder.append("Class of origin object: " + syncEvent.getOriginObject().getClass().getName());
+
+            } else {
+                exceptionMessageBuilder.append("Class of Origin object unknown because syncEvent is null.");
+            }
+            throw new IllegalArgumentException(exceptionMessageBuilder.toString());
         }
 
     }

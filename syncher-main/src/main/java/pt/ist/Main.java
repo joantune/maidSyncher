@@ -79,10 +79,41 @@ public class Main {
 
     // FenixFramework will try automatic initialization when first accessed
     public static void main(String[] args) throws Exception {
-        retrieveAndCreateSyncEvents();
-        printChangesBuzz();
-        applyChanges();
+        try {
+            logStartOfSyncProcess();
+            processAnyRemainingSyncEvents();
+            retrieveAndCreateSyncEvents();
+            printChangesBuzz();
+            applyChanges();
+        } catch (Exception ex) {
+            if (ex.getCause() instanceof WriteOnReadError) { //it shouldn't happen
+                throw (WriteOnReadError) ex.getCause();
+            } else {
+                registerExceptionAndMarkAsFailed(ex);
+                throw ex;
+            }
+        }
         //MaidRoot.getInstance().processChangesBuzz(true);
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    private static void logStartOfSyncProcess() {
+        currentSyncLog = new SyncLog();
+        MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
+
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    private static void registerExceptionAndMarkAsFailed(Exception ex) {
+
+        currentSyncLog.registerExceptionAndMarkAsFailed(ex);
+    }
+
+    @Atomic(mode = TxMode.READ)
+    private static void processAnyRemainingSyncEvents() {
+        MaidRoot maidRoot = MaidRoot.getInstance();
+        maidRoot.processRemainingInstances();
+
     }
 
     @Atomic(mode = TxMode.READ)
@@ -90,17 +121,17 @@ public class Main {
         try {
             MaidRoot.getInstance().applyChangesBuzz();
         } catch (Exception ex) {
-            if(ex.getCause() instanceof WriteOnReadError) {
+            if (ex.getCause() instanceof WriteOnReadError) {
                 throw (WriteOnReadError) ex.getCause();
             } else {
                 currentSyncLog.registerExceptionAndMarkAsFailed(ex);
+                throw ex;
             }
         }
     }
 
     @Atomic(mode = TxMode.WRITE)
     private static void retrieveAndCreateSyncEvents() {
-        currentSyncLog = new SyncLog();
         MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
         try {
             syncGitHub();

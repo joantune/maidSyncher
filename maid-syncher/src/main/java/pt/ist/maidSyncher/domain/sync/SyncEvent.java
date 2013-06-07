@@ -25,6 +25,7 @@ import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.ACObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -76,6 +77,9 @@ public class SyncEvent extends SyncEvent_Base {
         checkNotNull(apiObjectWrapper);
         checkNotNull(apiObjectWrapper.getAPIObject());
         checkNotNull(origin);
+        checkNotNull(dateOfChange);
+        checkNotNull(changeEvent);
+        checkNotNull(targetSyncUniverse);
 
         setDateOfChange(dateOfChange);
         setTypeOfChangeEvent(changeEvent);
@@ -86,6 +90,7 @@ public class SyncEvent extends SyncEvent_Base {
         setApiObjectClassName(apiObjectWrapper.getAPIObject().getClass().getName());
         setTargetSyncUniverse(targetSyncUniverse);
         setOriginObject(origin);
+        setMaidRoot(MaidRoot.getInstance());
     }
 
     public static SyncEvent createAndAddADeleteEventWithoutAPIObj(SynchableObject removedObject) {

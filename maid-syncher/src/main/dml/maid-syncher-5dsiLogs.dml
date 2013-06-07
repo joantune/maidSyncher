@@ -4,6 +4,8 @@ package pt.ist.maidSyncher.domain.sync.logs;
 class SyncLog {
 	LocalTime syncStartTime;
 	
+	int numberSyncEventsToProcessAtStart;
+	
 	int numberGHRequestsAtStartSync;
 	int numberGHRequestsAtEndSync;
 	int numberGHRequestsAtEndActions;
@@ -23,6 +25,8 @@ class SyncLog {
 	String serializedStackTrace;
 	
 	int nrGeneratedSyncActions;
+	
+	int nrGeneratedSyncActionsFromRemainingSyncEvents;
 	
 	String status (REQUIRED);
 }
