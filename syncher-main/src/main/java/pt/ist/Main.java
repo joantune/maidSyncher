@@ -134,6 +134,7 @@ public class Main {
     private static void retrieveAndCreateSyncEvents() {
         MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
         try {
+            MaidRoot.getChangesBuzz().clear();
             syncGitHub();
             syncActiveCollab();
         } catch (IOException exception) {

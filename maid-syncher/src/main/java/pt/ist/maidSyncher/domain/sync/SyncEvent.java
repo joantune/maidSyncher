@@ -16,7 +16,6 @@ package pt.ist.maidSyncher.domain.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.beans.PropertyDescriptor;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -34,7 +33,6 @@ import pt.ist.maidSyncher.domain.github.GHObject;
 import pt.utl.ist.fenix.tools.util.Strings;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 /**
@@ -115,7 +113,6 @@ public class SyncEvent extends SyncEvent_Base {
 
     }
 
-    private ImmutableSet<PropertyDescriptor> propertyDescriptors;
 
     @Override
     public String toString() {

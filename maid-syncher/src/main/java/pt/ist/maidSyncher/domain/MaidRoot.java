@@ -385,6 +385,7 @@ public class MaidRoot extends MaidRoot_Base {
                     try {
                         atomicProcessSyncAction(syncActionWrapper);
                         logSyncSuccessAndDeleteSyncEvent(syncActionLog, syncActionWrapper);
+                        actionWrappersIterator.remove();
                     } catch (Exception ex) {
                         logSyncFailure(syncActionLog, ex);
 
@@ -402,6 +403,10 @@ public class MaidRoot extends MaidRoot_Base {
         @Atomic(mode = TxMode.WRITE)
         private SyncActionLog logSyncStart(SyncActionWrapper<? extends SynchableObject> syncActionWrapper) {
             SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
+            System.out.println("current " + currentSyncLog == null);
+            System.out.println("syncActionWrapper " + syncActionWrapper == null);
+            System.out.println("syncActionWrapper event " + syncActionWrapper.getOriginatingSyncEvent() == null);
+
             SyncActionLog syncActionLog =
                     new SyncActionLog(currentSyncLog, syncActionWrapper.getOriginatingSyncEvent().getOriginObject().getUrl(),
                             syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
@@ -546,6 +551,8 @@ public class MaidRoot extends MaidRoot_Base {
     @ShoutOutTo(value = { "the guy that thought that including a null was a good idea" })
     private void validate(SyncActionWrapper syncActionWrapper, SyncEvent syncEvent) {
         checkNotNull(syncActionWrapper.getOriginatingSyncEvent());
+        checkNotNull(syncActionWrapper.getOriginatingSyncEvent().getOriginObject());
+        checkNotNull(syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
         checkNotNull(syncActionWrapper.getPropertyDescriptorNamesTicked());
         checkNotNull(syncActionWrapper.getSyncDependedDSIObjects());
         checkNotNull(syncActionWrapper.getSyncDependedTypesOfDSIObjects());
