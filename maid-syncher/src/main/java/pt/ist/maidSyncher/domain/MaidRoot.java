@@ -46,6 +46,7 @@ import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.sync.logs.SyncActionLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncEventConflictLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
+import pt.ist.maidSyncher.domain.sync.logs.SyncWarningLog;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -227,7 +228,7 @@ public class MaidRoot extends MaidRoot_Base {
                                 + dsiElement.getExternalId() + " class: " + dsiElement.getClass().getName() + " was detected");
                     }
                     break;
-                /* end of CREATE */
+                    /* end of CREATE */
 
                 case READ:
                     //the READs are pretty much neutral
@@ -266,14 +267,14 @@ public class MaidRoot extends MaidRoot_Base {
 
             }
 
-            //so, let's add if we have to, and delete the ones we should
-            if (addEvent) {
-                changesBuzz.put(dsiElement, syncEvent);
-            }
-            for (SyncEvent syncEventToDelete : syncEventsToDelete) {
-                changesBuzz.remove(dsiElement, syncEventToDelete);
-                syncEventToDelete.delete();
-            }
+        //so, let's add if we have to, and delete the ones we should
+        if (addEvent) {
+            changesBuzz.put(dsiElement, syncEvent);
+        }
+        for (SyncEvent syncEventToDelete : syncEventsToDelete) {
+            changesBuzz.remove(dsiElement, syncEventToDelete);
+            syncEventToDelete.delete();
+        }
 
         } else {
             changesBuzz.put(dsiElement, syncEvent);
@@ -553,25 +554,37 @@ public class MaidRoot extends MaidRoot_Base {
             throw new IllegalArgumentException("Sync events from wrapper and original event differ");
         }
 
-        Collection propertyDescriptorsTicked = syncActionWrapper.getPropertyDescriptorNamesTicked();
+        Collection<String> propertyDescriptorsTicked = syncActionWrapper.getPropertyDescriptorNamesTicked();
         Collection<String> changedPropertyDescriptors =
                 syncActionWrapper.getOriginatingSyncEvent().getChangedPropertyDescriptorNames().getUnmodifiableList();
         if (!propertyDescriptorsTicked.containsAll(changedPropertyDescriptors)) {
-            StringBuilder exceptionMessageBuilder = new StringBuilder();
-            exceptionMessageBuilder.append("One didn't consider a property descriptor change. Property descriptors not ticked: ");
-            HashSet<String> copyOfChangedDescriptors = new HashSet<>(changedPropertyDescriptors);
-            copyOfChangedDescriptors.removeAll(propertyDescriptorsTicked);
-            for (String propertyDescriptor : copyOfChangedDescriptors) {
-                exceptionMessageBuilder.append(propertyDescriptor + " ");
-            }
-            if (syncEvent != null && syncEvent.getOriginObject() != null) {
-                exceptionMessageBuilder.append("Class of origin object: " + syncEvent.getOriginObject().getClass().getName());
-
-            } else {
-                exceptionMessageBuilder.append("Class of Origin object unknown because syncEvent is null.");
-            }
-            throw new IllegalArgumentException(exceptionMessageBuilder.toString());
+            //let's generate a log
+            registerPropertyDescriptorNotConsideredWarning(changedPropertyDescriptors, propertyDescriptorsTicked, syncEvent);
         }
 
     }
+
+    @SuppressWarnings("unused")
+    @Atomic(mode = TxMode.WRITE)
+    private static void registerPropertyDescriptorNotConsideredWarning(Collection<String> changedPropertyDescriptors,
+            Collection<String> propertyDescriptorsTicked,
+            SyncEvent syncEvent) {
+        StringBuilder exceptionMessageBuilder = new StringBuilder();
+        exceptionMessageBuilder.append("One didn't consider a property descriptor change. Property descriptors not ticked: ");
+        HashSet<String> copyOfChangedDescriptors = new HashSet<>(changedPropertyDescriptors);
+        copyOfChangedDescriptors.removeAll(propertyDescriptorsTicked);
+        for (String propertyDescriptor : copyOfChangedDescriptors) {
+            exceptionMessageBuilder.append(propertyDescriptor + " ");
+        }
+        if (syncEvent != null && syncEvent.getOriginObject() != null) {
+            exceptionMessageBuilder.append("Class of origin object: " + syncEvent.getOriginObject().getClass().getName());
+
+        } else {
+            exceptionMessageBuilder.append("Class of Origin object unknown because syncEvent is null.");
+        }
+
+        new SyncWarningLog(MaidRoot.getInstance().getCurrentSyncLog(), exceptionMessageBuilder.toString());
+
+    }
+
 }

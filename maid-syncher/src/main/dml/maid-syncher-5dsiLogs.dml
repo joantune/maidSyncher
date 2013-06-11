@@ -40,6 +40,10 @@ class SyncActionLog {
 	String actionDescription;
 }
 
+class SyncWarningLog {
+	String description (REQUIRED);
+}
+
 // START SyncEventConflictLog area
 
 class SyncEventConflictLog {
@@ -112,4 +116,17 @@ relation DSIObjectSyncActionLog {
 		multiplicity *;
 	}
 }
+
+
+//SyncWarningLog relations
+
+relation SyncWarningLogSyncLog {
+	SyncLog playsRole syncLog {
+		multiplicity 1..1;
+	}
+	SyncWarningLog playsRole warnings {
+		multiplicity *;
+	}
+}
+
 	
