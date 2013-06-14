@@ -4,13 +4,13 @@ class .pt.ist.maidSyncher.domain.MaidRoot {
 }
 
 class .pt.ist.maidSyncher.domain.SynchableObject {
-  LocalTime lastSynchTime;
+  DateTime lastSynchTime;
  	long id;
 	String url;
 }
 
 class GHObject extends .pt.ist.maidSyncher.domain.SynchableObject {
-	LocalTime createdAt;
+	DateTime createdAt;
 }
 
 class GHUser extends GHObject {
@@ -50,8 +50,8 @@ class GHRepository extends GHObject {
 
 	//@SerializedName("private")
 	boolean isPrivate;
-	LocalTime pushedAt;
-	LocalTime updatedAt;
+	DateTime pushedAt;
+	DateTime updatedAt;
 
 	int forks;
 	int openIssues;
@@ -92,7 +92,7 @@ class GHLabel  extends GHObject {
 
 class GHMilestone extends GHObject {
 	Boolean open;
-	LocalTime dueOn;
+	DateTime dueOn;
 	int closedIssues;
 	int number;
 	int openIssues;
@@ -105,8 +105,8 @@ class GHMilestone extends GHObject {
 
 class GHIssue extends GHObject {
 
-	LocalTime closedAt;
-	LocalTime updatedAt;
+	DateTime closedAt;
+	DateTime updatedAt;
 
 	int number;
 
@@ -125,7 +125,7 @@ class GHIssue extends GHObject {
 }
 
 class GHComment extends GHObject {
-	LocalTime updatedAt;
+	DateTime updatedAt;
 
 	String body;
 }

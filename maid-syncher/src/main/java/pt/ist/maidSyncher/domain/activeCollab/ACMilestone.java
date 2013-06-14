@@ -205,7 +205,7 @@ public class ACMilestone extends ACMilestone_Base {
                     milestonesToEdit = getNewPrefilledGHMilestonesToEdit(milestonesToEdit);
                     //let's make sure we edit all of its due on
                     for (Milestone milestone : milestonesToEdit.values()) {
-                        milestone.setDueOn(getDueOn().toDateTimeToday().toDate());
+                        milestone.setDueOn(getDueOn().toDate());
                     }
 
                 }

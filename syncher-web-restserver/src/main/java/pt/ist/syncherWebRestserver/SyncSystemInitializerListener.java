@@ -13,6 +13,7 @@ public class SyncSystemInitializerListener implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         try {
             SyncherSystem.init();
+            SyncherSystem.initSchedule();
         } catch (IOException e) {
             e.printStackTrace();
             throw new Error(e);

@@ -12,7 +12,7 @@ valueType pt.utl.ist.fenix.tools.util.Strings as Strings {
 }
 
 class SyncEvent {
-	LocalTime dateOfChange (REQUIRED);
+	DateTime dateOfChange (REQUIRED);
 	TypeOfChangeEvent typeOfChangeEvent (REQUIRED);
 	String apiObjectClassName (REQUIRED);
 	SyncUniverse targetSyncUniverse (REQUIRED);

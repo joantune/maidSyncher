@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ public class SyncEvent extends SyncEvent_Base {
      * at)
      */
 
-    public SyncEvent(LocalTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<String> propertyDescriptors,
+    public SyncEvent(DateTime dateOfChange, TypeOfChangeEvent changeEvent, Collection<String> propertyDescriptors,
             DSIObject dsiObject, APIObjectWrapper apiObjectWrapper, SyncUniverse targetSyncUniverse, SynchableObject origin) {
         checkNotNull(apiObjectWrapper);
         checkNotNull(apiObjectWrapper.getAPIObject());

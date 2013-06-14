@@ -394,7 +394,7 @@ public class ACTask extends ACTask_Base {
         Milestone newMilestone = new Milestone();
         newMilestone.setTitle(acMilestone.getName());
         newMilestone.setDescription(acMilestone.getBody());
-        newMilestone.setDueOn(acMilestone.getDueOn() != null ? acMilestone.getDueOn().toDateTimeToday().toDate() : null);
+        newMilestone.setDueOn(acMilestone.getDueOn() != null ? acMilestone.getDueOn().toDate() : null);
         Milestone createdMilestone = milestoneService.createMilestone(ghRepository, newMilestone);
         GHMilestone processedGhMilestone = GHMilestone.process(createdMilestone, true);
         ghRepository.addMilestones(processedGhMilestone);

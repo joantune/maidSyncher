@@ -33,7 +33,7 @@ import org.eclipse.egit.github.core.service.LabelService;
 import org.eclipse.egit.github.core.service.MilestoneService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +156,7 @@ public class Main {
 
     private static void syncActiveCollab() throws IOException {
 
-        currentSyncLog.setSyncACStartTime(new LocalTime());
+        currentSyncLog.setSyncACStartTime(new DateTime());
 
         // setup ActiveCollab
         Properties acConfigurationProperties = new Properties();
@@ -255,7 +255,7 @@ public class Main {
             }
         }
 
-        currentSyncLog.setSyncACEndTime(new LocalTime());
+        currentSyncLog.setSyncACEndTime(new DateTime());
 /*
         List<ACTask> acTasks = acp.getTasks();
         Iterator<ACTask> it = acTasks.iterator();
@@ -280,7 +280,7 @@ public class Main {
     }
 
     private static void syncGitHub() throws IOException {
-        currentSyncLog.setSyncGHStartTime(new LocalTime());
+        currentSyncLog.setSyncGHStartTime(new DateTime());
         //this is the first sync task, so let us reset the changesBuzz
         //MaidRoot.getInstance().resetSyncEvents();
 
@@ -382,7 +382,7 @@ public class Main {
             }
         }
 
-        currentSyncLog.setSyncGHEndTime(new LocalTime());
+        currentSyncLog.setSyncGHEndTime(new DateTime());
 
     }
 

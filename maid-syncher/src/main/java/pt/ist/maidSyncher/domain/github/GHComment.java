@@ -21,7 +21,7 @@ import jvstm.cps.ConsistencyPredicate;
 
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -102,7 +102,7 @@ public class GHComment extends GHComment_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         return getUpdatedAtDate() == null ? getCreatedAt() : getUpdatedAt();
     }
 

@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -49,7 +49,7 @@ public class TestUtils {
             }
 
         }
-        return new SyncEvent(new LocalTime(), typeOfChangeEvent, propertyDescriptorsToUse, null, new APIObjectWrapper() {
+        return new SyncEvent(new DateTime(), typeOfChangeEvent, propertyDescriptorsToUse, null, new APIObjectWrapper() {
 
             @Override
             public void validateAPIObject() throws SyncEventOriginObjectChanged {

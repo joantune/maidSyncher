@@ -1,9 +1,9 @@
 package pt.ist.maidSyncher.domain.activeCollab;
 
 class ACObject extends .pt.ist.maidSyncher.domain.SynchableObject {
-	LocalTime createdOn;
+	DateTime createdOn;
 	long createdById;
-	LocalTime updatedOn;
+	DateTime updatedOn;
 	long updatedById;
 	
 
@@ -45,8 +45,8 @@ class ACMilestone extends ACObject {
     int priority;
     int assigneeId;
 //	private int* _otherAssigneesId;
-    LocalTime startOn;
-    LocalTime dueOn;
+    DateTime startOn;
+    DateTime dueOn;
 
 }
 
@@ -56,7 +56,7 @@ class ACAssignmentLabel extends ACObject {
 class ACGeneralTask extends ACObject{
    String name;
     int priority;
-    LocalTime dueOn;
+    DateTime dueOn;
 
     Boolean complete;
     

@@ -2,7 +2,7 @@ package pt.ist.maidSyncher.domain.sync.logs;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,12 +23,12 @@ public class SyncActionLog extends SyncActionLog_Base {
 
 
     public void markStartOfSync() {
-        setSyncStartTime(new LocalTime());
+        setSyncStartTime(new DateTime());
     }
 
     public void markEndOfSync(Boolean success, String... errorStrings) {
         checkNotNull(success);
-        setSyncEndTime(new LocalTime());
+        setSyncEndTime(new DateTime());
         setSuccess(success);
         if (success.equals(Boolean.FALSE)) {
             //let's get the optional String that is the errorDescription

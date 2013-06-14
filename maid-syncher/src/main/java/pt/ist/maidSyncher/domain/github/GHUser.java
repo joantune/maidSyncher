@@ -19,7 +19,7 @@ import java.util.Set;
 import jvstm.cps.ConsistencyPredicate;
 
 import org.eclipse.egit.github.core.User;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -77,13 +77,13 @@ public class GHUser extends GHUser_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         /*we have no updated at filed (which is no big deal, so, let's make
          * this have less priority [either return the creation date or
          * the date of the last time it was synched] */
         if (getLastSynchTime() == null) {
             if (getCreatedAt() == null) {
-                return new LocalTime();
+                return new DateTime();
             } else
                 return getCreatedAt();
         } else {

@@ -30,8 +30,8 @@ import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.GitHubResponse;
 import org.eclipse.egit.github.core.service.IssueService;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -266,7 +266,7 @@ public class GHIssueSyncTest {
 
         GHMilestone ghMilestone = new GHMilestone();
         ghMilestone.setTitle(milestoneTitle);
-        ghMilestone.setDueOn(new LocalTime(dueDate));
+        ghMilestone.setDueOn(new DateTime(dueDate));
         ghMilestone.setDescription(ghMilestoneBody);
         ghMilestone.setRepository(mockGHRepository);
         DSIMilestone dsiMilestone = new DSIMilestone();

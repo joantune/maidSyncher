@@ -22,6 +22,7 @@
 	<module>syncher-main</module>
 	<module>syncher-web-clientjs</module>
 	<module>syncher-web-restserver</module>
+	<module>syncher-web</module>
 </modules>
 
 </project>

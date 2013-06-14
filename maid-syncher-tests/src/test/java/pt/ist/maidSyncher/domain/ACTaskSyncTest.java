@@ -29,7 +29,7 @@ import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.GitHubRequest;
 import org.eclipse.egit.github.core.client.GitHubResponse;
 import org.eclipse.egit.github.core.service.IssueService;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,7 +117,7 @@ public class ACTaskSyncTest {
 
     protected static final String GH_MILESTONE_TITLE = "gh milestone title";
 
-    private static final LocalTime AC_MILESTONE_DUEON = new LocalTime();
+    private static final DateTime AC_MILESTONE_DUEON = new DateTime();
 
     DSIRepository dsiRepository;
 
@@ -401,7 +401,7 @@ public class ACTaskSyncTest {
 
         assertEquals(GH_MILESTONE_TITLE, milestoneCaptor.getValue().getTitle());
         assertEquals(AC_MILESTONE_BODY, milestoneCaptor.getValue().getDescription());
-        assertEquals(AC_MILESTONE_DUEON.toDateTimeToday().toDate(), milestoneCaptor.getValue().getDueOn());
+        assertEquals(AC_MILESTONE_DUEON.toDate(), milestoneCaptor.getValue().getDueOn());
 
         Map<Object, Object> issueMap = validateIssueSimpleFieldAndReturnIssueMap();
 

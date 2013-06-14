@@ -19,7 +19,7 @@ import java.util.Set;
 
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Repository;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -126,7 +126,7 @@ public class GHLabel extends GHLabel_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         /*we have no updated at filed (which is no big deal, so, let's make
          * this have less priority [either return the creation date or
          * the date of the last time it was synched] */

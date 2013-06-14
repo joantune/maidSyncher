@@ -20,7 +20,7 @@ import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.GitHubRequest;
 import org.eclipse.egit.github.core.client.GitHubResponse;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,7 +56,7 @@ public class ACMilestoneSyncTest {
 
     private final static String AC_MILESTONE_NAME = "ac milestone name";
     private final static String AC_MILESTONE_BODY = "ac milestone body";
-    private final static LocalTime AC_MILESTONE_DUE_ON_LT = new LocalTime();
+    private final static DateTime AC_MILESTONE_DUE_ON_LT = new DateTime();
 
     private static final String GH_REPOSITORY_NAME = "testRepo";
 
@@ -169,7 +169,7 @@ public class ACMilestoneSyncTest {
         for (Milestone milestoneCaptured : milestoneCaptor.getAllValues()) {
             assertEquals(AC_MILESTONE_NAME, milestoneCaptured.getTitle());
             assertEquals(AC_MILESTONE_BODY, milestoneCaptured.getDescription());
-            assertEquals(AC_MILESTONE_DUE_ON_LT.toDateTimeToday().toDate(), milestoneCaptured.getDueOn());
+            assertEquals(AC_MILESTONE_DUE_ON_LT.toDate(), milestoneCaptured.getDueOn());
         }
 
     }

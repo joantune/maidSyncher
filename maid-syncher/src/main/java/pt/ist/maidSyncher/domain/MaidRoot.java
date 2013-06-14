@@ -455,7 +455,10 @@ public class MaidRoot extends MaidRoot_Base {
 
         LOGGER.info("Applied all SyncActions");
 
+        getCurrentSyncLog().markAsSuccess();
+
     }
+
 
     private void processSyncWrappers(Set<SyncWrapper> syncWrappers) {
         while (syncWrappers.isEmpty() == false) {

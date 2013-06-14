@@ -26,7 +26,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.eclipse.egit.github.core.IRepositoryIdProvider;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.User;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,7 +130,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         return getUpdatedAt() == null ? getCreatedAt() : getUpdatedAt();
     }
 

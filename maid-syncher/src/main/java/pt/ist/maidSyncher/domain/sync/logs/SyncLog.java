@@ -1,7 +1,7 @@
 package pt.ist.maidSyncher.domain.sync.logs;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
@@ -12,7 +12,7 @@ public class SyncLog extends SyncLog_Base {
     public SyncLog() {
         super();
         setMaidRoot(MaidRoot.getInstance());
-        setSyncStartTime(new LocalTime());
+        setSyncStartTime(new DateTime());
         markAsFailure();
     }
 
@@ -24,6 +24,7 @@ public class SyncLog extends SyncLog_Base {
         setStatus(STATUS_FAILURE);
     }
 
+    @Atomic(mode = TxMode.WRITE)
     public void markAsSuccess() {
         setStatus(STATUS_SUCCESS);
     }
@@ -34,7 +35,7 @@ public class SyncLog extends SyncLog_Base {
 
     @Atomic(mode = TxMode.WRITE)
     public void registerExceptionAndMarkAsFailed(Exception ex) {
-        setSyncEndTime(new LocalTime());
+        setSyncEndTime(new DateTime());
         setSerializedStackTrace(ExceptionUtils.getStackTrace(ex));
         markAsFailure();
 

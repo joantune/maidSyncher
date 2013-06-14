@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.eclipse.egit.github.core.Milestone;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +52,7 @@ public class GHMilestoneSyncTest {
 
     private final static String GH_MILESTONE_TITLE = "gh milestone title";
     private final static String GH_MILESTONE_DESCRIPTION = "gh milestone description";
-    private final static LocalTime GH_MILESTONE_DUE_ON_LT = new LocalTime();
+    private final static DateTime GH_MILESTONE_DUE_ON_DT = new DateTime();
 
     private static final long AC_PROJECT_ID = 2;
 
@@ -73,7 +73,7 @@ public class GHMilestoneSyncTest {
 
         ghMilestone.setTitle(GH_MILESTONE_TITLE);
         ghMilestone.setDescription(GH_MILESTONE_DESCRIPTION);
-        ghMilestone.setDueOn(GH_MILESTONE_DUE_ON_LT);
+        ghMilestone.setDueOn(GH_MILESTONE_DUE_ON_DT);
 
         pt.ist.maidSyncher.domain.activeCollab.ACMilestone acMilestoneOne =
                 new pt.ist.maidSyncher.domain.activeCollab.ACMilestone();
@@ -128,7 +128,7 @@ public class GHMilestoneSyncTest {
 
             assertEquals(GH_MILESTONE_DESCRIPTION, acMilestone.getBody());
             assertEquals(GH_MILESTONE_TITLE, acMilestone.getName());
-            assertEquals(GH_MILESTONE_DUE_ON_LT.toDateTimeToday().toDate(), acMilestone.getDueOn());
+            assertEquals(GH_MILESTONE_DUE_ON_DT.toDate(), acMilestone.getDueOn());
         }
 
     }

@@ -33,6 +33,7 @@ import java.util.Set;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.eclipse.egit.github.core.client.GitHubRequest;
+import org.joda.time.DateTime;
 import org.joda.time.LocalTime;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -369,7 +370,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
 
     }
 
-    public abstract LocalTime getUpdatedAtDate();
+    public abstract DateTime getUpdatedAtDate();
 
     /**
      * 
@@ -409,7 +410,7 @@ public abstract class SynchableObject extends SynchableObject_Base {
                             && valueOrigin.getClass().getPackage().getName().equalsIgnoreCase("org.eclipse.egit.github.core"))
                         continue; //let's skip the properties with egit core objects (they shall be copied from a custom overriden version of this method)
                     if (valueOrigin instanceof Date)
-                        valueOrigin = LocalTime.fromDateFields((Date) valueOrigin);
+                        valueOrigin = new DateTime(valueOrigin);
                     if (Objects.equal(valueDest, valueOrigin) == false)
                         propertyDescriptorsThatChanged.add(origDescriptor);
                     try {

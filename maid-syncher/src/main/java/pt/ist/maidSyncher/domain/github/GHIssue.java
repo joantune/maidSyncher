@@ -33,7 +33,7 @@ import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.service.IssueService;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -215,7 +215,7 @@ public class GHIssue extends GHIssue_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         return getUpdatedAt() == null ? getCreatedAt() : getUpdatedAt();
     }
 
@@ -712,7 +712,7 @@ public class GHIssue extends GHIssue_Base {
                             ACMilestone acMilestoneToCreate = new ACMilestone();
                             acMilestoneToCreate.setName(getMilestone().getTitle());
                             acMilestoneToCreate.setBody(getMilestone().getDescription());
-                            acMilestoneToCreate.setDueOn(getMilestone().getDueOn().toDateTimeToday().toDate());
+                            acMilestoneToCreate.setDueOn(getMilestone().getDueOn().toDate());
                             acMilestoneToCreate.setProjectId(acProject.getId());
                             ACMilestone newlyCreatedMilestone = ACMilestone.create(acMilestoneToCreate);
                             milestoneToUse =

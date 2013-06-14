@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -178,7 +178,7 @@ public class GHMilestone extends GHMilestone_Base {
                     acMilestonesToEdit = getNewPrefilledACMilestonesToEdit(acMilestonesToEdit);
                     //for each, let's edit the date
                     for (ACMilestone acMilestoneToEdit : acMilestonesToEdit) {
-                        acMilestoneToEdit.setDueOn(getDueOn().toDateTimeToday().toDate());
+                        acMilestoneToEdit.setDueOn(getDueOn().toDate());
                     }
 
                 }
@@ -244,7 +244,7 @@ public class GHMilestone extends GHMilestone_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         /*we have no updated at filed (which is no big deal, so, let's make
          * this have less priority [either return the creation date or
          * the date of the last time it was synched] */
@@ -262,7 +262,7 @@ public class GHMilestone extends GHMilestone_Base {
         acMilestone.setName(getTitle());
         acMilestone.setBody(getDescription());
         if (getDueOn() != null)
-            acMilestone.setDueOn(getDueOn().toDateTimeToday().toDate());
+            acMilestone.setDueOn(getDueOn().toDate());
         acMilestone.setProjectId(projectId);
         return acMilestone;
     }

@@ -26,23 +26,33 @@ public class SyncherSystem {
 
     @Atomic(mode = TxMode.WRITE)
     public static void init() throws IOException {
+        LOGGER.info("Initing MaidSyncher SyncherSystem");
         SchedulerSystem schedulerSystem = SchedulerSystem.getInstance();
         if (schedulerSystem.getLoggingStorage() == null) {
             LOGGER.info("initing File Storage system for scheduler");
             LocalFileSystemStorage fileSystemStorage = new LocalFileSystemStorage("LogLFS", "/tmp/", 0);
             schedulerSystem.setLoggingStorage(fileSystemStorage);
+        } else {
+            LOGGER.info("Logging storage already existed");
+
         }
 
         LOGGER.info("initing Synch task");
 
-        initSchedule();
 
     }
 
-    static void initSchedule() throws IOException {
+    @Atomic(mode = TxMode.WRITE)
+    public static void initSchedule() throws IOException {
         Properties schedulerConfigurationProperties = new Properties();
         schedulerConfigurationProperties.load(SyncherSystem.class.getResourceAsStream("/configuration.properties"));
         String schedule = schedulerConfigurationProperties.getProperty("sync.task.cron.schedule");
+        if (schedule == null) {
+            LOGGER.warn("No schedule configuration found (on configuration.properties, property 'sync.task.cron.schedule') going with each 10 minutes");
+            schedule = "*/10 * * * *";
+        } else {
+            LOGGER.info("Schedule of syncherTask: " + schedule);
+        }
         LOGGER.debug("Finding existing task");
         boolean systemAlreadyInited = false;
         for (TaskSchedule taskSchedule : SchedulerSystem.getInstance().getTaskScheduleSet()) {

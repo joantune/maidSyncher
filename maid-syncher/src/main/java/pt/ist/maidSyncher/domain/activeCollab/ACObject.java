@@ -11,7 +11,7 @@
  ******************************************************************************/
 package pt.ist.maidSyncher.domain.activeCollab;
 
-import org.joda.time.LocalTime;
+import org.joda.time.DateTime;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
@@ -33,7 +33,7 @@ public abstract class ACObject extends ACObject_Base {
     }
 
     @Override
-    public LocalTime getUpdatedAtDate() {
+    public DateTime getUpdatedAtDate() {
         if (getUpdatedOn() == null)
             return getCreatedOn();
         else
