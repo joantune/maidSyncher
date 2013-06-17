@@ -3,13 +3,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>syncher-web-clientjs</title>
-<link rel="stylesheet/less" type="text/css" href="../themes/bootstrap/css/style.css" />
+<!-- 
+<link rel="stylesheet/less" type="text/css" href="../themes/bootstrap/less/bootstrap.less" />
+ -->
+<link rel="stylesheet/less" type="text/css" href="less/style.less" />
+
 <style>
 body {
 	padding-top: 60px;
 	/* 60px to make the container go all the way to the bottom of the topbar */
 }
+
 </style>
+
 </head>
 <body>
     <div class="navbar navbar-fixed-top">
@@ -35,6 +41,38 @@ body {
         <h1>Synchronization logs</h1>
         <p>Below are the sortable, and filtarable, logs of all the synchs. Click on a row to get more info about
             each synch</p>
+
+        <div id="syncLogs">
+            <table class="table table-hover-clickable">
+                <thead>
+                    <tr>
+                        <th>Date of start</th>
+                        <th>Actions</th>
+                        <th>Conflicts</th>
+                        <th>Warnings</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: syncLogs">
+                <!-- <tr data-bind="css: $data.representationRowClass"> -->
+                <tr data-bind="css: classCss">
+               <td data-bind="text: SyncStartTime"/>
+                <td data-bind="text: NrGeneratedSyncActions"/>
+                <td data-bind="text: nrSyncEventConflictLogs"/>
+                <td>
+                <span data-bind="text: nrWarnings"></span>
+                <!-- ko if: nrWarnings() > 0 -->
+                <i class="icon-warning-sign"></i>
+                <!-- /ko -->
+                </td>
+                <td data-bind="text: Status"/>
+                
+                </tr>
+                </tbody>
+
+            </table>
+
+        </div>
 
         <button data-bind="click: add">Add</button>
         <button data-bind="click: remove">Remove</button>

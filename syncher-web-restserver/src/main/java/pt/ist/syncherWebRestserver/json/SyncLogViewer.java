@@ -18,6 +18,8 @@ public class SyncLogViewer implements JsonViewer<SyncLog> {
 
         jsonObject.addProperty("id", obj.getExternalId());
 
+        jsonObject.add("SyncStartTime", ctx.view(obj.getSyncStartTime()));
+
         jsonObject.addProperty("NumberSyncEventsToProcessAtStart", obj.getNumberSyncEventsToProcessAtStart());
 
         jsonObject.addProperty("NumberGHRequestsAtStartSync", obj.getNumberGHRequestsAtStartSync());

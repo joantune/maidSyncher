@@ -34,6 +34,49 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.0.0.v20130308</version>
+                <configuration>
+                    <scanIntervalSeconds>2</scanIntervalSeconds>
+                    <stopKey>foo</stopKey>
+                    <stopPort>9999</stopPort>
+                    <encoding>UTF-8</encoding>
+                    <webApp>
+                        <contextPath>/xpto</contextPath>
+                        <baseResource implementation="org.eclipse.jetty.util.resource.ResourceCollection">
+                            <resourcesAsCSV>src/main/webapp/,../syncher-web-clientjs/src/main/webapp/,../../partialWspace/bennu/portal-frameworks/bankai/src/main/webapp</resourcesAsCSV>
+                        </baseResource>
+                    </webApp>
+                    <systemProperties>
+                    <systemProperty>
+                        <name>org.eclipse.jetty.server.Request.maxFormContentSize</name>
+                        <value>10485760</value>
+                    </systemProperty>
+                </systemProperties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-jetty</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <scanIntervalSeconds>0</scanIntervalSeconds>
+                            <daemon>true</daemon>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-jetty</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
