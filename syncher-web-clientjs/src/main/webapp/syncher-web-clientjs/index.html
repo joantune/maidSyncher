@@ -13,7 +13,6 @@ body {
 	padding-top: 60px;
 	/* 60px to make the container go all the way to the bottom of the topbar */
 }
-
 </style>
 
 </head>
@@ -36,78 +35,15 @@ body {
         </div>
     </div>
 
-    <div class="container-fluid">
+    <div id="content" class="container-fluid">
 
-        <h1>Synchronization logs</h1>
-        <p>Below are the sortable, and filtarable, logs of all the synchs. Click on a row to get more info about
-            each synch</p>
-
-        <div id="syncLogs">
-            <table class="table table-hover-clickable">
-                <thead>
-                    <tr>
-                        <th>Date of start</th>
-                        <th>Actions</th>
-                        <th>Conflicts</th>
-                        <th>Warnings</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody data-bind="foreach: syncLogs">
-                <!-- <tr data-bind="css: $data.representationRowClass"> -->
-                <tr data-bind="css: classCss">
-               <td data-bind="text: SyncStartTime"/>
-                <td data-bind="text: NrGeneratedSyncActions"/>
-                <td data-bind="text: nrSyncEventConflictLogs"/>
-                <td>
-                <span data-bind="text: nrWarnings"></span>
-                <!-- ko if: nrWarnings() > 0 -->
-                <i class="icon-warning-sign"></i>
-                <!-- /ko -->
-                </td>
-                <td data-bind="text: Status"/>
-                
-                </tr>
-                </tbody>
-
-            </table>
-
-        </div>
-
-        <button data-bind="click: add">Add</button>
-        <button data-bind="click: remove">Remove</button>
-        <table class="table table-hover"
-            data-bind="dataTable: { data: tableData, trClick: rowClickHandler, rowFunction: rowColorize, options: { bJQueryUI: true, aoColumns: [ { sTitle: 'Date' }, { sTitle: 'Result' } ] } }" />
-
-        <div id="syncLogDetailsModal"
-            data-bind="template: { name: 'syncDetails-template', data: modalDetailsViewModel }" class="modal hide fade">
-        </div>
-
-        <!-- The modal with the details 
--->
-        <script type="text/html" id="syncDetails-template">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h3>Sync Details</h3>
-        </div>
-        <div class="modal-body">
-            <p>
-                <strong>Start time:</strong> <span data-bind="text: dateStart"></span>
-            </p>
-            <p>
-                <strong>End time:</strong> <span data-bind="text: dateFinish"></span>
-            </p>
-            <hr />
-            <p>
-                <strong>Total number of actions:</strong> <span data-bind="text: syncLogDetails().nrTotalActions"></span> <strong>Number of actions completed:</strong> <span data-bind="text: syncLogDetails().completedActions().length"></span>
-            </p>
-
-
-        </div>
-        <div class="modal-footer">
-            <a href="#" class="btn">Close</a> <a href="#" class="btn btn-primary">Save changes</a>
-        </div>
+        <script type="text/html" id="home" src="templates/syncLogs.html">
 	</script>
+
+        <script type="text/html" id="details" src="templates/syncLogDetails.html">
+    </script>
+
+
     </div>
     <!-- /container -->
 
@@ -115,8 +51,8 @@ body {
     <script src="js/libs/jquery.dataTables.min.js" type="text/javascript"></script>
     <script src="js/libs/less-1.3.3.min.js" type="text/javascript"></script>
     <script src="js/libs/bootstrap.min.js" type="text/javascript"></script>
-    <script src="js/libs/knockback-full-stack.min.js" type="text/javascript"></script>
-    <script src="js/libs/backbone-relational.js" type="text/javascript"></script>
+    <script src="js/libs/knockback-full-stack.js" type="text/javascript"></script>
+    <script src="js/libs/backbone-relational.js" type="text/javascript"></script> 
     <script src="js/App.js" type="text/javascript"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package pt.ist.syncherWebRestserver.json;
 
 import pt.ist.bennu.core.annotation.DefaultJsonAdapter;
+import pt.ist.bennu.core.rest.json.DomainObjectViewer;
 import pt.ist.bennu.json.JsonBuilder;
 import pt.ist.bennu.json.JsonViewer;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
@@ -48,6 +49,8 @@ public class SyncLogViewer implements JsonViewer<SyncLog> {
 
         jsonObject.addProperty("nrSyncEventConflictLogs", obj.getSyncConflictLogsSet().size());
         jsonObject.addProperty("nrWarnings", obj.getSyncWarningsSet().size());
+
+        jsonObject.add("actions", ctx.view(obj.getSyncActionLogsSet(), DomainObjectViewer.class));
 
         return jsonObject;
     }
