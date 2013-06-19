@@ -52,6 +52,10 @@ public class SyncLogViewer implements JsonViewer<SyncLog> {
 
         jsonObject.add("actions", ctx.view(obj.getSyncActionLogsSet(), DomainObjectViewer.class));
 
+        jsonObject.add("warnings", ctx.view(obj.getSyncWarningsSet(), DomainObjectViewer.class));
+
+        jsonObject.add("conflicts", ctx.view(obj.getSyncConflictLogsSet(), DomainObjectViewer.class));
+
         return jsonObject;
     }
 

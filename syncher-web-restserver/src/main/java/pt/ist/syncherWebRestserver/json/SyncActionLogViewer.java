@@ -31,6 +31,8 @@ public class SyncActionLogViewer implements JsonViewer<SyncActionLog> {
 
         jsonObject.addProperty("id", obj.getExternalId());
 
+        jsonObject.add("syncLog", ctx.view(obj.getSyncLog()));
+
         jsonObject.add("syncStartTime", ctx.view(obj.getSyncStartTime()));
         jsonObject.add("syncEndTime", ctx.view(obj.getSyncEndTime()));
         jsonObject.addProperty("success", obj.getSuccess());

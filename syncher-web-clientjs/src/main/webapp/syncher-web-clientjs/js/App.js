@@ -75,8 +75,9 @@ var selfThing = this;
 
 var SyncLog = Backbone.Model.extend({});
 
-var SyncLogActionRelational = Backbone.RelationalModel.extend({
-})
+var SyncLogActionRelational = Backbone.RelationalModel.extend({})
+var SyncLogWarningRelational = Backbone.RelationalModel.extend({})
+var SyncLogConflictRelational = Backbone.RelationalModel.extend({})
 
 var SyncLogActions = Backbone.Collection.extend({
     parse : function(response) {
@@ -85,7 +86,19 @@ var SyncLogActions = Backbone.Collection.extend({
     model : SyncLogActionRelational
 });
 
+var SyncLogWarnings = Backbone.Collection.extend({
+    parse : function(response) {
+        return response.warnings;
+    },
+    model : SyncLogWarningRelational
+});
 
+var SyncLogConflicts = Backbone.Collection.extend({
+    parse : function(response) {
+        return response.conflicts;
+    },
+    model : SyncLogConflictRelational
+});
 
 var SyncLogRelational = Backbone.RelationalModel.extend({
     relations : [ {
@@ -96,28 +109,41 @@ var SyncLogRelational = Backbone.RelationalModel.extend({
             key : 'syncLog'
         },
         collectionOptions : function(relationalSyncLog) {
-            return { url :  '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/actions'
-                     };
+            return {
+                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/actions'
+            };
         },
         collectionType : 'SyncLogActions'
     }
 
-    // }, {
-    // type : Backbone.HasMany,
-    // key : 'warnings',
-    // relatedModel : 'SyncWarning',
-    // reverseRelation : {
-    // key : 'syncLog'
-    // }
-    // } , {
-    // type : Backbone.HasMany,
-    // key : 'conflicts',
-    // relatedModel : 'SyncConflict',
-    // reverseRelation : {
-    // key : 'syncLog'
-    // }
-    // }
-    ]
+    , {
+        type : Backbone.HasMany,
+        key : 'warnings',
+        relatedModel : 'SyncLogWarningRelational',
+        reverseRelation : {
+            key : 'syncLog'
+        },
+        collectionOptions : function(relationalSyncLog) {
+            return {
+                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/warnings'
+            };
+        },
+        collectionType : 'SyncLogWarnings'
+    }, {
+        type : Backbone.HasMany,
+        key : 'conflicts',
+        relatedModel : 'SyncLogConflictRelational',
+        reverseRelation : {
+            key : 'syncLog'
+        },
+        collectionOptions : function(relationalSyncLog) {
+            return {
+                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/conflicts'
+            };
+        },
+        collectionType : 'SyncLogConflicts'
+
+    } ]
 });
 
 var SyncLogsRelational = Backbone.Collection.extend({
@@ -129,28 +155,30 @@ var SyncLogsRelational = Backbone.Collection.extend({
 
 });
 
-var SyncLogs = Backbone.Collection.extend({
-    url : '../api/syncher-web-restserver/synclogs',
-    model : SyncLog,
-    parse : function(response) {
-        return response.synclogs;
-    }
-});
+var syncLogs = new SyncLogsRelational();
 
-var syncLogs = new SyncLogs();
+var RemainingSyncEvents = Backbone.Collection.extend({
+    parse : function(response) {
+        return response.remainingevents;
+    },
+    url : '../api/syncher-web-restserver/synclogs/remainingevents'
+
+});
 
 syncLogs.fetch();
 
 var LogViewModel = kb.ViewModel.extend({
     constructor : function(model) {
-        kb.ViewModel.prototype.constructor.call(this, model, {
-            internals : [ 'cssClass' ]
-        });
+        var self = this;
+        kb.ViewModel.prototype.constructor.call(this, model, { /*
+                                                                 * internals:
+                                                                 * ['actions']
+                                                                 */});
         this.classCss = ko.computed((function() {
-            if (model.get('nrWarnings') > 0) {
+            if (self.warnings().length > 0) {
                 return "warning";
             }
-            var status = model.get('Status');
+            var status = self.Status();
 
             if (status != undefined) {
 
@@ -166,8 +194,8 @@ var LogViewModel = kb.ViewModel.extend({
 
         }));
 
-        this.goToLogDetails = function() {
-            router.navigate('details', {
+        this.goToLogDetails = function(currentSyncLog) {
+            router.navigate('details/' + currentSyncLog.id(), {
                 trigger : true
             });
         };
@@ -176,14 +204,23 @@ var LogViewModel = kb.ViewModel.extend({
     }
 });
 
+var LogDetailsViewModel = kb.ViewModel.extend({
+    constructor : function(model) {
+        kb.ViewModel.prototype.constructor.call(this, model, {});
+    }
+});
+
 // var CustomViewModel = kb.ViewModel.extend({
 // this.classCss: ko.computed((function() { return "success";}))
 // });
 
+var remainingEvents = new RemainingSyncEvents();
+remainingEvents.fetch();
 var syncLogsViewModel = {
     syncLogs : kb.collectionObservable(syncLogs, {
         view_model : LogViewModel
     }),
+    remainingSyncEvents : kb.collectionObservable(remainingEvents)
 };
 
 // tha router:
@@ -238,11 +275,12 @@ window.RouterBackboneJS = Backbone.Router.extend({
                 loadPage(kb.renderTemplate(templateId, syncLogsViewModel))
             }));
         });
-        this.route('details', null, function() {
+        this.route('details/:syncLogId', null, function(syncLogId) {
             var templateId = 'details';
 
             loadTemplate(templateId, (function() {
-                appendContent(kb.renderTemplate(templateId, syncLogsViewModel), 'content')
+                appendContent(kb.renderTemplate(templateId, new LogDetailsViewModel(syncLogs.get(syncLogId))),
+                        'content')
             }));
         });
         // this.route('things', null, function() {

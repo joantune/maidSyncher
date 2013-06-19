@@ -20,6 +20,7 @@ import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
 @Path("synclogs")
 public class SyncLogResource extends DomainObjectResource<SyncLog> {
 
+    private static final String REMAINING_EVENTS = "remainingevents";
     private static final String WARNINGS = "warnings";
     private static final String CONFLICTS = "conflicts";
     private static final String ACTIONS = "actions";
@@ -54,6 +55,14 @@ public class SyncLogResource extends DomainObjectResource<SyncLog> {
     public String viewSyncActionLogs(@PathParam("oid") String oid) {
         accessControl(getAccessExpression());
         return view(((SyncLog) readDomainObject(oid)).getSyncActionLogsSet(), ACTIONS);
+    }
+
+    @GET
+    @Path(REMAINING_EVENTS)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String viewRemainingSyncEventsLogs(@PathParam("oid") String oid) {
+        accessControl(getAccessExpression());
+        return view(MaidRoot.getInstance().getSyncEventsToProcessSet(), REMAINING_EVENTS);
     }
 
     @GET

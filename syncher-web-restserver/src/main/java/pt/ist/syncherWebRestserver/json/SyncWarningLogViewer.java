@@ -28,6 +28,7 @@ public class SyncWarningLogViewer implements JsonViewer<SyncWarningLog> {
             return null;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("id", obj.getExternalId());
+        jsonObject.add("syncLog", ctx.view(obj.getSyncLog()));
         jsonObject.addProperty("description", obj.getDescription());
         return jsonObject;
     }
