@@ -4,6 +4,7 @@
 package pt.ist.syncherWebRestserver.json;
 
 import pt.ist.bennu.core.annotation.DefaultJsonAdapter;
+import pt.ist.bennu.core.rest.json.DomainObjectViewer;
 import pt.ist.bennu.json.JsonBuilder;
 import pt.ist.bennu.json.JsonViewer;
 import pt.ist.maidSyncher.domain.sync.logs.SyncEventConflictLog;
@@ -29,7 +30,7 @@ public class SyncEventConflictLogViewer implements JsonViewer<SyncEventConflictL
             return null;
         JsonObject jsonObject = new  JsonObject();
         jsonObject.addProperty("id", obj.getExternalId());
-        jsonObject.add("syncLog", ctx.view(obj.getSyncLog()));
+        jsonObject.add("syncLog", ctx.view(obj.getSyncLog(), DomainObjectViewer.class));
         jsonObject.addProperty("eventOneTypeOfChangeEvent", obj.getEventOneTypeOfChangeEvent().toString());
         jsonObject.addProperty("eventTwoTypeOfChangeEvent", obj.getEventTwoTypeOfChangeEvent().toString());
 

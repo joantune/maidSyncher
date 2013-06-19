@@ -1,3 +1,4 @@
+<div class="pane" id="main" >
     <h1>Synchronization logs</h1>
     <p>Below are the sortable, and filtarable, logs of all the synchs. Click on a row to get more info about each
         synch</p>
@@ -27,7 +28,7 @@
                     <td data-bind="text: SyncStartTime" />
                     <td data-bind="text: actions().length" />
                     <td data-bind="text: conflicts().length" />
-                    <td><span data-bind="text: warnings().length"></span> <!-- ko if: warnings.length > 0 --> <i
+                    <td><span data-bind="text: warnings().length"></span> <!-- ko if: warnings().length > 0 --> <i
                         class="icon-warning-sign"></i> <!-- /ko --></td>
                     <td data-bind="text: Status" />
 
@@ -37,3 +38,4 @@
         </table>
 
     </div>
+</div>

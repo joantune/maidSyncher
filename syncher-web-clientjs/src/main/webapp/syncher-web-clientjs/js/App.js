@@ -231,18 +231,19 @@ window.RouterBackboneJS = Backbone.Router.extend({
         Backbone.Router.prototype.constructor.apply(this, arguments);
 
         var loadPage = function(el) {
-            if (_this.active_el) {
-                ko.removeNode(this.active_el);
-            }
+            // if (_this.active_el) {
+            // ko.removeNode(this.active_el);
+            // }
             $('#content').append(_this.active_el = el);
             $(el).addClass('active');
         };
 
-        var appendContent = function(el, elementIdToAppendIn) {
-            if (_this.appended_el) {
+        var appendContent = function(el, elementIdToAppendIn, skipRemove) {
+            if (!skipRemove && _this.appended_el) {
                 ko.removeNode(this.appended_el);
             }
             $('#' + elementIdToAppendIn).append(_this.appended_el = el);
+            $(el).addClass('active');
         };
 
         var loadTemplate = function(templateId, callback) {
@@ -250,7 +251,7 @@ window.RouterBackboneJS = Backbone.Router.extend({
             // preventing reloading of templates
             if (_this.loadedTemplates) {
                 if (_this.loadedTemplates.indexOf(templateId) !== -1) {
-                    callback();
+                    callback(false);
                     return;
                 }
             } else {
@@ -263,7 +264,7 @@ window.RouterBackboneJS = Backbone.Router.extend({
                 el.text(response);
                 console.log("Loaded template with ID: " + templateId);
                 _this.loadedTemplates.push(templateId);
-                callback();
+                callback(true);
                 return;
             });
         }
@@ -271,16 +272,30 @@ window.RouterBackboneJS = Backbone.Router.extend({
         this.route('', null, function() {
             var templateId = 'home';
 
-            loadTemplate(templateId, (function() {
-                loadPage(kb.renderTemplate(templateId, syncLogsViewModel))
+            loadTemplate(templateId, (function(firstTime) {
+                $('#details').on('hidden', function() {
+                    if (_this.appended_el) {
+                        ko.removeNode(_this.appended_el);
+                    }
+
+                });
+                $('#details').modal('hide');
+                if (firstTime == true) {
+                appendContent(kb.renderTemplate(templateId, syncLogsViewModel), 'content', false);
+                }
+                else {
+//                    syncLogs.fetch();
+                }
             }));
         });
+        
         this.route('details/:syncLogId', null, function(syncLogId) {
             var templateId = 'details';
 
             loadTemplate(templateId, (function() {
                 appendContent(kb.renderTemplate(templateId, new LogDetailsViewModel(syncLogs.get(syncLogId))),
-                        'content')
+                        'content', true);
+                $('#details').modal('show');
             }));
         });
         // this.route('things', null, function() {
