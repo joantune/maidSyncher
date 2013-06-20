@@ -25,3 +25,15 @@
     background-color: darken(@infoBackground, 5%);
   }
 }
+
+.table-bordered-outline {
+	.table-bordered;
+	border-left: 1px solid @tableBorder;
+	td {
+		border-left: 0;
+	}
+}
+
+.btn-muted               { color: @grayLight !important; }
+.btn-muted:hover,
+.btn-muted:focus        { color: darken(@grayLight, 10%) !important; }

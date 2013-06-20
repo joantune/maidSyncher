@@ -207,7 +207,17 @@ var LogViewModel = kb.ViewModel.extend({
 var LogDetailsViewModel = kb.ViewModel.extend({
     constructor : function(model) {
         kb.ViewModel.prototype.constructor.call(this, model, {});
-    }
+    },
+
+    afterRender : function() {
+        console.log('initing modal');
+        $(function() {
+            debugger;
+            console.log('initing popover');
+            $('#ghSyncTime').popover();
+        });
+    },
+
 });
 
 // var CustomViewModel = kb.ViewModel.extend({
@@ -281,19 +291,19 @@ window.RouterBackboneJS = Backbone.Router.extend({
                 });
                 $('#details').modal('hide');
                 if (firstTime == true) {
-                appendContent(kb.renderTemplate(templateId, syncLogsViewModel), 'content', false);
-                }
-                else {
-//                    syncLogs.fetch();
+                    appendContent(kb.renderTemplate(templateId, syncLogsViewModel), 'content', false);
+                } else {
+                    // syncLogs.fetch();
                 }
             }));
         });
-        
+
         this.route('details/:syncLogId', null, function(syncLogId) {
             var templateId = 'details';
 
             loadTemplate(templateId, (function() {
-                appendContent(kb.renderTemplate(templateId, new LogDetailsViewModel(syncLogs.get(syncLogId))),
+                logDetailsViewModel = new LogDetailsViewModel(syncLogs.get(syncLogId));
+                appendContent(kb.renderTemplate(templateId, logDetailsViewModel, {afterRender: logDetailsViewModel.afterRender }),
                         'content', true);
                 $('#details').modal('show');
             }));
