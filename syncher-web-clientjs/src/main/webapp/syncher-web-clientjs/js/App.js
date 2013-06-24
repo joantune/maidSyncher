@@ -1,179 +1,260 @@
-var selfThing = this;
-/* The dataTable binding */
-(function($) {
-    ko.bindingHandlers.dataTable = {
-        init : function(element, valueAccessor) {
-            var binding = ko.utils.unwrapObservable(valueAccessor());
-
-            // If the binding is an object with an options field,
-            // initialise the dataTable with those options.
-            if (binding.options) {
-                $(element).dataTable(binding.options);
-            }
-
-        },
-        update : function(element, valueAccessor) {
-            var binding = ko.utils.unwrapObservable(valueAccessor());
-
-            // If the binding isn't an object, turn it into one.
-            if (!binding.data) {
-                binding = {
-                    data : valueAccessor()
-                }
-            }
-
-            // Clear table
-            $(element).dataTable().fnClearTable();
-
-            // Rebuild table from data source specified in binding
-            $(element).dataTable().fnAddData(binding.data());
-
-            // let's add the custom callback for each row, if it exists
-            if (binding.trClick) {
-                $(element).find("tr").click(binding.trClick);
-            }
-
-            if (binding.rowFunction) {
-                $(element).find("tr").each(binding.rowFunction);
-            }
-        }
-    };
-})(jQuery);
-// var SyncLogDetail = Backbone.RelationalModel.extend({});
-//
-// var exampleLogSyncOne = new SyncLogDetail({
-// id : '1',
-// success : 'true',
-// nrTotalActions : '1',
-// completedActions : [{
-// type : 'GITHUB',
-// url : 'http://test.com',
-// objectId : '12',
-// typeOfEvent : 'CREATE',
-// description : 'TODO'
-// }],
-// errorDetail : 'Exception thrown by asdasdasd'
-// })
-//
-// var SyncLog = Backbone.RelationalModel.extend({
-// relations : [ {
-// type : Backbone.HasOne,
-// key : 'syncLogDetails',
-// relatedModel : 'SyncLogDetail',
-// reverseRelation : {
-// key : 'syncLog'
-// }
-// } ]
-// });
-//
-// var syncLog = new SyncLog({
-// dateStart : '20/05/2013 17:00',
-// dateFinish : '20/05/2013 17:02',
-// success : 'true',
-// syncLogDetails : '1'
-// })
-
-var SyncLog = Backbone.Model.extend({});
-
-var SyncLogActionRelational = Backbone.RelationalModel.extend({})
-var SyncLogWarningRelational = Backbone.RelationalModel.extend({})
-var SyncLogConflictRelational = Backbone.RelationalModel.extend({})
-
-var SyncLogActions = Backbone.Collection.extend({
-    parse : function(response) {
-        return response.actions;
-    },
-    model : SyncLogActionRelational
-});
-
-var SyncLogWarnings = Backbone.Collection.extend({
-    parse : function(response) {
-        return response.warnings;
-    },
-    model : SyncLogWarningRelational
-});
-
-var SyncLogConflicts = Backbone.Collection.extend({
-    parse : function(response) {
-        return response.conflicts;
-    },
-    model : SyncLogConflictRelational
-});
-
-var SyncLogRelational = Backbone.RelationalModel.extend({
-    relations : [ {
-        type : Backbone.HasMany,
-        key : 'actions',
-        relatedModel : 'SyncLogActionRelational',
-        reverseRelation : {
-            key : 'syncLog'
-        },
-        collectionOptions : function(relationalSyncLog) {
-            return {
-                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/actions'
-            };
-        },
-        collectionType : 'SyncLogActions'
-    }
-
-    , {
-        type : Backbone.HasMany,
-        key : 'warnings',
-        relatedModel : 'SyncLogWarningRelational',
-        reverseRelation : {
-            key : 'syncLog'
-        },
-        collectionOptions : function(relationalSyncLog) {
-            return {
-                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/warnings'
-            };
-        },
-        collectionType : 'SyncLogWarnings'
-    }, {
-        type : Backbone.HasMany,
-        key : 'conflicts',
-        relatedModel : 'SyncLogConflictRelational',
-        reverseRelation : {
-            key : 'syncLog'
-        },
-        collectionOptions : function(relationalSyncLog) {
-            return {
-                url : '../api/syncher-web-restserver/synclogs/' + relationalSyncLog.get('id') + '/conflicts'
-            };
-        },
-        collectionType : 'SyncLogConflicts'
-
-    } ]
-});
-
-var SyncLogsRelational = Backbone.Collection.extend({
-    url : '../api/syncher-web-restserver/synclogs',
-    model : SyncLogRelational,
-    parse : function(response) {
-        return response.synclogs;
-    }
-
-});
-
 var syncLogs = new SyncLogsRelational();
 
-var RemainingSyncEvents = Backbone.Collection.extend({
-    parse : function(response) {
-        return response.remainingevents;
-    },
-    url : '../api/syncher-web-restserver/synclogs/remainingevents'
+var spinner = null;
+var displayLoadingScreen = function(turnOn) {
+    if (turnOn) {
+        var opts = {
+            lines : 13, // The number of lines to draw
+            length : 7, // The length of each line
+            width : 4, // The line thickness
+            radius : 10, // The radius of the inner circle
+            rotate : 0, // The rotation offset
+            color : '#000', // #rgb or #rrggbb
+            speed : 1, // Rounds per second
+            trail : 60, // Afterglow percentage
+            shadow : false, // Whether to render a shadow
+            hwaccel : false, // Whether to use hardware acceleration
+            className : 'spinner', // The CSS class to assign to the spinner
+            zIndex : 2e9, // The z-index (defaults to 2000000000)
+        // top: 'auto', // Top position relative to parent in px
+        // left: 'auto' // Left position relative to parent in px
+        };
+        $.blockUI({
+            message : $('#pleaseWait'),
+            // TODO comment the timeout
+            // timeout: 2000
+            fadeIn : 1000,
+            css : {
+                top : '20%'
+            }
+        });
+        var target = document.getElementById('pleaseWait');
+        if (spinner == null) {
+            spinner = new Spinner(opts);
+        }
+        spinner.spin(target);
+    } else {
+        spinner.stop();
+        $.unblockUI({})
 
+    }
+};
+
+syncLogs.fetch({
+    success : function() {
+        var remainingEvents = new RemainingSyncEvents();
+        remainingEvents.fetch();
+
+        var syncLogsViewModel = {
+            self : this,
+            syncLogs : kb.collectionObservable(syncLogs, {
+                view_model : LogViewModel
+            }),
+            remainingSyncEvents : kb.collectionObservable(remainingEvents),
+            selectedSyncLog : ko.observable(null),
+            goToLogDetails : function(currentSyncLog) {
+                displayLoadingScreen(true);
+                async.parallel({
+                    actions : function(callback) {
+                        currentSyncLog.model().get('actions').fetch({
+                            success : function(argument) {
+                                callback(null, argument)
+                            },
+                            error : function(argument) {
+                                callback(argument, null)
+                            }
+                        });
+                    },
+                    warnings : function(callback) {
+                        currentSyncLog.model().get('warnings').fetch({
+                            success : function(argument) {
+                                callback(null, argument)
+                            },
+                            error : function(argument) {
+                                callback(argument, null)
+                            }
+                        });
+                    }
+                }, function(err, results) {
+                    displayLoadingScreen(false);
+                    if (err === undefined || err === null) {
+                        syncLogsViewModel.selectedSyncLog(currentSyncLog);
+                        currentSyncLog.ghPopoverEnabler($('#ghSyncTime'));
+                        currentSyncLog.acPopoverEnabler($('#acSyncTime'));
+                        $('#details').modal('show');
+                    } else {
+                        alert('there was an error communicating with the server');
+                    }
+                });
+
+            }
+        };
+
+        $(function() {
+            ko.applyBindings(syncLogsViewModel, $('#content')[0]);
+            // $('#ghSyncTime').on('shown');
+            $('#details').on('shown', function() {
+                // $('#ghSyncTime').popover();
+            });
+        });
+    }
 });
 
-syncLogs.fetch();
+var successUtil = function(toReturnOnSuccess, toReturnOnFailure, toReturnOnNotSet, success) {
+    if (success === 'blah blah') {
+        return toReturnOnNotSet;
+    } else if (success)
+        return toReturnOnSuccess;
+    else
+        return toReturnOnFailure;
+};
+
+var calculateDurationInSeconds = function(endTime, startTime) {
+    var end = moment(endTime);
+    var start = moment(startTime);
+    return end.diff(start, 'seconds', true);
+}
+
+var ActionsViewModel = function(model) {
+
+    var self = this;
+
+    this.success = kb.observable(model, 'success');
+    this.rowClass = ko.computed(function() {
+        return successUtil("success", "error", "", self.success());
+    });
+
+    this.syncEndTime = kb.observable(model, 'syncEndTime');
+    this.syncStartTime = kb.observable(model, 'syncStartTime');
+
+    this.typeOriginObject = kb.observable(model, 'typeOriginObject');
+    this.urlOriginObject = kb.observable(model, 'urlOriginObject');
+
+    this.duration = ko.computed(function() {
+        if (self.syncEndTime() != null && self.syncStartTime() != null) {
+            return calculateDurationInSeconds(self.syncEndTime(), self.syncStartTime());
+        }
+        return null;
+    });
+
+    this.trimmedTypeOriginObject = ko.computed(function() {
+        var toReturn = self.typeOriginObject();
+        if (toReturn) {
+            firstChar = self.typeOriginObject().lastIndexOf('.') + 1;
+            if (firstChar > 0) {
+                toReturn = toReturn.substring(firstChar);
+            }
+        }
+        return toReturn;
+    });
+
+    this.successIcon = ko.computed(function() {
+        var successIcon = '<i class="icon-ok"></i>';
+        var failureIcon = '<i class="icon-remove"></i>';
+        return successUtil(successIcon, failureIcon, "", model);
+    });
+};
+
+var WarningsViewModel = function(model) {
+
+    var self = this;
+
+    this.description = kb.observable(model, 'description');
+    this.id = kb.observable(model, 'id');
+
+};
+
+var momentify = function(dateString) {
+    return moment(dateString)
+}
+
+var friendlyDateTime = function(dateTimeString, styleIt) {
+    var amoment = moment(dateTimeString);
+    if (styleIt) {
+        return amoment.format("[<strong>]DD-MM-YYYY[</strong>] @ HH:mm:ss")
+    } else {
+        return amoment.format("DD-MM-YYYY @ HH:mm:ss")
+    }
+}
+var friendlyNamedDateTime = function(dateTimeString) {
+    var amoment = moment(dateTimeString);
+    return amoment.format("MMMM Do YYYY, HH:mm:ss")
+}
+
+var timeOnly = function(amoment) {
+    return moment(amoment).format("HH:mm:ss");
+    // return amoment.format("HH:mm:ss")
+}
+
+var humanFriendlyFromNow = function(dateTimeString) {
+    var amoment = moment(dateTimeString);
+    return amoment.fromNow();
+}
 
 var LogViewModel = kb.ViewModel.extend({
     constructor : function(model) {
+
         var self = this;
-        kb.ViewModel.prototype.constructor.call(this, model, { /*
-                                                                 * internals:
-                                                                 * ['actions']
-                                                                 */});
+        kb.ViewModel.prototype.constructor.call(this, model, {
+            internals : [ 'SyncStartTime' ],
+        // if: ['actions', 'warnings']
+        });
+
+        this.SyncStartTime = kb.observable(model, 'SyncStartTime');
+        this.actions = kb.collectionObservable(model.get('actions'), {
+            view_model : ActionsViewModel
+        });
+
+        this.warnings = kb.collectionObservable(model.get('warnings'), {
+            view_model : WarningsViewModel
+        });
+
+        var popoverOptionsGenerator = function(startTime, endTime) {
+            var syncStartTimePrefixHtml = "<small><strong>Sync start time: </strong>";
+            var syncEndTimePrefixHtml = "<small><strong>Sync end time: </strong>";
+            var smallHtmlTerminator = "</small>";
+            return {
+                html : true,
+                trigger : "hover",
+                content : syncStartTimePrefixHtml + timeOnly(startTime) + smallHtmlTerminator + "<br/>"
+                        + syncEndTimePrefixHtml + timeOnly(endTime) + smallHtmlTerminator,
+            };
+
+        };
+
+        this.ghPopoverEnabler = function(jQueryElement) {
+            if (self.SyncGHStartTime && self.SyncGHEndTime) {
+                var options = popoverOptionsGenerator(self.SyncGHStartTime(), self.SyncGHEndTime());
+                jQueryElement.popover(options);
+                return true;
+            }
+        };
+
+        this.acPopoverEnabler = function(jQueryElement) {
+            if (self.SyncACStartTime && self.SyncACEndTime) {
+                var options = popoverOptionsGenerator(self.SyncACStartTime(), self.SyncACEndTime());
+                options.placement = "top";
+                jQueryElement.popover(options);
+                return true;
+            }
+        };
+
+        this.acSyncTimeDuration = ko.computed(function() {
+            if (self.SyncACStartTime && self.SyncACEndTime) {
+                return calculateDurationInSeconds(self.SyncACEndTime(), self.SyncACStartTime());
+
+            }
+
+        });
+
+        this.ghSyncTimeDuration = ko.computed(function() {
+            if (self.SyncGHStartTime && self.SyncGHEndTime) {
+                return calculateDurationInSeconds(self.SyncGHEndTime(), self.SyncGHStartTime());
+
+            }
+
+        });
+
         this.classCss = ko.computed((function() {
             if (self.warnings().length > 0) {
                 return "warning";
@@ -194,267 +275,6 @@ var LogViewModel = kb.ViewModel.extend({
 
         }));
 
-        this.goToLogDetails = function(currentSyncLog) {
-            router.navigate('details/' + currentSyncLog.id(), {
-                trigger : true
-            });
-        };
-
         return this;
     }
-});
-
-var LogDetailsViewModel = kb.ViewModel.extend({
-    constructor : function(model) {
-        kb.ViewModel.prototype.constructor.call(this, model, {});
-    },
-
-    afterRender : function() {
-        console.log('initing modal');
-        $(function() {
-            debugger;
-            console.log('initing popover');
-            $('#ghSyncTime').popover();
-        });
-    },
-
-});
-
-// var CustomViewModel = kb.ViewModel.extend({
-// this.classCss: ko.computed((function() { return "success";}))
-// });
-
-var remainingEvents = new RemainingSyncEvents();
-remainingEvents.fetch();
-var syncLogsViewModel = {
-    syncLogs : kb.collectionObservable(syncLogs, {
-        view_model : LogViewModel
-    }),
-    remainingSyncEvents : kb.collectionObservable(remainingEvents)
-};
-
-// tha router:
-window.RouterBackboneJS = Backbone.Router.extend({
-
-    constructor : function() {
-        var _this = this;
-        Backbone.Router.prototype.constructor.apply(this, arguments);
-
-        var loadPage = function(el) {
-            // if (_this.active_el) {
-            // ko.removeNode(this.active_el);
-            // }
-            $('#content').append(_this.active_el = el);
-            $(el).addClass('active');
-        };
-
-        var appendContent = function(el, elementIdToAppendIn, skipRemove) {
-            if (!skipRemove && _this.appended_el) {
-                ko.removeNode(this.appended_el);
-            }
-            $('#' + elementIdToAppendIn).append(_this.appended_el = el);
-            $(el).addClass('active');
-        };
-
-        var loadTemplate = function(templateId, callback) {
-
-            // preventing reloading of templates
-            if (_this.loadedTemplates) {
-                if (_this.loadedTemplates.indexOf(templateId) !== -1) {
-                    callback(false);
-                    return;
-                }
-            } else {
-                _this.loadedTemplates = new Array();
-                _this.loadedTemplates.push(templateId);
-
-            }
-            var el = $('#' + templateId);
-            $.get(el.attr("src"), function(response) {
-                el.text(response);
-                console.log("Loaded template with ID: " + templateId);
-                _this.loadedTemplates.push(templateId);
-                callback(true);
-                return;
-            });
-        }
-
-        this.route('', null, function() {
-            var templateId = 'home';
-
-            loadTemplate(templateId, (function(firstTime) {
-                $('#details').on('hidden', function() {
-                    if (_this.appended_el) {
-                        ko.removeNode(_this.appended_el);
-                    }
-
-                });
-                $('#details').modal('hide');
-                if (firstTime == true) {
-                    appendContent(kb.renderTemplate(templateId, syncLogsViewModel), 'content', false);
-                } else {
-                    // syncLogs.fetch();
-                }
-            }));
-        });
-
-        this.route('details/:syncLogId', null, function(syncLogId) {
-            var templateId = 'details';
-
-            loadTemplate(templateId, (function() {
-                logDetailsViewModel = new LogDetailsViewModel(syncLogs.get(syncLogId));
-                appendContent(kb.renderTemplate(templateId, logDetailsViewModel, {afterRender: logDetailsViewModel.afterRender }),
-                        'content', true);
-                $('#details').modal('show');
-            }));
-        });
-        // this.route('things', null, function() {
-        // loadPage(kb.renderTemplate('things_page', new
-        // ThingsPageViewModel())); });
-        // this.route('things/:id', null, function(id) {
-        // loadPage(kb.renderTemplate('thing_page', new
-        // ThingCellViewModel(things_collection.get(id)))); });
-    }
-});
-
-var router = new RouterBackboneJS();
-
-/*
- * The ViewModel var dataTableExampleViewModel = { rowClickHandler :
- * function(event) { //ko.applyBindings(modalDetailsViewModel,
- * $('#syncLogDetailsModal')[0]); $('#syncLogDetailsModal').modal('show');
- * console.log(event); }, rowColorize : function(index, row) {
- * $(row).children("td").each(function(index, td) { var tdContent =
- * $(td).text(); console.log(tdContent); if (tdContent != undefined) { if
- * (tdContent.indexOf('Success') != -1) { $(row).addClass("success"); return
- * false; } else if (tdContent.indexOf('Fail') != -1) {
- * $(row).addClass('error'); return false; } } }); },
- * 
- * modalDetailsViewModel : kb.viewModel(syncLog),
- * 
- * tableData : ko.observableArray([ [ "20/10/2013", "Success" ], [ "20/12/2013",
- * "Fail" ], [ "20/05/2012", "Success" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Data" ], [ "Existing", "Data" ], [ "Existing",
- * "Data" ], [ "Existing", "Janice" ] ]), add : function() {
- * this.tableData.push([ (new Date()).getTime(), "Added" ]); }, remove :
- * function() { this.tableData.pop(); } };
- */
-/* Initialise the ViewModel */
-$(function() {
-    // ko.applyBindings(dataTableExampleViewModel);
-
-    console.log(Backbone.history.start({
-        root : '/xpto/syncher-web-clientjs/'
-    }));
-    // ko.applyBindings(syncLogsViewModel, $('#syncLogs')[0]);
 });
