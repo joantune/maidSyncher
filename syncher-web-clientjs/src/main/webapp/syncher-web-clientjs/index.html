@@ -154,7 +154,7 @@ body {
                                 <tr>
                                     <th>Start time</th>
                                     <th>Duration</th>
-                                    <th>Type</th>
+                                    <th>Origin Object</th>
                                     <th>Success</th>
                                 </tr>
                             </thead>
@@ -163,7 +163,7 @@ body {
                                     <td data-bind="text: timeOnly(syncStartTime())"></td>
                                     <td class="muted" data-bind="text: duration() + 's'"></td>
                                     <td><a
-                                        data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }"></a></td>
+                                        data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }" target="_blank"></a></td>
                                     <td data-bind="html: successIcon"></td>
                                 </tr>
                             </tbody>
@@ -178,7 +178,7 @@ body {
                                 </tr>
                             </thead>
                             <tbody data-bind="foreach: warnings">
-                                <tr class="warning"><td data-bind="text: description"></td></tr>
+                                <tr class="warning"><td><i class="icon-warning-sign"></i> <span data-bind="text: description"></span></td></tr>
                             </tbody>
                         </table>
 

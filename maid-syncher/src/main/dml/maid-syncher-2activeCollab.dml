@@ -5,6 +5,7 @@ class ACObject extends .pt.ist.maidSyncher.domain.SynchableObject {
 	long createdById;
 	DateTime updatedOn;
 	long updatedById;
+	String permalink;
 	
 
 }

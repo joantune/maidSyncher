@@ -6,18 +6,22 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class SyncActionLog extends SyncActionLog_Base {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncActionLog.class);
 
-    public SyncActionLog(SyncLog associatedSyncLog, String urlOriginObject, DSIObject syncDSIObject) {
+    public SyncActionLog(SyncLog associatedSyncLog, SyncEvent syncEvent, DSIObject syncDSIObject) {
         super();
+        SynchableObject originObject = syncEvent.getOriginObject();
         checkNotNull(syncDSIObject);
         checkNotNull(associatedSyncLog);
         setSyncLog(associatedSyncLog);
         setSuccess(Boolean.FALSE);
-        setUrlOriginObject(urlOriginObject);
+        setUrlOriginObject(originObject.getHtmlUrl());
+        setTypeOriginObject(originObject.getClass().getName());
         setDsiObject(syncDSIObject);
     }
 

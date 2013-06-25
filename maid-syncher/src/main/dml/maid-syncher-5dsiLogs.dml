@@ -39,6 +39,7 @@ class SyncActionLog {
 	String urlOriginObject;
 	String errorDescription;
 	String actionDescription;
+	String typeOriginObject (REQUIRED);
 }
 
 class SyncWarningLog {

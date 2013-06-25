@@ -59,6 +59,8 @@ public class ACProject extends ACProject_Base {
     protected static final String DSC_TYPE = "type";
     protected static final String DSC_ARCHIVED = "archived";
 
+    protected static final String DSC_BUDGET = "budget";
+
     public ACProject() {
         super();
         setAcInstance(MaidRoot.getInstance().getAcInstance());
@@ -162,6 +164,10 @@ public class ACProject extends ACProject_Base {
         for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
+            case DSC_PERMALINK:
+            case DSC_UPDATED_BY_ID:
+            case DSC_UPDATED_ON:
+            case DSC_BUDGET:
             case DSC_ID:
             case DSC_CREATED_ON:
             case DSC_OVERVIEW:
@@ -172,9 +178,11 @@ public class ACProject extends ACProject_Base {
             case DSC_ARCHIVED:
                 //if archived, got to remove GHLabels
                 isNowArchivedAux = getArchived();
+                break;
             case DSC_NAME:
                 //got to change GHLabels
                 nameChangedAux = true;
+                break;
             case DSC_STATUS:
                 //let's do nothing here
                 break;
@@ -280,6 +288,10 @@ public class ACProject extends ACProject_Base {
         for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
+            case DSC_PERMALINK:
+            case DSC_UPDATED_BY_ID:
+            case DSC_UPDATED_ON:
+            case DSC_BUDGET:
             case DSC_ID:
             case DSC_CREATED_ON:
             case DSC_OVERVIEW:

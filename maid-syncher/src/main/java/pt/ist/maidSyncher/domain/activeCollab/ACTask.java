@@ -248,7 +248,6 @@ public class ACTask extends ACTask_Base {
     public static final String DSC_BODY = "body";
     public static final String DSC_OTHER_ASSIGNEES_ID = "otherAssigneesId";
     public static final String DSC_ASSIGNEE_ID = "assigneeId";
-    public static final String DSC_COMPLETE = "complete";
 
     public static final String DSC_MILESTONE_ID = "milestoneId";
     public static final String DSC_CATEGORY_ID = "categoryId";
@@ -259,6 +258,7 @@ public class ACTask extends ACTask_Base {
         for (String changedDescriptor : triggerEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
+            case DSC_PERMALINK:
             case DSC_OTHER_ASSIGNEES_ID:
             case DSC_ASSIGNEE_ID:
             case DSC_ID:
@@ -274,6 +274,8 @@ public class ACTask extends ACTask_Base {
                 //for now, let's do nothing with the id
                 //of who created it
             case DSC_CREATED_BY_ID:
+                break;
+            case DSC_MILESTONE_ID:
                 break;
             case DSC_NAME:
                 break;
@@ -463,6 +465,7 @@ public class ACTask extends ACTask_Base {
                 ghIssueToUpdate.setId(ghIssue.getId()); //making sure it is the same id
                 break;
                 //the ones that we don't have to do anything
+            case DSC_PERMALINK:
             case DSC_CREATED_ON:
             case DSC_UPDATED_ON:
             case DSC_PRIORITY:

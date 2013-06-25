@@ -5,11 +5,14 @@ package pt.ist.maidSyncher.domain;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +30,7 @@ import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
+import pt.ist.maidSyncher.domain.activeCollab.ACGeneralTask;
 import pt.ist.maidSyncher.domain.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHLabel;
@@ -34,6 +38,9 @@ import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 8 de Mai de 2013
@@ -61,33 +68,7 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
         initializeACMilestone();
         initializeAssociatedGHIssue();
 
-        //setup the stubs
-        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Milestone.class))).then(
-                new Answer<Milestone>() {
-
-                    @Override
-                    public Milestone answer(InvocationOnMock invocation) throws Throwable {
-                        Milestone milestone = (Milestone) invocation.getArguments()[1];
-                        if (milestone.getUrl() == null)
-                            milestone.setUrl("http://phonyUrl.com/");
-                        milestone.setNumber(GH_MILESTONE_NUMBER);
-                        return milestone;
-                    }
-
-                });
-
-        when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Label.class))).thenAnswer(
-                new Answer<Label>() {
-
-                    @Override
-                    public Label answer(InvocationOnMock invocation) throws Throwable {
-                        //let's get the label to return the label :)
-                        Label labelArgument = (Label) invocation.getArguments()[1];
-                        when(labelMock.getName()).thenReturn(labelArgument.getName());
-                        return labelMock;
-                    }
-
-                });
+        setupStubsForGHIssueCreation();
         SyncEvent createSubTaskEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acSubTask,
                         Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACSubTask.class)));
@@ -132,6 +113,76 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
 
     @Test
     @Atomic(mode = TxMode.WRITE)
+    public void createACSubTaskAlreadyCompleted() throws IOException {
+        acSubTask = initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, false);
+        initializeACMilestone();
+        initializeAssociatedGHIssue();
+
+        setupStubsForGHIssueCreation();
+
+        acSubTask.setComplete(Boolean.TRUE);
+
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                Collections2.filter(
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACSubTask.class)),
+                        new Predicate<PropertyDescriptor>() {
+                            @Override
+                            public boolean apply(PropertyDescriptor input) {
+                                if (input == null)
+                                    return false;
+                                return input.getName().equalsIgnoreCase(ACGeneralTask.DSC_COMPLETE);
+                            }
+                        });
+
+        SyncEvent createSubTaskEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, acSubTask, propertyDescriptorsToUse);
+
+        SyncActionWrapper sync = acSubTask.sync(createSubTaskEvent);
+        sync.sync();
+
+        //verifications
+
+        //the creation of the issue associated with this subtask
+        verify(gitHubClient, times(2)).post(stringPostUriCaptor.capture(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        //everything else is checked in the other methods, let's just check if we are creating a closed issue
+        assertEquals(GHIssue.STATE_CLOSED, issueMap.get(IssueService.FILTER_STATE));
+    }
+
+    void setupStubsForGHIssueCreation() throws IOException {
+        //setup the stubs
+        when(gitHubClient.post(Mockito.anyString(), Mockito.anyObject(), Mockito.eq(Milestone.class))).then(
+                new Answer<Milestone>() {
+
+                    @Override
+                    public Milestone answer(InvocationOnMock invocation) throws Throwable {
+                        Milestone milestone = (Milestone) invocation.getArguments()[1];
+                        if (milestone.getUrl() == null)
+                            milestone.setUrl("http://phonyUrl.com/");
+                        milestone.setNumber(GH_MILESTONE_NUMBER);
+                        return milestone;
+                    }
+
+                });
+
+        when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Label.class))).thenAnswer(
+                new Answer<Label>() {
+
+                    @Override
+                    public Label answer(InvocationOnMock invocation) throws Throwable {
+                        //let's get the label to return the label :)
+                        Label labelArgument = (Label) invocation.getArguments()[1];
+                        when(labelMock.getName()).thenReturn(labelArgument.getName());
+                        return labelMock;
+                    }
+
+                });
+    }
+
+    @Test
+    @Atomic(mode = TxMode.WRITE)
     public void updateWithAllDescriptorChange() throws IOException {
         //let's create a subTask without the GH side
         acSubTask = initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, true);
@@ -158,6 +209,53 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
 
         //for the right GHIssue
         assertTrue(stringPostUriCaptor.getValue().contains(String.valueOf(GH_SUBTASK_ONE_ISSUE_NUMBER)));
+
+    }
+
+    @Test
+    @Atomic(mode = TxMode.WRITE)
+    public void updateThatCompletesTask() throws IOException {
+        //let's create a subTask without the GH side
+        acSubTask = initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, true);
+        initializeACMilestone(); //shouldn't make an impact
+        initializeAssociatedGHIssue(); //needed
+
+        acSubTask.setComplete(true);
+
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                Collections2.filter(
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(pt.ist.maidSyncher.api.activeCollab.ACSubTask.class)),
+                        new Predicate<PropertyDescriptor>() {
+                            @Override
+                            public boolean apply(PropertyDescriptor input) {
+                                if (input == null)
+                                    return false;
+                                return input.getName().equalsIgnoreCase(ACGeneralTask.DSC_COMPLETE);
+                            }
+                        });
+
+        SyncEvent updateSubTaskEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acSubTask, propertyDescriptorsToUse);
+
+        SyncActionWrapper sync = acSubTask.sync(updateSubTaskEvent);
+        sync.sync();
+
+        //verifications
+
+        verify(gitHubClient).post(stringPostUriCaptor.capture(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        Map<Object, Object> issueMap = postCaptor.getValue();
+
+        assertEquals(AC_SUB_TASK_ONE_NAME, issueMap.get(IssueService.FIELD_TITLE));
+
+        //we did an edit of an issue on the right repository
+        assertTrue(stringPostUriCaptor.getValue().contains(ghRepository.generateId()));
+
+        //for the right GHIssue
+        assertTrue(stringPostUriCaptor.getValue().contains(String.valueOf(GH_SUBTASK_ONE_ISSUE_NUMBER)));
+
+        //and we marked it as complete
+        assertEquals(GHIssue.STATE_CLOSED, issueMap.get(IssueService.FILTER_STATE));
 
     }
 

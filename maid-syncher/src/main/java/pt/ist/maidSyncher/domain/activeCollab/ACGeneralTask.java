@@ -17,7 +17,7 @@ public abstract class ACGeneralTask extends ACGeneralTask_Base {
     protected static final String DSC_NAME = "name";
     protected static final String DSC_PRIORITY = "priority";
     protected static final String DSC_DUE_ON = "dueOn";
-    protected static final String DSC_COMPLETE = "complete";
+    public static final String DSC_COMPLETE = "complete";
 
     public  ACGeneralTask() {
         super();

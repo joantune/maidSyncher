@@ -141,10 +141,12 @@ public class ACSubTask extends ACSubTask_Base {
     private SyncActionWrapper syncUpdateEvent(SyncEvent syncEvent) {
         final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedName = false;
+        boolean auxChangedCompletion = false;
         for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
             case DSC_ID:
+            case DSC_PERMALINK:
             case DSC_URL:
             case DSC_PARENTID: //this one should never change
             case DSC_CREATED_ON:
@@ -156,6 +158,8 @@ public class ACSubTask extends ACSubTask_Base {
             case DSC_NAME:
                 auxChangedName = true;
                 break;
+            case DSC_COMPLETE:
+                auxChangedCompletion = true;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
                 //cases, let's remove it from the ticked descriptors
@@ -163,27 +167,44 @@ public class ACSubTask extends ACSubTask_Base {
         }
 
         final boolean changedName = auxChangedName;
+        final boolean changedCompletion = auxChangedCompletion;
 
         return new SyncActionWrapper<SynchableObject>() {
 
+            private Issue getPrefilledIssue(GHIssue ghIssue, Issue issue) {
+                if (issue != null)
+                    return issue;
+                Issue issueToReturn = new Issue();
+                try {
+                    ghIssue.copyPropertiesTo(issueToReturn);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
+                    throw new Error("Error trying to prefill an Issue.", e);
+                }
+                issueToReturn.setTitle(getName());
+                return issueToReturn;
+
+            }
+
             @Override
             public Collection<SynchableObject> sync() throws IOException {
+                Issue issueToUpdate = null;
+                DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+                GHIssue ghIssue = dsiSubTask.getGhIssue();
                 if (changedName) {
-                    DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
-                    GHIssue ghIssue = dsiSubTask.getGhIssue();
-                    Issue issueToUpdate = new Issue();
-                    try {
-                        ghIssue.copyPropertiesTo(issueToUpdate);
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | TaskNotVisibleException e) {
-                        throw new Error("Error trying to prefill an Issue.", e);
-                    }
 
+                    issueToUpdate = getPrefilledIssue(ghIssue, issueToUpdate);
                     issueToUpdate.setTitle(getName());
 
+                }
+                if (changedCompletion) {
+                    issueToUpdate = getPrefilledIssue(ghIssue, issueToUpdate);
+                    issueToUpdate
+                    .setState(getComplete() == null ? GHIssue.STATE_OPEN : getComplete() ? GHIssue.STATE_CLOSED : GHIssue.STATE_OPEN);
+                }
+                if (issueToUpdate != null) {
                     IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
 
                     issueService.editIssue(ghIssue.getRepository(), issueToUpdate);
-
                 }
 
                 return Collections.emptySet();
@@ -220,6 +241,7 @@ public class ACSubTask extends ACSubTask_Base {
         for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
+            case DSC_PERMALINK:
             case DSC_ID:
             case DSC_URL:
             case DSC_PARENTID:
@@ -259,6 +281,7 @@ public class ACSubTask extends ACSubTask_Base {
                 issue.setTitle(getName());
 
                 issue.setBody(GHIssue.applySubTaskBodyPrefix(null, parentGHIssue));
+                issue.setState(getComplete() == null ? GHIssue.STATE_OPEN : getComplete() ? GHIssue.STATE_CLOSED : GHIssue.STATE_OPEN);
 
                 //set the milestones of the parent
 
@@ -273,7 +296,13 @@ public class ACSubTask extends ACSubTask_Base {
 
                 //let's sync it
                 IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
-                return Collections.<SynchableObject> singleton(GHIssue.process(issueService.createIssue(gitHubRepository, issue),
+                Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
+                if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
+                    //we must now edit it and close it
+                    createdIssue = issueService.editIssue(gitHubRepository, issue);
+                }
+
+                return Collections.<SynchableObject> singleton(GHIssue.process(createdIssue,
                         gitHubRepository, true));
 
             }

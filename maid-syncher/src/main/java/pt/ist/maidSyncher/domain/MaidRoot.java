@@ -408,7 +408,7 @@ public class MaidRoot extends MaidRoot_Base {
             System.out.println("syncActionWrapper event " + syncActionWrapper.getOriginatingSyncEvent() == null);
 
             SyncActionLog syncActionLog =
-                    new SyncActionLog(currentSyncLog, syncActionWrapper.getOriginatingSyncEvent().getOriginObject().getUrl(),
+                    new SyncActionLog(currentSyncLog, syncActionWrapper.getOriginatingSyncEvent(),
                             syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
             syncActionLog.markStartOfSync();
             return syncActionLog;

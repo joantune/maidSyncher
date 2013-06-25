@@ -20,6 +20,8 @@ import java.util.Set;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Repository;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
@@ -33,11 +35,13 @@ import com.google.common.collect.Sets;
 
 public class GHLabel extends GHLabel_Base {
 
-    public final static String PROJECT_PREFIX = "P-";
+    public final static Logger LOGGER = LoggerFactory.getLogger(GHLabel.class);
+
+  public final static String PROJECT_PREFIX = "P-";
 
     public final static String DELETED_LABEL_NAME = "deleted";
 
-    public  GHLabel() {
+    public GHLabel() {
         super();
         MaidRoot.getInstance().addGhLabels(this);
     }
@@ -75,6 +79,19 @@ public class GHLabel extends GHLabel_Base {
         });
     }
 
+    @Override
+    public String getHtmlUrl() {
+        //we should have no HTML Url, let's just make sure :)
+        if (super.getHtmlUrl() != null) {
+            LOGGER.warn("HtmlUrl slot is not empty as it should..");
+        }
+        if (getRepository() != null && getRepository().getHtmlUrl() != null)
+            return getRepository().getHtmlUrl() + LABEL_HTML_URL_SUFFIX;
+        return null;
+    }
+
+    private final static String LABEL_HTML_URL_SUFFIX = "/issues";
+
     public static void process(Collection<Label> labels, Repository repository) {
         checkNotNull(labels);
 
@@ -89,7 +106,8 @@ public class GHLabel extends GHLabel_Base {
         Set<GHLabel> newGhLabels = new HashSet<GHLabel>();
 
         for (Label labelToProcess : labels) {
-            newGhLabels.add(process(labelToProcess));
+            GHLabel processedLabel = process(labelToProcess);
+            newGhLabels.add(processedLabel);
         }
 
         //let us remove the old relations
@@ -138,7 +156,6 @@ public class GHLabel extends GHLabel_Base {
 
         return getDsiObjectProject();
     }
-
 
     @Override
     public DSIObject findOrCreateDSIObject() {

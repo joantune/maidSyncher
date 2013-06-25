@@ -7,6 +7,7 @@ class .pt.ist.maidSyncher.domain.SynchableObject {
   DateTime lastSynchTime;
  	long id;
 	String url;
+	String htmlUrl;
 }
 
 class GHObject extends .pt.ist.maidSyncher.domain.SynchableObject {
@@ -28,7 +29,7 @@ class GHUser extends GHObject {
 
 	String gravatarId;
 
-	String htmlUrl;
+	//String htmlUrl; - went to superclass
 
 	String location;
 }
@@ -67,7 +68,7 @@ class GHRepository extends GHObject {
 
 	String gitUrl;
 
-	String htmlUrl;
+	//String htmlUrl; // - went to superclass
 
 	String language;
 
@@ -116,7 +117,7 @@ class GHIssue extends GHObject {
 
 	String bodyText;
 
-	String htmlUrl;
+	//String htmlUrl; //went to superclass
 
 	String state;
 

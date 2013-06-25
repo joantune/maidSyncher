@@ -24,6 +24,8 @@ import java.util.Set;
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.Repository;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
@@ -36,7 +38,9 @@ import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class GHMilestone extends GHMilestone_Base {
 
-    public GHMilestone() {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GHMilestone.class);
+
+  public GHMilestone() {
         super();
         MaidRoot.getInstance().addGhMilestones(this);
     }
@@ -55,7 +59,19 @@ public class GHMilestone extends GHMilestone_Base {
         return ghMilestone;
     }
 
-    public static void process(Collection<Milestone> milestones, Repository repository) {
+    private final static String MILESTONE_HTML_URL_SUFFIX = "/issues/milestones";
+
+    @Override
+    public String getHtmlUrl() {
+        if (super.getHtmlUrl() != null)
+            LOGGER.warn("htmlUrl slot is not empty as it should [it is ignored in this class]");
+        if (getRepository() != null && getRepository().getHtmlUrl() != null)
+            return getRepository().getHtmlUrl() + MILESTONE_HTML_URL_SUFFIX;
+        else
+            return null;
+    }
+
+  public static void process(Collection<Milestone> milestones, Repository repository) {
         MaidRoot maidRoot = MaidRoot.getInstance();
 
         //let's take care of the repository
@@ -193,7 +209,6 @@ public class GHMilestone extends GHMilestone_Base {
 
                 return Collections.emptyList();
             }
-
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {

@@ -22,18 +22,20 @@ import jvstm.cps.ConsistencyPredicate;
 import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class GHComment extends GHComment_Base {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GHComment.class);
 
     public GHComment() {
         super();
         MaidRoot.getInstance().addGhComments(this);
     }
-
 
     public static void process(Collection<Comment> comments, Issue issue) {
         checkNotNull(comments);
@@ -67,6 +69,16 @@ public class GHComment extends GHComment_Base {
         }
     }
 
+    @Override
+    public String getHtmlUrl() {
+        if (super.getHtmlUrl() != null) {
+            LOGGER.warn("htmlUrl slot of this item is not null! [its value is ignored]");
+        }
+        if (getIssue() != null && getIssue().getHtmlUrl() != null) {
+            return getIssue().getHtmlUrl();
+        } else
+            return null;
+    }
 
     @ConsistencyPredicate
     private boolean checkMultiplicityDsiObject() {
@@ -105,6 +117,5 @@ public class GHComment extends GHComment_Base {
     public DateTime getUpdatedAtDate() {
         return getUpdatedAtDate() == null ? getCreatedAt() : getUpdatedAt();
     }
-
 
 }

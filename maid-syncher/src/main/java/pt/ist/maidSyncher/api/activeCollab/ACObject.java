@@ -26,6 +26,7 @@ public abstract class ACObject {
 
     private long _id;
     private String _url;
+    private String permalink;
     protected Date _createdOn;
     protected long _createdById;
     protected Date _updatedOn;
@@ -52,6 +53,7 @@ public abstract class ACObject {
         if (getUrl() != null)
             setUrl(getUrl().replaceFirst("public/index","api"));
 
+        setPermalink(JsonRest.getString(jsonObj, "permalink"));
         LOGGER.trace("URL:" + getUrl());
 
         _createdOn = JsonRest.getDate(jsonObj, "created_on");
@@ -116,5 +118,13 @@ public abstract class ACObject {
 
     public void setUrl(String _url) {
         this._url = _url;
+    }
+
+    public String getPermalink() {
+        return permalink;
+    }
+
+    public void setPermalink(String permalink) {
+        this.permalink = permalink;
     }
 }

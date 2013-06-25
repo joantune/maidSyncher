@@ -147,6 +147,7 @@ public class ACMilestone extends ACMilestone_Base {
         for (String changedDescriptor : syncEvent.getChangedPropertyDescriptorNames().getUnmodifiableList()) {
             tickedDescriptors.add(changedDescriptor);
             switch (changedDescriptor) {
+            case DSC_PERMALINK:
             case DSC_ID:
             case DSC_URL:
             case DSC_PRIORITY:

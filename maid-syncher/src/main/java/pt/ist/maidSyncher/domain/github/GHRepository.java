@@ -186,6 +186,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             case DSC_OWNER:
             case DSC_HAS_DOWNLOADS:
             case DSC_GITURL:
+            case DSC_URL:
             case DSC_HAS_ISSUES:
             case DSC_MASTER_BRANCH:
             case DSC_HAS_WIKI:
@@ -322,6 +323,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
             case DSC_ID:
             case DSC_OWNER:
             case DSC_HAS_DOWNLOADS:
+            case DSC_URL:
             case DSC_GITURL:
             case DSC_HAS_ISSUES:
             case DSC_MASTER_BRANCH:
