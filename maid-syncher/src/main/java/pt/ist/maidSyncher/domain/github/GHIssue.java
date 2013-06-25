@@ -71,6 +71,7 @@ public class GHIssue extends GHIssue_Base {
     public final static String DSC_STATE = "state";
     public final static String DSC_LABELS = "labels";
     public final static String DSC_NUMBER = "number";
+    public final static String DSC_CLOSED_AT = "closedAt";
     public final static String DSC_BODY = "body";
     public final static String DSC_TITLE = "title";
     public final static String DSC_UPDATED_AT = "updatedAt";
@@ -368,6 +369,7 @@ public class GHIssue extends GHIssue_Base {
             case DSC_UPDATED_AT:
             case DSC_NUMBER:
             case DSC_MILESTONE:
+            case DSC_CLOSED_AT:
                 //changes to this milestone don't reflect
                 //on the other side, because we are only a subtask
                 break; //the ones above, there'se no sense in changing anything
@@ -639,6 +641,7 @@ public class GHIssue extends GHIssue_Base {
             case DSC_CREATED_AT:
             case DSC_UPDATED_AT:
             case DSC_NUMBER:
+            case DSC_CLOSED_AT:
                 break; //the ones above, there'se no sense in changing anything
 
             case DSC_MILESTONE:
@@ -823,6 +826,7 @@ public class GHIssue extends GHIssue_Base {
             case DSC_STATE:
             case DSC_BODY:
             case DSC_TITLE:
+            case DSC_CLOSED_AT:
                 break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above

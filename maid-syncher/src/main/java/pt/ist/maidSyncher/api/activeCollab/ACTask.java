@@ -147,7 +147,7 @@ public class ACTask extends ACObject {
      */
     public ACTask postComplete() throws IOException {
         String urlToUse = getUrl() + "/complete";
-        return new ACTask(getRequestProcessor().processPost(urlToUse, null));
+        return new ACTask(getRequestProcessor().processPost((String) null, urlToUse));
     }
 
     /**
@@ -157,7 +157,7 @@ public class ACTask extends ACObject {
      */
     public ACTask postReopen() throws IOException {
         String urlToUse = getUrl() + "/reopen";
-        return new ACTask(getRequestProcessor().processPost(urlToUse, null));
+        return new ACTask(getRequestProcessor().processPost((String) null, urlToUse));
     }
 
     /**

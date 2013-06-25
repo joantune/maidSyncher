@@ -23,6 +23,6 @@ public interface RequestProcessor {
 
     String getBasicUrlForPath(String string);
 
-    JSONObject processPost(String path, String string) throws IOException;
+    JSONObject processPost(String content, String path) throws IOException;
 
 }

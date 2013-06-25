@@ -251,6 +251,7 @@ public class ACSubTask extends ACSubTask_Base {
             case DSC_CREATED_BY_ID:
             case DSC_UPDATED_ON:
             case DSC_UPDATED_BY_ID:
+            case DSC_COMPLETE:
                 break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
