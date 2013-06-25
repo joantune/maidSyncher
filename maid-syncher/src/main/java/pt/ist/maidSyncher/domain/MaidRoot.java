@@ -557,7 +557,11 @@ public class MaidRoot extends MaidRoot_Base {
         checkNotNull(syncActionWrapper.getOriginatingSyncEvent().getOriginObject());
         checkNotNull(syncActionWrapper.getOriginatingSyncEvent().getDsiElement());
         checkNotNull(syncActionWrapper.getPropertyDescriptorNamesTicked());
-        checkNotNull(syncActionWrapper.getSyncDependedDSIObjects());
+        try {
+            checkNotNull(syncActionWrapper.getSyncDependedDSIObjects());
+        } catch (NullPointerException ex) {
+            //An NPE might occur here, but that doesn't mean that this is invalid
+        }
         checkNotNull(syncActionWrapper.getSyncDependedTypesOfDSIObjects());
 
         if (syncActionWrapper.getOriginatingSyncEvent().equals(syncEvent) == false) {

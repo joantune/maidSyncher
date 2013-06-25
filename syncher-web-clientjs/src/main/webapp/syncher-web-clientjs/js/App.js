@@ -101,7 +101,7 @@ syncLogs.fetch({
 });
 
 var successUtil = function(toReturnOnSuccess, toReturnOnFailure, toReturnOnNotSet, success) {
-    if (success === 'blah blah') {
+    if (success === null) {
         return toReturnOnNotSet;
     } else if (success)
         return toReturnOnSuccess;
@@ -151,7 +151,7 @@ var ActionsViewModel = function(model) {
     this.successIcon = ko.computed(function() {
         var successIcon = '<i class="icon-ok"></i>';
         var failureIcon = '<i class="icon-remove"></i>';
-        return successUtil(successIcon, failureIcon, "", model);
+        return successUtil(successIcon, failureIcon, "", self.success());
     });
 };
 

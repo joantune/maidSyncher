@@ -160,6 +160,7 @@ public class ACSubTask extends ACSubTask_Base {
                 break;
             case DSC_COMPLETE:
                 auxChangedCompletion = true;
+                break;
             default:
                 tickedDescriptors.remove(changedDescriptor); //if we did not fall on any of the above
                 //cases, let's remove it from the ticked descriptors
