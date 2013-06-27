@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.egit.github.core.client.GitHubClient;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -428,6 +429,7 @@ public class MaidRoot extends MaidRoot_Base {
         private void atomicProcessSyncAction(SyncActionWrapper syncActionWrapper) throws IOException {
             LOGGER.info("Running SyncActionWrapper for event: " + syncActionWrapper.getOriginatingSyncEvent().toString());
             syncActionWrapper.sync();
+            syncActionWrapper.getOriginatingSyncEvent().getDsiElement().setLastSynchedAt(new DateTime());
 
         }
 

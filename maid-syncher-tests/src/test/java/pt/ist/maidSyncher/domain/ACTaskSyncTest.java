@@ -441,7 +441,7 @@ public class ACTaskSyncTest {
                                     return false;
                                 if (input.getName().equals(ACTask.DSC_MILESTONE_ID)
                                         || input.getName().equals(ACTask.DSC_CATEGORY_ID)
-                                        || input.getName().equals(ACTask.DSC_PROJECT_ID)) {
+                                        || input.getName().equals(ACTask.DSC_PROJECT_ID) || input.getName().equals(ACTask.DSC_ID)) {
                                     return false;
                                 }
                                 return true;
@@ -491,7 +491,8 @@ public class ACTaskSyncTest {
                                 if (input == null)
                                     return false;
                                 if (input.getName().equals(ACTask.DSC_MILESTONE_ID)
-                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)) {
+                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)
+                                        || input.getName().equals(ACTask.DSC_ID)) {
                                     return false;
                                 }
                                 return true;
@@ -600,7 +601,8 @@ public class ACTaskSyncTest {
                                 if (input == null)
                                     return false;
                                 if (input.getName().equals(ACTask.DSC_PROJECT_ID)
-                                        || input.getName().equals(ACTask.DSC_MILESTONE_ID)) {
+                                        || input.getName().equals(ACTask.DSC_MILESTONE_ID)
+                                        || input.getName().equals(ACTask.DSC_ID)) {
                                     return false;
                                 }
                                 return true;
@@ -617,9 +619,9 @@ public class ACTaskSyncTest {
 
         //the simple fields of the new issue
 
-        //six times - one to close the issue, other
-        //to open the other one, and two similar one for
-        //each of the two subtasks
+        //one to close the issue, other
+        //to open the other one, and two similar ones for
+        //each of the two subtasks, plus one for the other values of the issue that got edited
         verify(gitHubClient, times(6)).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
 
 //        Map<Object, Object> issueMap = postCaptor.getValue();
@@ -754,7 +756,8 @@ public class ACTaskSyncTest {
                                 if (input == null)
                                     return false;
                                 if (input.getName().equals(ACTask.DSC_PROJECT_ID)
-                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)) {
+                                        || input.getName().equals(ACTask.DSC_CATEGORY_ID)
+                                        || input.getName().equals(ACTask.DSC_ID)) {
                                     return false;
                                 }
                                 return true;

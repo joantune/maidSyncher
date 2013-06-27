@@ -14,6 +14,9 @@
  */
 package pt.ist.maidSyncher.domain.exceptions;
 
+import java.util.Set;
+
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 /**
@@ -22,6 +25,8 @@ import pt.ist.maidSyncher.domain.sync.SyncEvent;
  * 
  */
 public class SyncActionError extends RuntimeException {
+
+    private Set<SynchableObject> changedObjects;
 
     /**
      * 
@@ -37,11 +42,21 @@ public class SyncActionError extends RuntimeException {
         super(message);
     }
 
+    public SyncActionError(String message, Set<SynchableObject> synchedObjectsSoFar) {
+        super(message);
+        this.changedObjects = synchedObjectsSoFar;
+    }
+
     /**
      * @param cause
      */
     public SyncActionError(Throwable cause) {
         super(cause);
+    }
+
+    public SyncActionError(Throwable cause, Set<SynchableObject> changedObjects) {
+        super(cause);
+        this.changedObjects = changedObjects;
     }
 
     /**
@@ -60,6 +75,11 @@ public class SyncActionError extends RuntimeException {
         super(message, cause);
     }
 
+    public SyncActionError(String message, Throwable cause, Set<SynchableObject> changedObjects) {
+        super(message, cause);
+        this.changedObjects = changedObjects;
+    }
+
     /**
      * @param message
      * @param cause
@@ -68,6 +88,10 @@ public class SyncActionError extends RuntimeException {
      */
     public SyncActionError(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    public Set<SynchableObject> getChangedObjects() {
+        return changedObjects;
     }
 
 }

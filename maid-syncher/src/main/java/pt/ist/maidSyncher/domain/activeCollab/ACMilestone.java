@@ -28,9 +28,11 @@ import org.eclipse.egit.github.core.service.MilestoneService;
 
 import pt.ist.maidSyncher.api.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
@@ -52,7 +54,7 @@ public class ACMilestone extends ACMilestone_Base {
     private static final String DSC_BODY = "body";
     private static final String DSC_DUEON = "dueOn";
 
-    public  ACMilestone() {
+    public ACMilestone() {
         super();
     }
 
@@ -105,7 +107,6 @@ public class ACMilestone extends ACMilestone_Base {
     public static ACMilestone findById(long id) {
         return (ACMilestone) MiscUtils.findACObjectsById(id, ACMilestone.class);
     }
-
 
     @Override
     public DSIObject getDSIObject() {
@@ -182,9 +183,9 @@ public class ACMilestone extends ACMilestone_Base {
         return new SyncActionWrapper<GHMilestone>() {
 
             @Override
-            public Collection<GHMilestone> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
                 Multimap<GHRepository, Milestone> milestonesToEdit = null;
-                Set<GHMilestone> ghMilestonesChanged = new HashSet<>();
+                Set<SynchableObject> ghMilestonesChanged = new HashSet<>();
 
                 if (changedName) {
                     milestonesToEdit = getNewPrefilledGHMilestonesToEdit(milestonesToEdit);
@@ -212,17 +213,21 @@ public class ACMilestone extends ACMilestone_Base {
                 }
                 if (milestonesToEdit != null) {
                     MilestoneService milestoneService = new MilestoneService(MaidRoot.getGitHubClient());
-                    for (GHRepository ghRepository : milestonesToEdit.keySet()) {
-                        for (Milestone milestone : milestonesToEdit.get(ghRepository)) {
-                            ghMilestonesChanged.add(GHMilestone.process(milestoneService.editMilestone(ghRepository, milestone),
-                                    true));
+                    try {
+                        for (GHRepository ghRepository : milestonesToEdit.keySet()) {
+                            for (Milestone milestone : milestonesToEdit.get(ghRepository)) {
+                                ghMilestonesChanged.add(GHMilestone.process(
+                                        milestoneService.editMilestone(ghRepository, milestone), true));
 
+                            }
                         }
+                    } catch (IOException exception) {
+                        throw new SyncActionError(exception, ghMilestonesChanged);
                     }
                 }
+
                 return ghMilestonesChanged;
             }
-
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {

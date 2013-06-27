@@ -40,6 +40,7 @@ import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
@@ -78,8 +79,8 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
     protected static final String DSC_HTML_URL = "htmlUrl";
 
     @Override
-    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException,
-    InvocationTargetException, NoSuchMethodException, TaskNotVisibleException {
+    public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
+    NoSuchMethodException, TaskNotVisibleException {
         Set<String> changedPropertyDescriptors = new HashSet();
         changedPropertyDescriptors.addAll(super.copyPropertiesFrom(orig));
         //let's take care of the Owner
@@ -230,47 +231,50 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
-                Set<SynchableObject> synchedObjects = new HashSet<SynchableObject>();
+            public Set<SynchableObject> sync() throws SyncActionError {
+                Set<SynchableObject> changedObjects = new HashSet<SynchableObject>();
 
                 Set<ACTaskCategory> newACTaskCategories = new HashSet<>();
 
-                //let's take care of:
+                try {
+                    //let's take care of:
 
-                //. the project if we need to;
-                if (acProjectToEdit != null) {
-                    ACProject newlyCreatedACProject = acProjectToEdit.update();
-                    pt.ist.maidSyncher.domain.activeCollab.ACProject newACProject =
-                            pt.ist.maidSyncher.domain.activeCollab.ACProject.process(newlyCreatedACProject, true);
-                    dsiRepository.setDefaultProject(newACProject);
-                    synchedObjects.add(newACProject);
+                    //. the project if we need to;
+                    if (acProjectToEdit != null) {
+                        ACProject newlyCreatedACProject = acProjectToEdit.update();
+                        pt.ist.maidSyncher.domain.activeCollab.ACProject newACProject =
+                                pt.ist.maidSyncher.domain.activeCollab.ACProject.process(newlyCreatedACProject, true);
+                        dsiRepository.setDefaultProject(newACProject);
+                        changedObjects.add(newACProject);
+                    }
+
+                    //. the categories if we need to;
+                    if (acCategoriesToEdit.isEmpty() == false) {
+                        for (ACCategory acCategoryToEdit : acCategoriesToEdit) {
+                            ACCategory newACCategory = acCategoryToEdit.update();
+                            ACTaskCategory newACTaskCategory =
+                                    ACTaskCategory.process(newACCategory, newACCategory.getProjectId(), true);
+                            newACTaskCategories.add(newACTaskCategory);
+                            changedObjects.add(newACTaskCategory);
+                        }
+                        //let's set the new task categories
+
+                        //remove the old ones
+                        for (ACTaskCategory oldAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
+                            dsiRepository.removeAcTaskCategories(oldAcTaskCategory);
+                        }
+
+                        for (ACTaskCategory acTaskCategory : newACTaskCategories) {
+                            dsiRepository.addAcTaskCategories(acTaskCategory);
+                        }
+
+                    }
+                } catch (IOException ex) {
+                    throw new SyncActionError(ex, changedObjects);
                 }
 
-                //. the categories if we need to;
-                if (acCategoriesToEdit.isEmpty() == false) {
-                    for (ACCategory acCategoryToEdit : acCategoriesToEdit) {
-                        ACCategory newACCategory = acCategoryToEdit.update();
-                        ACTaskCategory newACTaskCategory =
-                                ACTaskCategory.process(newACCategory, newACCategory.getProjectId(), true);
-                        newACTaskCategories.add(newACTaskCategory);
-                        synchedObjects.add(newACTaskCategory);
-                    }
-                    //let's set the new task categories
-
-                    //remove the old ones
-                    for (ACTaskCategory oldAcTaskCategory : dsiRepository.getAcTaskCategoriesSet()) {
-                        dsiRepository.removeAcTaskCategories(oldAcTaskCategory);
-                    }
-
-                    for (ACTaskCategory acTaskCategory : newACTaskCategories) {
-                        dsiRepository.addAcTaskCategories(acTaskCategory);
-                    }
-
-                }
-
-                return synchedObjects;
+                return changedObjects;
             }
-
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
@@ -351,7 +355,8 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
+                Set<SynchableObject> changedObjects = new HashSet<>();
                 //let's try to see if an ACProject already exists or not
                 pt.ist.maidSyncher.domain.activeCollab.ACProject acExistingProject =
                         pt.ist.maidSyncher.domain.activeCollab.ACProject.findByName(getName());
@@ -367,8 +372,13 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                     newAcProject.setCompanyId((int) acInstance.getId());
 
                     //lets ignore the leadId, status, budget, and labels
-                    acProjectToReturn =
-                            pt.ist.maidSyncher.domain.activeCollab.ACProject.process(ACProject.create(newAcProject), true);
+                    try {
+                        acProjectToReturn =
+                                pt.ist.maidSyncher.domain.activeCollab.ACProject.process(ACProject.create(newAcProject), true);
+                        changedObjects.add(acProjectToReturn);
+                    } catch (IOException exception) {
+                        throw new SyncActionError(exception, changedObjects);
+                    }
                 }
 
                 //let's gather all of the active ACProjects
@@ -394,17 +404,22 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                             }
                         }
 
-                        //now, let us create the rest of the categories
-                        for (pt.ist.maidSyncher.domain.activeCollab.ACProject acProjectToCreateTCategoryFor : projectsToCreateTaskCategoriesFor) {
-                            //let's create it
-                            ACCategory acNewCategory = new ACCategory();
-                            acNewCategory.setName(ACTaskCategory.REPOSITORY_PREFIX + getName());
-                            acNewCategory = ACCategory.create(acNewCategory, acProjectToCreateTCategoryFor.getId(), ACTaskCategory.class);
-                            ACTaskCategory newlyCreatedACTaskCategory =
-                                    ACTaskCategory.process(acNewCategory, acProjectToCreateTCategoryFor.getId(), true);
-                            acTaskCategoriesToAssign.add(newlyCreatedACTaskCategory);
+                        try {
+                            //now, let us create the rest of the categories
+                            for (pt.ist.maidSyncher.domain.activeCollab.ACProject acProjectToCreateTCategoryFor : projectsToCreateTaskCategoriesFor) {
+                                //let's create it
+                                ACCategory acNewCategory = new ACCategory();
+                                acNewCategory.setName(ACTaskCategory.REPOSITORY_PREFIX + getName());
+                                acNewCategory =
+                                        ACCategory.create(acNewCategory, acProjectToCreateTCategoryFor.getId(), ACTaskCategory.class);
+                                ACTaskCategory newlyCreatedACTaskCategory =
+                                        ACTaskCategory.process(acNewCategory, acProjectToCreateTCategoryFor.getId(), true);
+                                changedObjects.add(newlyCreatedACTaskCategory);
+                                acTaskCategoriesToAssign.add(newlyCreatedACTaskCategory);
+                            }
+                        } catch (IOException exception) {
+                            throw new SyncActionError(exception, changedObjects);
                         }
-
                         //now, let's remove the old ones, and add the new ones
                         dsiRepository.getAcTaskCategoriesSet().clear();
                         dsiRepository.getAcTaskCategoriesSet().addAll(acTaskCategoriesToAssign);
@@ -413,7 +428,7 @@ public class GHRepository extends GHRepository_Base implements IRepositoryIdProv
                         synchedObjects.add(acProjectToReturn);
                         synchedObjects.addAll(dsiRepository.getAcTaskCategoriesSet());
 
-                        return synchedObjects;
+                        return changedObjects;
             }
 
             @Override

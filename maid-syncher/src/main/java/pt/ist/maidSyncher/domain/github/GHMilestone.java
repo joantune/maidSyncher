@@ -29,9 +29,11 @@ import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.api.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.MaidRoot;
+import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
@@ -40,7 +42,7 @@ public class GHMilestone extends GHMilestone_Base {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GHMilestone.class);
 
-  public GHMilestone() {
+    public GHMilestone() {
         super();
         MaidRoot.getInstance().addGhMilestones(this);
     }
@@ -71,7 +73,7 @@ public class GHMilestone extends GHMilestone_Base {
             return null;
     }
 
-  public static void process(Collection<Milestone> milestones, Repository repository) {
+    public static void process(Collection<Milestone> milestones, Repository repository) {
         MaidRoot maidRoot = MaidRoot.getInstance();
 
         //let's take care of the repository
@@ -172,7 +174,8 @@ public class GHMilestone extends GHMilestone_Base {
         return new SyncActionWrapper<GHMilestone>() {
 
             @Override
-            public Collection<GHMilestone> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
+                Set<SynchableObject> changedObjects = new HashSet<>();
                 Collection<ACMilestone> acMilestonesToEdit = null;
                 if (changedDescription) {
                     acMilestonesToEdit = getNewPrefilledACMilestonesToEdit(acMilestonesToEdit);
@@ -199,15 +202,20 @@ public class GHMilestone extends GHMilestone_Base {
 
                 }
 
-                if (acMilestonesToEdit != null) {
-                    //let's post them all
-                    for (ACMilestone acMilestone : acMilestonesToEdit) {
-                        ACMilestone newlyUpdatedMilestone = acMilestone.update(acMilestone.getUrl());
-                        pt.ist.maidSyncher.domain.activeCollab.ACMilestone.process(newlyUpdatedMilestone, true);
+                try {
+                    if (acMilestonesToEdit != null) {
+                        //let's post them all
+                        for (ACMilestone acMilestone : acMilestonesToEdit) {
+                            ACMilestone newlyUpdatedMilestone = acMilestone.update(acMilestone.getUrl());
+                            changedObjects.add(pt.ist.maidSyncher.domain.activeCollab.ACMilestone
+                                    .process(newlyUpdatedMilestone, true));
+                        }
                     }
+                } catch (IOException ex) {
+                    throw new SyncActionError(ex, changedObjects);
                 }
 
-                return Collections.emptyList();
+                return changedObjects;
             }
 
             @Override

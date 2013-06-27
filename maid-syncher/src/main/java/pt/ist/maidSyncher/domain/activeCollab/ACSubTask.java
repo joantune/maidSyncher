@@ -27,11 +27,13 @@ import org.eclipse.egit.github.core.service.IssueService;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.SynchableObject;
+import pt.ist.maidSyncher.domain.activeCollab.ACTask.GHObjectWrapper;
 import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.dsi.DSISubTask;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIncogruenceBetweenOriginAndDestination;
 import pt.ist.maidSyncher.domain.github.GHIssue;
 import pt.ist.maidSyncher.domain.github.GHRepository;
@@ -187,10 +189,11 @@ public class ACSubTask extends ACSubTask_Base {
             }
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
                 Issue issueToUpdate = null;
                 DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
                 GHIssue ghIssue = dsiSubTask.getGhIssue();
+                Set<SynchableObject> changedObjects = new HashSet<>();
                 if (changedName) {
 
                     issueToUpdate = getPrefilledIssue(ghIssue, issueToUpdate);
@@ -203,12 +206,17 @@ public class ACSubTask extends ACSubTask_Base {
                     .setState(getComplete() == null ? GHIssue.STATE_OPEN : getComplete() ? GHIssue.STATE_CLOSED : GHIssue.STATE_OPEN);
                 }
                 if (issueToUpdate != null) {
-                    IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+                    try {
+                        IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
 
-                    issueService.editIssue(ghIssue.getRepository(), issueToUpdate);
+                        Issue editedIssue = issueService.editIssue(ghIssue.getRepository(), issueToUpdate);
+                        changedObjects.add(GHIssue.process(editedIssue, ghIssue.getRepository(), true));
+                    } catch (IOException ex) {
+                        throw new SyncActionError(ex, changedObjects);
+                    }
                 }
 
-                return Collections.emptySet();
+                return changedObjects;
 
             }
 
@@ -262,7 +270,9 @@ public class ACSubTask extends ACSubTask_Base {
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
+
+                Set<SynchableObject> changedObjects = new HashSet<>();
 
                 pt.ist.maidSyncher.domain.activeCollab.ACTask parentACTask = getTask();
                 //let's try to find out if we need to create a GHIssue (if we have an ACTaskCategory that
@@ -290,22 +300,31 @@ public class ACSubTask extends ACSubTask_Base {
                 //the repository should come from the parentACTask's ACTaskCategory
                 DSIRepository dsiRepository = (DSIRepository) acTaskCategory.getDSIObject();
                 GHRepository gitHubRepository = dsiRepository.getGitHubRepository();
+                try {
 
-                parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
+                    GHObjectWrapper syncGHMilestoneFromACMilestone =
+                            parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
+                    if (syncGHMilestoneFromACMilestone.wasJustCreated)
+                        changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
 
-                //taking care of the label
-                parentACTask.syncGHLabelFromACProject(parentACTask.getProject(), gitHubRepository, issue);
+                    //taking care of the label
+                    GHObjectWrapper syncGHLabelFromACProject =
+                            parentACTask.syncGHLabelFromACProject(parentACTask.getProject(), gitHubRepository, issue);
+                    if (syncGHLabelFromACProject.wasJustCreated)
+                        changedObjects.add(syncGHLabelFromACProject.ghObject);
 
-                //let's sync it
-                IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
-                Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
-                if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
-                    //we must now edit it and close it
-                    createdIssue = issueService.editIssue(gitHubRepository, issue);
+                    //let's sync it
+                    IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
+                    Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
+                    if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
+                        //we must now edit it and close it
+                        createdIssue = issueService.editIssue(gitHubRepository, issue);
+                        changedObjects.add(GHIssue.process(createdIssue, gitHubRepository, true));
+                    }
+                } catch (IOException ex) {
+                    throw new SyncActionError(ex, changedObjects);
                 }
-
-                return Collections.<SynchableObject> singleton(GHIssue.process(createdIssue,
-                        gitHubRepository, true));
+                return changedObjects;
 
             }
 

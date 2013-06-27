@@ -113,8 +113,6 @@ public class GHIssueSyncTest {
 
     private static boolean initialized = false;
 
-
-
     @Before
     @Atomic
     public void initMockGHIssue() {
@@ -158,8 +156,6 @@ public class GHIssueSyncTest {
 
     }
 
-
-
     private final static String GHISSUE_TITLE = "Test issue";
     private final static String GHISSUE_DESCRIPTION = "Test on the description, this must be the same";
 
@@ -184,13 +180,8 @@ public class GHIssueSyncTest {
         ghIssueToUse.setState(GHIssue.STATE_OPEN);
 
         //let us use a custom name
-        try {
-            final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
-
+        final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
+        sync.sync();
         //making sure we tried to create the ACTask at least once
         verify(requestProcessor, times(1)).processPost(apiAcTaskCaptor.capture(), Mockito.anyString());
 
@@ -235,12 +226,8 @@ public class GHIssueSyncTest {
         ghIssueToUse.setState(GHIssue.STATE_OPEN);
 
         //let us use a custom name
-        try {
-            final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
+        final SyncActionWrapper sync = ghIssueToUse.sync(createSyncEvent);
+        sync.sync();
 
 //      we should have two invocations of the processPost
         verify(requestProcessor, times(2)).processPost(apiAcObjectCaptor.capture(), Mockito.anyString());
@@ -446,12 +433,7 @@ public class GHIssueSyncTest {
 
         SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
 
-        try {
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
-
+        sync.sync();
         //yep, this is the way I should verify things, the code in the above tests is ugly
         //and are usages of mockito as it shouldn't be used. this is the way to go:) Issue #15
         verify(requestProcessor).processPost(apiAcTaskCaptor.capture(), Mockito.anyString());
@@ -509,11 +491,7 @@ public class GHIssueSyncTest {
 
         SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
 
-        try {
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
+        sync.sync();
 
         verify(requestProcessor).processPost(apiAcTaskCaptor.capture(), Mockito.anyString());
 
@@ -579,34 +557,26 @@ public class GHIssueSyncTest {
         initLabelWithAssociatedProject();
         SyncActionWrapper sync = ghIssueToUse.sync(updateTaskSyncEvent);
 
-        try {
-            sync.sync();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
+        sync.sync();
 
         //we should have:
 
         //the creation of the ACMilestone on the 'otherAcProject';
-        verify(requestProcessor,times(2)).processPost(apiAcObjectCaptor.capture(), Mockito.anyString());
+        verify(requestProcessor, times(2)).processPost(apiAcObjectCaptor.capture(), Mockito.anyString());
 
-        for (ACObject acObject  : apiAcObjectCaptor.getAllValues()) {
+        for (ACObject acObject : apiAcObjectCaptor.getAllValues()) {
             if (acObject instanceof ACMilestone) {
                 ACMilestone acMilestone = (ACMilestone) acObject;
                 assertEquals(AC_OTHER_PROJECT_ID.longValue(), acMilestone.getProjectId());
-            }
-            else if (acObject instanceof ACTask) {
+            } else if (acObject instanceof ACTask) {
                 ACTask acTask = (ACTask) acObject;
                 assertEquals(GHISSUE_TITLE, acTask.getName());
-                assertEquals( GHISSUE_DESCRIPTION, acTask.getBody());
-                assertEquals( Boolean.TRUE, acTask.getComplete());
-            }
-            else {
+                assertEquals(GHISSUE_DESCRIPTION, acTask.getBody());
+                assertEquals(Boolean.TRUE, acTask.getComplete());
+            } else {
                 fail();
             }
         }
-
-
 
         //the 'move' of the ACTask to the 'otherAcProject';
         ArgumentCaptor<String> pathCaptor = ArgumentCaptor.forClass(String.class);
@@ -624,7 +594,6 @@ public class GHIssueSyncTest {
 //        assertTrue(contentValue != null && contentValue.contains("submitted=submitted")); -- this part is not done by the stubbed request processor
 
         //the updates to the simple fields of the actask
-
 
     }
 

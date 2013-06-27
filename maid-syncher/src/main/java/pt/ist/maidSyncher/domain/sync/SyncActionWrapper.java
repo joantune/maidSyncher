@@ -14,12 +14,12 @@
  */
 package pt.ist.maidSyncher.domain.sync;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 11 de Mar de 2013
@@ -29,7 +29,7 @@ import pt.ist.maidSyncher.domain.dsi.DSIObject;
  */
 public interface SyncActionWrapper<T extends SynchableObject> {
 
-    public Collection<T> sync() throws IOException;
+    public Set<SynchableObject> sync() throws SyncActionError;
 
     public Collection<String> getPropertyDescriptorNamesTicked();
 

@@ -35,6 +35,7 @@ import pt.ist.maidSyncher.domain.activeCollab.exceptions.TaskNotVisibleException
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.EmptySyncActionWrapper;
@@ -199,64 +200,69 @@ public class ACProject extends ACProject_Base {
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
+            public Set<SynchableObject> sync() throws SyncActionError {
+                Set<SynchableObject> changedObjects = new HashSet<>();
                 DSIProject dsiProject = (DSIProject) getDSIObject();
                 MaidRoot maidRoot = MaidRoot.getInstance();
                 LabelService labelService = new LabelService(maidRoot.getGitHubClient());
-                Set<SynchableObject> syncObjectsAltered = new HashSet<SynchableObject>();
+                try {
 
-                if (isNowArchived) {
-                    //let us get all the labels, and delete them
-                    for (GHLabel ghLabel : dsiProject.getGitHubLabelsSet()) {
-                        labelService.deleteLabel(ghLabel.getRepository(), ghLabel.getName());
-                        //remove them
-                        ghLabel.delete();
-                    }
-                    dsiProject.getGitHubLabelsSet().clear();
-                    return Collections.emptySet();
-
-                } else if (nameChanged) {
-                    //let us try to reuse all of the reusable labels,
-                    //[i.e. the ones already with the correct name]
-                    Set<GHLabel> allExistingCorrectLabels = GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
-                    Set<GHRepository> allRepositoriesWithAlreadyCorrectLabels =
-                            (Set<GHRepository>) Collections2.transform(allExistingCorrectLabels,
-                                    new Function<GHLabel, GHRepository>() {
-                                @Override
-                                public GHRepository apply(GHLabel ghLabel) {
-                                    if (ghLabel == null)
-                                        return null;
-                                    return ghLabel.getRepository();
-                                }
-                            });
-
-                    Set<GHLabel> labelsToBeEdited = new HashSet<>(dsiProject.getGitHubLabelsSet());
-                    for (GHLabel labelToBeEdited : labelsToBeEdited) {
-                        Label labelToEdit = labelService.getLabel(labelToBeEdited.getRepository(), labelToBeEdited.getName());
-                        if (allRepositoriesWithAlreadyCorrectLabels.contains(labelToBeEdited.getRepository())) {
-                            //let us append to this label name, a -DEPRECATED_LABEL
-                            labelToEdit.setName(labelToEdit.getName() + "-DEPRECATED_LABEL");
-                            labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
-                        } else {
-                            //we need to edit it
-                            labelToEdit.setName(GHLabel.PROJECT_PREFIX + getName());
-                            labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
+                    if (isNowArchived) {
+                        //let us get all the labels, and delete them
+                        for (GHLabel ghLabel : dsiProject.getGitHubLabelsSet()) {
+                            labelService.deleteLabel(ghLabel.getRepository(), ghLabel.getName());
+                            //remove them
+                            ghLabel.delete();
+                            //TODO issue #26 - solve the changedObjects with the deleted question
                         }
-                        //let's apply the changes to the GHLabel
-                        try {
-                            labelToBeEdited.copyPropertiesFrom(labelToEdit);
-                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException
-                                | TaskNotVisibleException e) {
-                            throw new Error("oopsie daisy, do it manually", e);
-                        }
-                    }
-                    //now let us associate the GHLabel with this DSIProject
-                    dsiProject.getGitHubLabelsSet().clear();
-                    dsiProject.getGitHubLabelsSet().addAll(labelsToBeEdited);
-                    syncObjectsAltered.addAll(labelsToBeEdited);
+                        dsiProject.getGitHubLabelsSet().clear();
+                        return Collections.emptySet();
 
+                    } else if (nameChanged) {
+                        //let us try to reuse all of the reusable labels,
+                        //[i.e. the ones already with the correct name]
+                        Set<GHLabel> allExistingCorrectLabels = GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
+                        Set<GHRepository> allRepositoriesWithAlreadyCorrectLabels =
+                                (Set<GHRepository>) Collections2.transform(allExistingCorrectLabels,
+                                        new Function<GHLabel, GHRepository>() {
+                                    @Override
+                                    public GHRepository apply(GHLabel ghLabel) {
+                                        if (ghLabel == null)
+                                            return null;
+                                        return ghLabel.getRepository();
+                                    }
+                                });
+
+                        Set<GHLabel> labelsToBeEdited = new HashSet<>(dsiProject.getGitHubLabelsSet());
+                        for (GHLabel labelToBeEdited : labelsToBeEdited) {
+                            Label labelToEdit = labelService.getLabel(labelToBeEdited.getRepository(), labelToBeEdited.getName());
+                            if (allRepositoriesWithAlreadyCorrectLabels.contains(labelToBeEdited.getRepository())) {
+                                //let us append to this label name, a -DEPRECATED_LABEL
+                                labelToEdit.setName(labelToEdit.getName() + "-DEPRECATED_LABEL");
+                                labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
+                            } else {
+                                //we need to edit it
+                                labelToEdit.setName(GHLabel.PROJECT_PREFIX + getName());
+                                labelToEdit = labelService.editLabel(labelToBeEdited.getRepository(), labelToEdit);
+                            }
+                            //let's apply the changes to the GHLabel
+                            try {
+                                labelToBeEdited.copyPropertiesFrom(labelToEdit);
+                                changedObjects.add(labelToBeEdited);
+                            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException
+                                    | TaskNotVisibleException e) {
+                                throw new Error("oopsie daisy, do it manually", e);
+                            }
+                        }
+                        //now let us associate the GHLabel with this DSIProject
+                        dsiProject.getGitHubLabelsSet().clear();
+                        dsiProject.getGitHubLabelsSet().addAll(labelsToBeEdited);
+
+                    }
+                } catch (IOException exception) {
+                    throw new SyncActionError(exception, changedObjects);
                 }
-                return syncObjectsAltered;
+                return changedObjects;
             }
 
             @Override
@@ -314,81 +320,84 @@ public class ACProject extends ACProject_Base {
         return new SyncActionWrapper<SynchableObject>() {
 
             @Override
-            public Collection<SynchableObject> sync() throws IOException {
-                Set<SynchableObject> synchableObjectsToReturn = new HashSet<>();
-                if (getArchived())
-                    return Collections.emptyList();
-                Set<GHLabel> labelsToAssignToDSIProject = new HashSet<GHLabel>();
-                //let us get all of the repositories we need to create a label for
-                Set<GHRepository> repositoriesWeNeedToCreateLabelsFor =
-                        new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
+            public Set<SynchableObject> sync() throws SyncActionError {
+                Set<SynchableObject> changedObjects = new HashSet<>();
+                try {
+                    if (getArchived())
+                        return Collections.emptySet();
+                    Set<GHLabel> labelsToAssignToDSIProject = new HashSet<GHLabel>();
+                    //let us get all of the repositories we need to create a label for
+                    Set<GHRepository> repositoriesWeNeedToCreateLabelsFor =
+                            new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
 
-                final Set<GHLabel> appliableAndAlreadyExistingLabels =
-                        GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
-                for (GHLabel ghLabel : appliableAndAlreadyExistingLabels) {
-                    repositoriesWeNeedToCreateLabelsFor.remove(ghLabel.getRepository());
-                    labelsToAssignToDSIProject.add(ghLabel);
-                }
+                    final Set<GHLabel> appliableAndAlreadyExistingLabels =
+                            GHLabel.getAllLabelsWith(GHLabel.PROJECT_PREFIX + getName());
+                    for (GHLabel ghLabel : appliableAndAlreadyExistingLabels) {
+                        repositoriesWeNeedToCreateLabelsFor.remove(ghLabel.getRepository());
+                        labelsToAssignToDSIProject.add(ghLabel);
+                    }
 
-                //let us create the labels we need to
-                LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
-                for (GHRepository ghRepository : repositoriesWeNeedToCreateLabelsFor) {
-                    Label newLabel = new Label();
-                    newLabel.setName(GHLabel.PROJECT_PREFIX + getName());
-                    Label newlyCreatedLabel = labelService.createLabel(ghRepository, newLabel);
-                    labelsToAssignToDSIProject.add(GHLabel.process(newlyCreatedLabel, ghRepository.getId(), true));
-                }
+                    //let us create the labels we need to
+                    LabelService labelService = new LabelService(MaidRoot.getGitHubClient());
+                    for (GHRepository ghRepository : repositoriesWeNeedToCreateLabelsFor) {
+                        Label newLabel = new Label();
+                        newLabel.setName(GHLabel.PROJECT_PREFIX + getName());
+                        Label newlyCreatedLabel = labelService.createLabel(ghRepository, newLabel);
+                        labelsToAssignToDSIProject.add(GHLabel.process(newlyCreatedLabel, ghRepository.getId(), true));
+                    }
 
-                //let us remove the old labels and set the new ones on
-                //the appropriate DSIProject relation
-                DSIProject dsiProject = (DSIProject) getDSIObject();
-                dsiProject.getGitHubLabelsSet().clear();
-                dsiProject.getGitHubLabelsSet().addAll(labelsToAssignToDSIProject);
+                    //let us remove the old labels and set the new ones on
+                    //the appropriate DSIProject relation
+                    DSIProject dsiProject = (DSIProject) getDSIObject();
+                    dsiProject.getGitHubLabelsSet().clear();
+                    dsiProject.getGitHubLabelsSet().addAll(labelsToAssignToDSIProject);
 
-                synchableObjectsToReturn.addAll(labelsToAssignToDSIProject);
-                //now let's take care of the TaskCategory, i.e., we created a new ACProject
-                //thus we need to create a taskcategory for each repository
-                Set<ACTaskCategory> taskCategoriesDefined = getTaskCategoriesDefinedSet();
-                Set<String> taskCategoriesNames =
-                        new HashSet<>(Collections2.transform(taskCategoriesDefined, new Function<ACTaskCategory, String>() {
+                    changedObjects.addAll(labelsToAssignToDSIProject);
+                    //now let's take care of the TaskCategory, i.e., we created a new ACProject
+                    //thus we need to create a taskcategory for each repository
+                    Set<ACTaskCategory> taskCategoriesDefined = getTaskCategoriesDefinedSet();
+                    Set<String> taskCategoriesNames =
+                            new HashSet<>(Collections2.transform(taskCategoriesDefined, new Function<ACTaskCategory, String>() {
 
-                            @Override
-                            public String apply(ACTaskCategory acTaskCategory) {
-                                if (acTaskCategory == null)
-                                    return null;
-                                return StringUtils.lowerCase(acTaskCategory.getName());
-                            }
-                        }));
+                                @Override
+                                public String apply(ACTaskCategory acTaskCategory) {
+                                    if (acTaskCategory == null)
+                                        return null;
+                                    return StringUtils.lowerCase(acTaskCategory.getName());
+                                }
+                            }));
 
-                        Set<ACCategory> taskCategoriesToCreate = new HashSet<>();
+                            Set<ACCategory> taskCategoriesToCreate = new HashSet<>();
 
-                        Set<GHRepository> repositoriesToCreateTaskCategoriesFor =
-                                new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
+                            Set<GHRepository> repositoriesToCreateTaskCategoriesFor =
+                                    new HashSet(MaidRoot.getInstance().getGhRepositoriesSet());
 
-                        Iterator<GHRepository> repoIterator = repositoriesToCreateTaskCategoriesFor.iterator();
-                        //let's see if any of them are appropriate to be used
-                        while (repoIterator.hasNext()) {
-                            GHRepository ghRepository = repoIterator.next();
-                            String taskCategoryName = StringUtils.lowerCase(ACTaskCategory.REPOSITORY_PREFIX + ghRepository.getName());
-                            if (taskCategoriesNames.contains(taskCategoryName))
-                                repoIterator.remove();
+                            Iterator<GHRepository> repoIterator = repositoriesToCreateTaskCategoriesFor.iterator();
+                            //let's see if any of them are appropriate to be used
+                            while (repoIterator.hasNext()) {
+                                GHRepository ghRepository = repoIterator.next();
+                                String taskCategoryName = StringUtils.lowerCase(ACTaskCategory.REPOSITORY_PREFIX + ghRepository.getName());
+                                if (taskCategoriesNames.contains(taskCategoryName))
+                                    repoIterator.remove();
 
-                        }
-
-                        for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {
-                            String taskCategoryToCreateName = ACTaskCategory.REPOSITORY_PREFIX + getName();
-                            if (taskCategoriesNames.contains(StringUtils.lowerCase(taskCategoryToCreateName)) == false) {
-                                ACCategory acCategory = new ACCategory();
-                                acCategory.setName(taskCategoryToCreateName);
-                                synchableObjectsToReturn.add(ACTaskCategory.process(
-                                        ACCategory.create(acCategory, getId(), ACTaskCategory.class), getId(), true));
                             }
 
-                        }
+                            for (GHRepository ghRepository : repositoriesToCreateTaskCategoriesFor) {
+                                String taskCategoryToCreateName = ACTaskCategory.REPOSITORY_PREFIX + getName();
+                                if (taskCategoriesNames.contains(StringUtils.lowerCase(taskCategoryToCreateName)) == false) {
+                                    ACCategory acCategory = new ACCategory();
+                                    acCategory.setName(taskCategoryToCreateName);
+                                    changedObjects.add(ACTaskCategory.process(
+                                            ACCategory.create(acCategory, getId(), ACTaskCategory.class), getId(), true));
+                                }
 
-                        return synchableObjectsToReturn;
+                            }
+                } catch (IOException ex) {
+                    throw new SyncActionError(ex, changedObjects);
+                }
+
+                return changedObjects;
             }
-
 
             @Override
             public Collection<String> getPropertyDescriptorNamesTicked() {
