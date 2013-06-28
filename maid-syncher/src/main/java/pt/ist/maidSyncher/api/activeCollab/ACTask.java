@@ -61,7 +61,11 @@ public class ACTask extends ACObject {
         _body = JsonRest.getString(jsonObj, "body");
         Boolean visibilityFromInt = JsonRest.getBooleanFromInt(jsonObj, "visibility");
         _visibility = visibilityFromInt == null ? false : visibilityFromInt;
-        _categoryId = JsonRest.getInt(jsonObj, "category_id");
+        if (jsonObj.get("category") == null) {
+            _categoryId = JsonRest.getInt(jsonObj, "category_id");
+        } else {
+            _categoryId = JsonRest.getInt((JSONObject) jsonObj.get("category"), "id");
+        }
         _labelId = JsonRest.getInt(jsonObj, "label_id");
         _milestoneId = JsonRest.getInt(jsonObj, "milestone_id");
         _priority = JsonRest.getInt(jsonObj, "priority");

@@ -210,7 +210,8 @@ public class JsonRest {
                     LOGGER.error("Error: \n" + gsonBuilder.toJson(jsonErrorBody) + "\nOriginal request body:\n" + content
                             + "\nURL: " + url);
                 } finally {
-                    errorStream.close();
+                    if (errorStream != null)
+                        errorStream.close();
                     conn.disconnect();
                 }
 

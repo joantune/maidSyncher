@@ -530,116 +530,65 @@ public class ACTask extends ACTask_Base {
 //                RepositoryService repositoryService = new RepositoryService(MaidRoot.getGitHubClient());
 //                Repository repository = repositoryService.getRepository(ghOwner.getLogin(), ghRepository.getName());
 
-                    if (taskCategoryChanged && ACTaskCategory.hasGHSide(getTaskCategory())) {
+                    ACTaskCategory taskCategory = getTaskCategory();
+                    DSIRepository dsiRepository = (DSIRepository) taskCategory.getDSIObject();
+                    GHRepository newGHRepository = dsiRepository.getGitHubRepository();
+                    if ((taskCategoryChanged && ACTaskCategory.hasGHSide(getTaskCategory()))
+                            && !newGHRepository.equals(getDsiObjectIssue().getGhIssue().getRepository())) {
 
-                        ACTaskCategory taskCategory = getTaskCategory();
-                        DSIRepository dsiRepository = (DSIRepository) taskCategory.getDSIObject();
-                        GHRepository newGHRepository = dsiRepository.getGitHubRepository();
+                        //as the overriden method of the copyPropertiesTo
+                        //already takes care of the labels
 
-                        if (newGHRepository.equals(getDsiObjectIssue().getGhIssue().getRepository())) {
-                            LOGGER.warn("Avoided unneccessarily update");
-                        } else {
+                        Issue ghOldIssueToUpdate = ghIssue.getNewPrefilledIssue(null);
+                        Issue newIssue = ghIssue.getNewPrefilledIssue(null);
+                        //taking care of the milestone
+                        GHObjectWrapper syncGHMilestoneFromACMilestone =
+                                syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, newIssue);
+                        if (syncGHMilestoneFromACMilestone.wasJustCreated)
+                            changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
 
-                            //as the overriden method of the copyPropertiesTo
-                            //already takes care of the labels
+                        GHIssue newGhCreatedIssue =
+                                updateIssueSimpleFieldsIfNeccessary(newIssue, ghIssue, newGHRepository, changedObjects, true);
 
-                            Issue ghOldIssueToUpdate = ghIssue.getNewPrefilledIssue(null);
-                            Issue newIssue = ghIssue.getNewPrefilledIssue(null);
-                            //taking care of the milestone
-                            GHObjectWrapper syncGHMilestoneFromACMilestone =
-                                    syncGHMilestoneFromACMilestone(getMilestone(), newGHRepository, newIssue);
-                            if (syncGHMilestoneFromACMilestone.wasJustCreated)
-                                changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
+                        dsiIssue.setGhIssue(newGhCreatedIssue);
 
-                            IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
-                            GHIssue newGhCreatedIssue =
-                                    GHIssue.process(issueService.createIssue(newGHRepository, newIssue), newGHRepository, true);
+                        //adding the deleted label to the old issue
+                        Label labelDeleted = new Label();
+                        labelDeleted.setName(GHLabel.DELETED_LABEL_NAME);
 
-                            changedObjects.add(newGhCreatedIssue);
+                        List<Label> labelsToUseInTheOldIssue = addLabelsToUse(ghOldIssueToUpdate.getLabels(), labelDeleted);
+                        ghOldIssueToUpdate.setLabels(labelsToUseInTheOldIssue);
 
-                            dsiIssue.setGhIssue(newGhCreatedIssue);
+                        //let's close the old issue
+                        ghOldIssueToUpdate.setState(GHIssue.STATE_CLOSED);
 
-                            //adding the deleted label to the old issue
-                            Label labelDeleted = new Label();
-                            labelDeleted.setName(GHLabel.DELETED_LABEL_NAME);
+                        //and add into the description what happened to it
+                        String oldIssueBody = ghOldIssueToUpdate.getBody();
+                        String newBodyForIssue = applyMovedTo(oldIssueBody, newGhCreatedIssue);
+                        ghOldIssueToUpdate.setBody(newBodyForIssue);
 
-                            List<Label> labelsToUseInTheOldIssue = addLabelsToUse(ghOldIssueToUpdate.getLabels(), labelDeleted);
-                            ghOldIssueToUpdate.setLabels(labelsToUseInTheOldIssue);
-
-                            //let's close the old issue
-                            ghOldIssueToUpdate.setState(GHIssue.STATE_CLOSED);
-
-                            //and add into the description what happened to it
-                            String oldIssueBody = ghOldIssueToUpdate.getBody();
-                            String newBodyForIssue = applyMovedTo(oldIssueBody, newGhCreatedIssue);
-                            ghOldIssueToUpdate.setBody(newBodyForIssue);
-
-                            //let's 'commit' the old issue changes
-
-                            GHIssue oldGHIssue =
-                                    GHIssue.process(issueService.editIssue(ghRepository, ghOldIssueToUpdate), ghRepository, true);
-                            changedObjects.add(oldGHIssue);
-
-                            //now let's do the same for each subtask
-                            for (ACSubTask acSubTask : getSubTasksSet()) {
-                                //only if they have an associated GHIssue by now
-                                DSISubTask dsiSubTask = (DSISubTask) acSubTask.getDSIObject();
-                                GHIssue subTaskGHIssue = dsiSubTask.getGhIssue();
-                                if (subTaskGHIssue != null) {
-                                    //let's migrate this
-                                    changedObjects.add(processGHIssueFromACSubTaskMigration(newGHRepository, subTaskGHIssue,
-                                            acSubTask));
-                                }
-                            }
-
-                            //let's change the references
-                            ghIssue = newGhCreatedIssue;
-                            ghRepository = newGHRepository;
-                            if (ghIssueToUpdate != null)
-                                throw new Error(
-                                        "Nay, ghIssueToUpdate should be null at this point, becuase there was a repository change");
-                        }
-                    }
-                    if (taskNameChanged) {
-                        ghIssueToUpdate = ghIssue.getNewPrefilledIssue(ghIssueToUpdate);
-                        ghIssueToUpdate.setTitle(getName());
-                    }
-                    if (taskBodyChanged) {
-                        ghIssueToUpdate = ghIssue.getNewPrefilledIssue(ghIssueToUpdate);
-                        ghIssueToUpdate.setBody(getBody());
-                    }
-                    if (completeChanged) {
-                        ghIssueToUpdate = ghIssue.getNewPrefilledIssue(ghIssueToUpdate);
-                        //let's make the task as completed, or not
-                        if (getComplete()) {
-                            ghIssueToUpdate.setState(GHIssue.STATE_CLOSED);
-                        } else {
-                            ghIssueToUpdate.setState(GHIssue.STATE_OPEN);
-                        }
-                    }
-
-                    if (projectChanged) {
-                        //let's try to find the GHLabel associated with this one
-                        //and if it doesn't exist, create it
-                        ghIssueToUpdate = ghIssue.getNewPrefilledIssue(ghIssueToUpdate);
-
-                        syncGHLabelFromACProject(getProject(), ghRepository, ghIssueToUpdate);
-
-                    }
-
-                    if (milestoneChanged) {
-
-                        ghIssueToUpdate = ghIssue.getNewPrefilledIssue(ghIssueToUpdate);
-                        syncGHMilestoneFromACMilestone(getMilestone(), ghRepository, ghIssueToUpdate);
-                    }
-
-                    //let's edit the issue, if we have to
-                    if (ghIssueToUpdate != null) {
+                        //let's 'commit' the old issue changes
 
                         IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
-                        Issue newlyEditedIssue = issueService.editIssue(ghRepository, ghIssueToUpdate);
-                        GHIssue processedGHIssue = GHIssue.process(newlyEditedIssue, ghRepository, true);
-                        changedObjects.add(processedGHIssue);
+                        GHIssue oldGHIssue =
+                                GHIssue.process(issueService.editIssue(ghRepository, ghOldIssueToUpdate), ghRepository, true);
+                        changedObjects.add(oldGHIssue);
+
+                        //now let's do the same for each subtask
+                        for (ACSubTask acSubTask : getSubTasksSet()) {
+                            //only if they have an associated GHIssue by now
+                            DSISubTask dsiSubTask = (DSISubTask) acSubTask.getDSIObject();
+                            GHIssue subTaskGHIssue = dsiSubTask.getGhIssue();
+                            if (subTaskGHIssue != null) {
+                                //let's migrate this
+                                changedObjects.add(processGHIssueFromACSubTaskMigration(newGHRepository, subTaskGHIssue,
+                                        acSubTask));
+                            }
+                        }
+
+                    } else {
+                        updateIssueSimpleFieldsIfNeccessary(ghIssueToUpdate, ghIssue, ghRepository, changedObjects, false);
+
                     }
 
 //                //extra check
@@ -651,6 +600,61 @@ public class ACTask extends ACTask_Base {
                 }
 
                 return changedObjects;
+            }
+
+            private GHIssue updateIssueSimpleFieldsIfNeccessary(Issue ghIssueToUpdate, GHIssue ghIssue,
+                    GHRepository ghRepository, Set<SynchableObject> changedObjects, boolean createInsteadOfEdit)
+                            throws IOException {
+                Issue issue = ghIssueToUpdate;
+                if (taskNameChanged) {
+                    issue = ghIssue.getNewPrefilledIssue(issue);
+                    issue.setTitle(getName());
+                }
+                if (taskBodyChanged) {
+                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    issue.setBody(getBody());
+                }
+                if (completeChanged) {
+                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    //let's make the task as completed, or not
+                    if (getComplete()) {
+                        issue.setState(GHIssue.STATE_CLOSED);
+                    } else {
+                        issue.setState(GHIssue.STATE_OPEN);
+                    }
+                }
+
+                if (projectChanged) {
+                    //let's try to find the GHLabel associated with this one
+                    //and if it doesn't exist, create it
+                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+
+                    syncGHLabelFromACProject(getProject(), ghRepository, issue);
+
+                }
+
+                if (milestoneChanged) {
+
+                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    syncGHMilestoneFromACMilestone(getMilestone(), ghRepository, issue);
+                }
+
+                //let's edit the issue, if we have to
+                if (issue != null) {
+
+                    IssueService issueService = new IssueService(MaidRoot.getGitHubClient());
+                    Issue changedIssue = null;
+                    if (createInsteadOfEdit) {
+                        changedIssue = issueService.createIssue(ghRepository, issue);
+                    } else {
+                        changedIssue = issueService.editIssue(ghRepository, issue);
+
+                    }
+                    GHIssue processedGHIssue = GHIssue.process(changedIssue, ghRepository, true);
+                    changedObjects.add(processedGHIssue);
+                    return processedGHIssue;
+                }
+                return null;
             }
 
             private GHIssue processGHIssueFromACSubTaskMigration(GHRepository newGHRepository, GHIssue subTaskGHIssue,
@@ -697,8 +701,7 @@ public class ACTask extends ACTask_Base {
                 //let's close the oldIssue
 
                 return GHIssue.process(issueService.editIssue(subTaskGHIssue.getRepository(), oldIssue),
-                        subTaskGHIssue.getRepository(),
-                        true);
+                        subTaskGHIssue.getRepository(), true);
 
             }
 

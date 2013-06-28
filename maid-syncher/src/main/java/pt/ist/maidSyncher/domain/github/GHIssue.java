@@ -548,8 +548,9 @@ public class GHIssue extends GHIssue_Base {
     }
 
     public Issue getNewPrefilledIssue(Issue newIssueToReuse) {
-        if (newIssueToReuse != null)
+        if (newIssueToReuse != null) {
             return newIssueToReuse;
+        }
         Issue newIssue = new Issue();
         try {
             copyPropertiesTo(newIssue);

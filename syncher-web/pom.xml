@@ -6,7 +6,7 @@
     <parent>
         <groupId>pt.ist</groupId>
         <artifactId>fenix-framework-project</artifactId>
-        <version>1.0.0-rc1</version>
+        <version>1.0.0</version>
     </parent>
     <artifactId>syncher-web</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -14,7 +14,7 @@
     <name>Maid Syncher webapp</name>
 
     <properties>
-        <version.fenix.framework>2.1.0-rc2</version.fenix.framework>
+        <version.fenix.framework>2.2.0</version.fenix.framework>
         <fenix.framework.codeGeneratorClassName>pt.ist.fenixframework.backend.jvstmojb.codeGenerator.FenixCodeGeneratorOneBoxPerObject</fenix.framework.codeGeneratorClassName>
         <fenix.framework.backend>jvstm-ojb</fenix.framework.backend>
     </properties>
@@ -81,6 +81,21 @@
     </build>
 
     <dependencies>
+     <dependency>
+            <groupId>pt.ist</groupId>
+            <artifactId>fenix-framework-backend-jvstm-common-runtime</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.ist</groupId>
+            <artifactId>fenix-framework-core-api</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.ist</groupId>
+            <artifactId>fenix-framework-core-consistency-predicates</artifactId>
+            <version>2.2.0</version>
+        </dependency>
         <dependency>
             <groupId>pt.ist</groupId>
             <artifactId>syncher-web-restserver</artifactId>

@@ -375,9 +375,10 @@ public class MaidRoot extends MaidRoot_Base {
          * Processes the SyncActions contained in the {@link #actionWrappers}. If all are consumed, true is returned
          * 
          * @return true if everything was processed, false otherwise
+         * @throws Throwable
          */
         @Atomic(mode = TxMode.READ)
-        public boolean process(Set<DSIObject> dsiObjectsToSync) {
+        public boolean process(Set<DSIObject> dsiObjectsToSync) throws Throwable {
             Iterator<SyncActionWrapper<? extends SynchableObject>> actionWrappersIterator = getActionWrappers().iterator();
             while (actionWrappersIterator.hasNext()) {
                 SyncActionWrapper<? extends SynchableObject> syncActionWrapper = actionWrappersIterator.next();
@@ -389,6 +390,7 @@ public class MaidRoot extends MaidRoot_Base {
                         actionWrappersIterator.remove();
                     } catch (Exception ex) {
                         logSyncFailure(syncActionLog, ex);
+                        throw ex;
 
                     }
                 }
@@ -439,7 +441,7 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
     @Atomic(mode = TxMode.READ)
-    public void applyChangesBuzz() throws IOException {
+    public void applyChangesBuzz() throws Throwable {
         if (getSyncEventsToProcessSet().isEmpty() == false) {
             throw new IllegalStateException("The maidRoot still has SyncEvents to "
                     + "process, that should be processed before calling this method");
@@ -462,7 +464,7 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
 
-    private void processSyncWrappers(Set<SyncWrapper> syncWrappers) {
+    private void processSyncWrappers(Set<SyncWrapper> syncWrappers) throws Throwable {
         while (syncWrappers.isEmpty() == false) {
             Iterator<SyncWrapper> syncWrappersIterator = syncWrappers.iterator();
             while (syncWrappersIterator.hasNext()) {
@@ -481,9 +483,11 @@ public class MaidRoot extends MaidRoot_Base {
      * Tries to process any remaining {@link SyncEvent} that might still be
      * in {@link #getSyncEventsToProcessSet()}.
      * 
+     * @throws Throwable
+     * 
      */
     @Atomic(mode = TxMode.READ)
-    public void processRemainingInstances() {
+    public void processRemainingInstances() throws Throwable {
         //based on the events we have, let's create the map
         Set<SyncWrapper> syncWrappers = createSyncWrappers(getMultiMapFromSyncEvents(getSyncEventsSet()).asMap());
 

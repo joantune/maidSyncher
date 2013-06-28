@@ -78,7 +78,7 @@ public class Main {
     private static SyncLog currentSyncLog;
 
     // FenixFramework will try automatic initialization when first accessed
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
         try {
             logStartOfSyncProcess();
             processAnyRemainingSyncEvents();
@@ -110,14 +110,14 @@ public class Main {
     }
 
     @Atomic(mode = TxMode.READ)
-    private static void processAnyRemainingSyncEvents() {
+    private static void processAnyRemainingSyncEvents() throws Throwable {
         MaidRoot maidRoot = MaidRoot.getInstance();
         maidRoot.processRemainingInstances();
 
     }
 
     @Atomic(mode = TxMode.READ)
-    private static void applyChanges() throws Exception {
+    private static void applyChanges() throws Throwable {
         try {
             MaidRoot.getInstance().applyChangesBuzz();
         } catch (Exception ex) {
