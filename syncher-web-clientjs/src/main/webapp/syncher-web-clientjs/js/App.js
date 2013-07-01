@@ -50,6 +50,7 @@ syncLogs.fetch({
             syncLogs : kb.collectionObservable(syncLogs, {
                 view_model : LogViewModel
             }),
+            hideSyncs : ko.observable(false),
             remainingSyncEvents : kb.collectionObservable(remainingEvents),
             selectedSyncLog : ko.observable(null),
             goToLogDetails : function(currentSyncLog) {
@@ -199,7 +200,14 @@ var LogViewModel = kb.ViewModel.extend({
             internals : [ 'SyncStartTime' ],
         // if: ['actions', 'warnings']
         });
+        
+        this.hasItems = ko.computed(function() {
+            return self.actions().length > 0 || self.warnings().length > 0 || self.conflicts().length > 0;
+        });
 
+        this.visible = ko.computed(function() {
+            return false;
+        });
         this.SyncStartTime = kb.observable(model, 'SyncStartTime');
         this.actions = kb.collectionObservable(model.get('actions'), {
             view_model : ActionsViewModel
