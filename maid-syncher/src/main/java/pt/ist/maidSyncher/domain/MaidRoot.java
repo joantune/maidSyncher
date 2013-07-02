@@ -378,7 +378,7 @@ public class MaidRoot extends MaidRoot_Base {
          * @throws Throwable
          */
         @Atomic(mode = TxMode.READ)
-        public boolean process(Set<DSIObject> dsiObjectsToSync) throws Throwable {
+        public boolean process(Set<DSIObject> dsiObjectsToSync) {
             Iterator<SyncActionWrapper<? extends SynchableObject>> actionWrappersIterator = getActionWrappers().iterator();
             while (actionWrappersIterator.hasNext()) {
                 SyncActionWrapper<? extends SynchableObject> syncActionWrapper = actionWrappersIterator.next();
@@ -390,7 +390,7 @@ public class MaidRoot extends MaidRoot_Base {
                         actionWrappersIterator.remove();
                     } catch (Exception ex) {
                         logSyncFailure(syncActionLog, ex);
-                        throw ex;
+                        throw new Error(ex);
 
                     }
                 }
@@ -441,7 +441,7 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
     @Atomic(mode = TxMode.READ)
-    public void applyChangesBuzz() throws Throwable {
+    public void applyChangesBuzz() {
         if (getSyncEventsToProcessSet().isEmpty() == false) {
             throw new IllegalStateException("The maidRoot still has SyncEvents to "
                     + "process, that should be processed before calling this method");
@@ -464,7 +464,7 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
 
-    private void processSyncWrappers(Set<SyncWrapper> syncWrappers) throws Throwable {
+    private void processSyncWrappers(Set<SyncWrapper> syncWrappers) {
         while (syncWrappers.isEmpty() == false) {
             Iterator<SyncWrapper> syncWrappersIterator = syncWrappers.iterator();
             while (syncWrappersIterator.hasNext()) {
@@ -487,7 +487,7 @@ public class MaidRoot extends MaidRoot_Base {
      * 
      */
     @Atomic(mode = TxMode.READ)
-    public void processRemainingInstances() throws Throwable {
+    public void processRemainingInstances() {
         //based on the events we have, let's create the map
         Set<SyncWrapper> syncWrappers = createSyncWrappers(getMultiMapFromSyncEvents(getSyncEventsSet()).asMap());
 

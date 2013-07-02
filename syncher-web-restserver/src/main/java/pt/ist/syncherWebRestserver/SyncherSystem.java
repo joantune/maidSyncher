@@ -75,6 +75,9 @@ public class SyncherSystem {
         } else {
             LOGGER.info("Syncher task already added previously");
         }
+        //SchedulerSystem.queue(taskRunner)
+        //SchedulerSystem.getInstance().getTaskScheduleSet().iterator().next().getTaskRunner()
+
     }
 
 }

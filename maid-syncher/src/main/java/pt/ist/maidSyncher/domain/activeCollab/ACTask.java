@@ -113,7 +113,7 @@ public class ACTask extends ACTask_Base {
 
     @Override
     public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
-    NoSuchMethodException {
+            NoSuchMethodException {
         Set<String> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         pt.ist.maidSyncher.api.activeCollab.ACTask acTask = (pt.ist.maidSyncher.api.activeCollab.ACTask) orig;
@@ -465,7 +465,7 @@ public class ACTask extends ACTask_Base {
                 new SyncWarningLog(MaidRoot.getInstance().getCurrentSyncLog(),
                         "Id of ACTask changed!!. It shouldn't have happened, oh well. SyncEvent: " + triggerEvent);
                 break;
-                //the ones that we don't have to do anything
+            //the ones that we don't have to do anything
             case DSC_PERMALINK:
             case DSC_CREATED_ON:
             case DSC_UPDATED_ON:
@@ -473,8 +473,8 @@ public class ACTask extends ACTask_Base {
             case DSC_UPDATED_BY_ID:
             case DSC_DUE_ON:
                 break;
-                //for now, let's do nothing with the id
-                //of who created it
+            //for now, let's do nothing with the id
+            //of who created it
             case DSC_CREATED_BY_ID:
                 break;
             case DSC_NAME:
@@ -521,7 +521,19 @@ public class ACTask extends ACTask_Base {
                 DSIIssue dsiIssue = (DSIIssue) getDSIObject();
                 GHIssue ghIssue = dsiIssue.getGhIssue();
                 //get the repository
-                GHRepository ghRepository = ghIssue.getRepository();
+                GHRepository ghRepository = null;
+                if (ghIssue != null) {
+                    ghRepository = ghIssue.getRepository();
+                } else {
+                    if (getTaskCategory().hasGHSide() == false) {
+                        return Collections.emptySet();
+                        //we cannot do anything, this object has no GH side
+                    }
+                    //then we have to get the repository through the
+                    //category
+                    ghRepository = ((DSIRepository) getTaskCategory().getDSIObject()).getGitHubRepository();
+
+                }
 
                 Set<SynchableObject> changedObjects = new HashSet<SynchableObject>();
 
@@ -531,10 +543,19 @@ public class ACTask extends ACTask_Base {
 //                Repository repository = repositoryService.getRepository(ghOwner.getLogin(), ghRepository.getName());
 
                     ACTaskCategory taskCategory = getTaskCategory();
-                    DSIRepository dsiRepository = (DSIRepository) taskCategory.getDSIObject();
-                    GHRepository newGHRepository = dsiRepository.getGitHubRepository();
+                    GHRepository newGHRepository = null;
+                    if (taskCategory != null) {
+                        DSIRepository dsiRepository = (DSIRepository) taskCategory.getDSIObject();
+                        newGHRepository = dsiRepository.getGitHubRepository();
+                    } else {
+                        if (getProject().getDsiRepositoryFromDefaultProject() != null) {
+                            newGHRepository = getProject().getDsiRepositoryFromDefaultProject().getGitHubRepository();
+                        } else {
+                            newGHRepository = ghRepository;
+                        }
+                    }
                     if ((taskCategoryChanged && ACTaskCategory.hasGHSide(getTaskCategory()))
-                            && !newGHRepository.equals(getDsiObjectIssue().getGhIssue().getRepository())) {
+                            && !ObjectUtils.equals(newGHRepository, ghRepository)) {
 
                         //as the overriden method of the copyPropertiesTo
                         //already takes care of the labels
@@ -604,18 +625,18 @@ public class ACTask extends ACTask_Base {
 
             private GHIssue updateIssueSimpleFieldsIfNeccessary(Issue ghIssueToUpdate, GHIssue ghIssue,
                     GHRepository ghRepository, Set<SynchableObject> changedObjects, boolean createInsteadOfEdit)
-                            throws IOException {
+                    throws IOException {
                 Issue issue = ghIssueToUpdate;
                 if (taskNameChanged) {
                     issue = ghIssue.getNewPrefilledIssue(issue);
                     issue.setTitle(getName());
                 }
                 if (taskBodyChanged) {
-                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    issue = ghIssue.getNewPrefilledIssue(issue);
                     issue.setBody(getBody());
                 }
                 if (completeChanged) {
-                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    issue = ghIssue.getNewPrefilledIssue(issue);
                     //let's make the task as completed, or not
                     if (getComplete()) {
                         issue.setState(GHIssue.STATE_CLOSED);
@@ -627,7 +648,7 @@ public class ACTask extends ACTask_Base {
                 if (projectChanged) {
                     //let's try to find the GHLabel associated with this one
                     //and if it doesn't exist, create it
-                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    issue = ghIssue.getNewPrefilledIssue(issue);
 
                     syncGHLabelFromACProject(getProject(), ghRepository, issue);
 
@@ -635,7 +656,7 @@ public class ACTask extends ACTask_Base {
 
                 if (milestoneChanged) {
 
-                    ghIssueToUpdate = ghIssue.getNewPrefilledIssue(issue);
+                    issue = ghIssue.getNewPrefilledIssue(issue);
                     syncGHMilestoneFromACMilestone(getMilestone(), ghRepository, issue);
                 }
 
