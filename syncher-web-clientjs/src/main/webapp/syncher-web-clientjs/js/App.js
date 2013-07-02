@@ -192,6 +192,11 @@ var humanFriendlyFromNow = function(dateTimeString) {
     return amoment.fromNow();
 }
 
+var SUCCESS = "Success";
+var CONFLICT = "Conflict";
+var FAILURE = "Failure";
+var ONGOING = "Ongoing";
+
 var LogViewModel = kb.ViewModel.extend({
     constructor : function(model) {
 
@@ -237,6 +242,27 @@ var LogViewModel = kb.ViewModel.extend({
                 return true;
             }
         };
+        
+        this.SerializedStackTrace = kb.observable(model,'SerializedStackTrace');
+        
+        this.toggleStackTraceCommand = function() {
+            if (self.showStackTraceCommand()) self.showStackTraceCommand(false);
+            else self.showStackTraceCommand(true);
+        };
+        
+        this.showStackTraceCommand = ko.observable(false);
+        
+        this.shouldShowStackTrace = ko.computed(function() {
+            return self.Status() === FAILURE && self.SerializedStackTrace() && self.showStackTraceCommand();
+        });
+        
+        
+        this.statusStyle = ko.computed(function () {
+            if (self.Status() === FAILURE && self.SerializedStackTrace()){
+                return "popoverStyle";
+            }
+            return "";
+        });
 
         this.acPopoverEnabler = function(jQueryElement) {
             if (self.SyncACStartTime && self.SyncACEndTime) {
@@ -271,12 +297,14 @@ var LogViewModel = kb.ViewModel.extend({
 
             if (status != undefined) {
 
-                if (status.toLowerCase() === "Success".toLowerCase()) {
+                if (status.toLowerCase() === SUCCESS.toLowerCase()) {
                     return "success";
-                } else if (status.toLowerCase() === "Conflict".toLowerCase()) {
-                    return "error";
-                } else if (status.toLowerCase() === "Conflict".toLowerCase()) {
+                } else if (status.toLowerCase() === CONFLICT.toLowerCase()) {
                     return "warning";
+                } else if (status.toLowerCase() === FAILURE.toLowerCase()) {
+                    return "error";
+                } else if (status.toLowerCase() === ONGOING.toLowerCase()) {
+                    return "info";
                 }
             }
             return "";

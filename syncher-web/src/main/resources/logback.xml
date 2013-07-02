@@ -7,13 +7,15 @@
         </encoder>
     </appender>
 
-    <logger name="pt.ist" level="TRACE">
+    <logger name="pt.ist" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
+<!--
     <logger name="pt.ist.fenixWebFramework.servlets.filters.ProfilingFilter" level="TRACE">
         <appender-ref ref="STDOUT" />
     </logger>
+-->
     <!-- sends logs to logback-beagle -->
 
  <!--    <appender name="SOCKET" class="ch.qos.logback.classic.net.SocketAppender">

@@ -38,9 +38,11 @@ body {
     </div>
 
     <div id="content" class="container-fluid">
-<div id="pleaseWait" style="display:none; height: 100px;"> 
-    <p><b>Processing, please wait</b></p> 
-</div> 
+        <div id="pleaseWait" style="display: none; height: 100px;">
+            <p>
+                <b>Processing, please wait</b>
+            </p>
+        </div>
 
         <div id="main">
             <h1>Synchronization logs</h1>
@@ -56,7 +58,8 @@ body {
             </p>
 
             <div id="syncLogs">
-                <label class="checkbox"><input type="checkbox" data-bind="checked: hideSyncs"> Hide Syncs without side-effects</label>
+                <label class="checkbox"><input type="checkbox" data-bind="checked: hideSyncs"> Hide
+                    Syncs without side-effects</label>
                 <table class="table table-hover-clickable">
                     <thead>
                         <tr>
@@ -69,7 +72,8 @@ body {
                     </thead>
                     <tbody data-bind="foreach: syncLogs">
                         <!-- <tr data-bind="css: $data.representationRowClass"> -->
-                        <tr data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && hasItems()) || ($parent.hideSyncs() == false)">
+                        <tr
+                            data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && hasItems()) || ($parent.hideSyncs() == false)">
                             <td><span data-bind="html:  friendlyDateTime(SyncStartTime(), true)"> </span> <span
                                 class="muted" data-bind="text: '('+ humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
                             <td data-bind="text: actions().length" />
@@ -98,40 +102,32 @@ body {
                 <p>
                     <strong>Start time:</strong> <span data-bind="text: friendlyNamedDateTime(SyncStartTime())"></span>
                 </p>
+                <div class="alert alert-error alert-overflow" data-bind="visible: shouldShowStackTrace">
+                    <button type="button" class="close" data-bind="click: toggleStackTraceCommand">&times;</button>
+                    <strong>Failure!</strong> <small class="text-mini" data-bind="text: SerializedStackTrace"></small>
+                </div>
                 <table class="table-condensed table-bordered-outline">
                     <tbody>
                         <tr>
                             <td><strong>Status:</strong></td>
-                            <td data-bind="text: Status"></td>
+                            <td><span id="statusModal" data-bind="text: Status, css: statusStyle, click: toggleStackTraceCommand"></span></td>
                         </tr>
                         <tr>
                             <td><strong>GitHub sync time:</strong></td>
                             <td>
-                           <!--  <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
-                                id="ghSyncTime" title data-toggle="popover"
-                                data-content="<small>
-                                <strong>Sync start time: </strong>20:52:55.000+01:00
-                                </small><br/>
-                                <small>
-                                <strong>Sync end time: </strong>20:53:00.000+01:00
-                            </small>"
-                                data-html="true" data-trigger="hover">5s</span> -->
-                                <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
-                                id="ghSyncTime" data-bind="text: ghSyncTimeDuration() + 's'"></span>
-                                </td>
+                                <!--                                 <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
+                                id="ghSyncTime" data-bind="text: ghSyncTimeDuration() + 's'"></span> --> <span
+                                class="popoverStyle" id="ghSyncTime"
+                                data-bind="text: ghSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
+                            </td>
                             <td><strong>ActiveCollab sync time:</strong></td>
                             <td>
-                            <!-- <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
-                                id="acSyncTime" title data-toggle="popover"
-                                data-content="<small>
-                                <strong>Sync start time: </strong>20:53:00.000+01:00
-                                </small><br/>
-                                <small>
-                                <strong>Sync end time: </strong>20:53:13.000+01:00
-                            </small>"
-                                data-html="true" data-trigger="hover">13s</span> -->
-                                <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
-                                id="acSyncTime" data-bind="text: acSyncTimeDuration() + 's'"></span></td>
+                                <!--  <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
+                                id="acSyncTime" data-bind="text: acSyncTimeDuration() + 's'"></span> --> <span
+                                id="acSyncTime"
+                                data-bind="text: acSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
+                            </td>
+
                         </tr>
                         <tr>
                             <td><strong>Sync actions:</strong></td>
@@ -145,8 +141,10 @@ body {
                 <ul class="nav nav-tabs">
                     <li class="active"><a data-toggle="tab" href="#actions">Actions <span
                             data-bind="text: '(' + actions().length + ')'"></span></a></li>
-                    <li><a href="#warnings" data-toggle="tab" >Warnings <span data-bind="text: '(' + warnings().length + ')'"></span></a></li>
-                    <li><a href="#conflicts" data-toggle="tab">Conflicts <span data-bind="text: '(' + conflicts().length + ')'"></span></a></li>
+                    <li><a href="#warnings" data-toggle="tab">Warnings <span
+                            data-bind="text: '(' + warnings().length + ')'"></span></a></li>
+                    <li><a href="#conflicts" data-toggle="tab">Conflicts <span
+                            data-bind="text: '(' + conflicts().length + ')'"></span></a></li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active" id="actions">
@@ -164,7 +162,8 @@ body {
                                     <td data-bind="text: timeOnly(syncStartTime())"></td>
                                     <td class="muted" data-bind="text: duration() + 's'"></td>
                                     <td><a
-                                        data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }" target="_blank"></a></td>
+                                        data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }"
+                                        target="_blank"></a></td>
                                     <td data-bind="html: successIcon"></td>
                                 </tr>
                             </tbody>
@@ -179,7 +178,9 @@ body {
                                 </tr>
                             </thead>
                             <tbody data-bind="foreach: warnings">
-                                <tr class="warning"><td><i class="icon-warning-sign"></i> <span data-bind="text: description"></span></td></tr>
+                                <tr class="warning">
+                                    <td><i class="icon-warning-sign"></i> <span data-bind="text: description"></span></td>
+                                </tr>
                             </tbody>
                         </table>
 
