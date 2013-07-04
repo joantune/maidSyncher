@@ -51,6 +51,7 @@ syncLogs.fetch({
                 view_model : LogViewModel
             }),
             hideSyncs : ko.observable(false),
+           
             remainingSyncEvents : kb.collectionObservable(remainingEvents),
             selectedSyncLog : ko.observable(null),
             goToLogDetails : function(currentSyncLog) {
@@ -93,6 +94,10 @@ syncLogs.fetch({
 
         $(function() {
             ko.applyBindings(syncLogsViewModel, $('#content')[0]);
+            syncLogsViewModel['pager$_pager']['currentPage'].subscribe(function(){
+                alert('blah');
+
+            });
             // $('#ghSyncTime').on('shown');
             $('#details').on('shown', function() {
                 // $('#ghSyncTime').popover();
@@ -123,6 +128,23 @@ var ActionsViewModel = function(model) {
     this.success = kb.observable(model, 'success');
     this.rowClass = ko.computed(function() {
         return successUtil("success", "error", "", self.success());
+    });
+    
+    this.changedDescriptors = kb.observable(model, 'changedDescriptors');
+    
+    this.actionOriginPopoverContent = ko.computed(function() {
+        if (self.changedDescriptors() != null) {
+        var descriptorsStrings = "";
+        self.changedDescriptors().forEach(function(value) {
+            descriptorsStrings += value + ", ";
+        })
+        //to trim the last ", "
+        descriptorsStrings = descriptorsStrings.substring(0,descriptorsStrings.length-2);
+        
+        return "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>" +
+        "<p><small><a href=\""+self.urlOriginObject()+"\" target='_blank'>Link</a></small></p>";
+        }
+        else return "";
     });
 
     this.syncEndTime = kb.observable(model, 'syncEndTime');
@@ -205,6 +227,7 @@ var LogViewModel = kb.ViewModel.extend({
             internals : [ 'SyncStartTime' ],
         // if: ['actions', 'warnings']
         });
+        
         
         this.hasItems = ko.computed(function() {
             return self.actions().length > 0 || self.warnings().length > 0 || self.conflicts().length > 0;

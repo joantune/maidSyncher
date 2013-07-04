@@ -23,6 +23,7 @@ public class SyncActionLog extends SyncActionLog_Base {
         setUrlOriginObject(originObject.getHtmlUrl());
         setTypeOriginObject(originObject.getClass().getName());
         setDsiObject(syncDSIObject);
+        setChangedDescriptors(syncEvent.getChangedPropertyDescriptorNames());
     }
 
 

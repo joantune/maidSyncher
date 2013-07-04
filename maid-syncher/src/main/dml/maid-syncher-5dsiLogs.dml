@@ -37,6 +37,7 @@ class SyncActionLog {
 	DateTime syncEndTime;
 	Boolean success (REQUIRED);
 	String urlOriginObject;
+	Strings changedDescriptors (REQUIRED);
 	String errorDescription;
 	String actionDescription;
 	String typeOriginObject (REQUIRED);

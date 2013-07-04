@@ -50,7 +50,7 @@ body {
                 each synch</p>
 
             <p>
-                SyncEvents to process: <span data-bind="text: remainingSyncEvents().length"></span>
+                Remaining SyncEvents to process: <span data-bind="text: remainingSyncEvents().length"></span>
             </p>
 
             <p>
@@ -70,19 +70,19 @@ body {
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody data-bind="foreach: syncLogs">
-                        <!-- <tr data-bind="css: $data.representationRowClass"> -->
+                   <tbody data-bind="pager: {array: syncLogs, itemsPerPage: 10, customPagerId: 'pager' }">
+                        <tr data-bind="css: $data.representationRowClass">
                         <tr
                             data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && hasItems()) || ($parent.hideSyncs() == false)">
                             <td><span data-bind="html:  friendlyDateTime(SyncStartTime(), true)"> </span> <span
                                 class="muted" data-bind="text: '('+ humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
                             <td data-bind="text: actions().length" />
                             <td data-bind="text: conflicts().length" />
-                            <td><span data-bind="text: warnings().length"></span> <!-- ko if: warnings().length > 0 -->
+                            <td><span data-bind="text: warnings().length"></span><!--  ko if: warnings().length > 0 -->
                                 <i class="icon-warning-sign"></i> <!-- /ko --></td>
                             <td data-bind="text: Status" />
 
-                        </tr>
+                        </tr> 
                     </tbody>
 
                 </table>
@@ -124,7 +124,7 @@ body {
                             <td>
                                 <!--  <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
                                 id="acSyncTime" data-bind="text: acSyncTimeDuration() + 's'"></span> --> <span
-                                id="acSyncTime"
+                                class="popoverStyle" id="acSyncTime"
                                 data-bind="text: acSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
                             </td>
 
@@ -161,9 +161,14 @@ body {
                                 <tr data-bind="css: rowClass">
                                     <td data-bind="text: timeOnly(syncStartTime())"></td>
                                     <td class="muted" data-bind="text: duration() + 's'"></td>
-                                    <td><a
+                                    <td>
+                                    <!-- <a class="syncAction"
                                         data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }"
-                                        target="_blank"></a></td>
+                                        target="_blank"></a> -->
+                                    <a class="syncAction"
+                                        data-bind="text: trimmedTypeOriginObject, bootstrapPopover: {html: true, content: actionOriginPopoverContent, trigger: 'click' }"
+                                        target="_blank"></a>
+                                        </td>
                                     <td data-bind="html: successIcon"></td>
                                 </tr>
                             </tbody>
@@ -215,6 +220,7 @@ body {
     <script src="js/libs/spin.min.js" type="text/javascript"></script>
     <script src="js/libs/jquery.blockUI.js" type="text/javascript"></script>
     <script src="js/Models.js" type="text/javascript"></script>
+    <script src="js/CustomBindings.js" type="text/javascript"></script>
     <script src="js/App.js" type="text/javascript"></script>
 </body>
 </html>

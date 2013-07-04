@@ -1,3 +1,6 @@
 [submodule "egit-github"]
 	path = egit-github
 	url = https://github.com/eclipse/egit-github.git
+[submodule "knockout-paged"]
+	path = knockout-paged
+	url = https://github.com/lelandrichardson/knockout-paged.git
