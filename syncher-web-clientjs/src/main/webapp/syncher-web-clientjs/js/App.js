@@ -45,20 +45,49 @@ syncLogs.fetch({
         var remainingEvents = new RemainingSyncEvents();
         remainingEvents.fetch();
 
-        var syncLogsViewModel = {
-            self : this,
-            syncLogs : kb.collectionObservable(syncLogs, {
+        function SyncLogsViewModel(model) {
+            self = this;
+
+            // self.syncLogsAll = kb.observable(model, 'synclogs');
+
+//            self.syncLogsAll = kb.collectionObservable(syncLogs, {
+//                models_only : true
+//            });
+//            self.currentPageObs = ko.observable(1);
+//            self.filter_fn = ko.computed(function() {
+//                    return function(model, huh) {
+//                        return true;
+//                }
+//            });
+            self.syncLogs = kb.collectionObservable(syncLogs, {
                 view_model : LogViewModel
-            }),
-            hideSyncs : ko.observable(false),
-           
-            remainingSyncEvents : kb.collectionObservable(remainingEvents),
-            selectedSyncLog : ko.observable(null),
-            goToLogDetails : function(currentSyncLog) {
+                //filters: self.filter_fn
+            });
+
+            // self.syncLogs = ko.computed(function() {
+            // var itemsPerPage = 10;
+            // var firstItemIndex = itemsPerPage * (self.currentPageObs() - 1);
+            // if (self.syncLogsAll() == null) {
+            // return ko.observableArray([]);
+            // } else {
+            // var slicedCollection =
+            // self.syncLogsAll.collection().slice(firstItemIndex,
+            // firstItemIndex + itemsPerPage);
+            // return kb.collectionObservable(slicedCollection, {
+            // view_model : LogViewModel
+            // });
+            // }
+            // });
+
+            self.hideSyncs = ko.observable(false);
+
+            self.remainingSyncEvents = kb.collectionObservable(remainingEvents);
+            self.selectedSyncLog = ko.observable(null);
+            self.goToLogDetails = function(currentSyncLog) {
                 displayLoadingScreen(true);
                 async.parallel({
                     actions : function(callback) {
-                        currentSyncLog.model().get('actions').fetch({
+                        currentSyncLog.model.get('actions').fetch({
                             success : function(argument) {
                                 callback(null, argument)
                             },
@@ -68,7 +97,7 @@ syncLogs.fetch({
                         });
                     },
                     warnings : function(callback) {
-                        currentSyncLog.model().get('warnings').fetch({
+                        currentSyncLog.model.get('warnings').fetch({
                             success : function(argument) {
                                 callback(null, argument)
                             },
@@ -89,15 +118,18 @@ syncLogs.fetch({
                     }
                 });
 
-            }
-        };
+            };
+        }
+        ;
 
+        var syncLogsViewModel = new SyncLogsViewModel();
         $(function() {
             ko.applyBindings(syncLogsViewModel, $('#content')[0]);
-            syncLogsViewModel['pager$_pager']['currentPage'].subscribe(function(){
-                alert('blah');
-
-            });
+            //            
+            // syncLogsViewModel['pager$_pager']['currentPage'].subscribe(function(){
+            // alert('blah');
+            //
+            // });
             // $('#ghSyncTime').on('shown');
             $('#details').on('shown', function() {
                 // $('#ghSyncTime').popover();
@@ -129,22 +161,22 @@ var ActionsViewModel = function(model) {
     this.rowClass = ko.computed(function() {
         return successUtil("success", "error", "", self.success());
     });
-    
+
     this.changedDescriptors = kb.observable(model, 'changedDescriptors');
-    
+
     this.actionOriginPopoverContent = ko.computed(function() {
         if (self.changedDescriptors() != null) {
-        var descriptorsStrings = "";
-        self.changedDescriptors().forEach(function(value) {
-            descriptorsStrings += value + ", ";
-        })
-        //to trim the last ", "
-        descriptorsStrings = descriptorsStrings.substring(0,descriptorsStrings.length-2);
-        
-        return "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>" +
-        "<p><small><a href=\""+self.urlOriginObject()+"\" target='_blank'>Link</a></small></p>";
-        }
-        else return "";
+            var descriptorsStrings = "";
+            self.changedDescriptors().forEach(function(value) {
+                descriptorsStrings += value + ", ";
+            })
+            // to trim the last ", "
+            descriptorsStrings = descriptorsStrings.substring(0, descriptorsStrings.length - 2);
+
+            return "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>"
+                    + "<p><small><a href=\"" + self.urlOriginObject() + "\" target='_blank'>Link</a></small></p>";
+        } else
+            return "";
     });
 
     this.syncEndTime = kb.observable(model, 'syncEndTime');
@@ -219,121 +251,120 @@ var CONFLICT = "Conflict";
 var FAILURE = "Failure";
 var ONGOING = "Ongoing";
 
-var LogViewModel = kb.ViewModel.extend({
-    constructor : function(model) {
+var LogViewModel = function(model) {
 
-        var self = this;
-        kb.ViewModel.prototype.constructor.call(this, model, {
-            internals : [ 'SyncStartTime' ],
-        // if: ['actions', 'warnings']
-        });
-        
-        
-        this.hasItems = ko.computed(function() {
-            return self.actions().length > 0 || self.warnings().length > 0 || self.conflicts().length > 0;
-        });
+    var self = this;
 
-        this.visible = ko.computed(function() {
-            return false;
-        });
-        this.SyncStartTime = kb.observable(model, 'SyncStartTime');
-        this.actions = kb.collectionObservable(model.get('actions'), {
-            view_model : ActionsViewModel
-        });
+    this.model = model;
 
-        this.warnings = kb.collectionObservable(model.get('warnings'), {
-            view_model : WarningsViewModel
-        });
+    this.NrGeneratedSyncActions = kb.observable(model, 'NrGeneratedSyncActions');
+    this.NrGeneratedSyncActionsFromRemainingSyncEvents = kb.observable(model,
+            'NrGeneratedSyncActionsFromRemainingSyncEvents');
+    this.visible = ko.computed(function() {
+        return false;
+    });
+    this.Status = kb.observable(model, 'Status');
+    this.SyncStartTime = kb.observable(model, 'SyncStartTime');
+    this.conflicts = kb.collectionObservable(model.get('conflicts'));
+    this.actions = kb.collectionObservable(model.get('actions'), {
+        view_model : ActionsViewModel
+    });
+    this.warnings = kb.collectionObservable(model.get('warnings'), {
+        view_model : WarningsViewModel
+    });
+    this.hasItems = ko.computed(function() {
+        return self.actions().length > 0 || self.warnings().length > 0 || self.conflicts().length > 0;
+    });
 
-        var popoverOptionsGenerator = function(startTime, endTime) {
-            var syncStartTimePrefixHtml = "<small><strong>Sync start time: </strong>";
-            var syncEndTimePrefixHtml = "<small><strong>Sync end time: </strong>";
-            var smallHtmlTerminator = "</small>";
-            return {
-                html : true,
-                trigger : "hover",
-                content : syncStartTimePrefixHtml + timeOnly(startTime) + smallHtmlTerminator + "<br/>"
-                        + syncEndTimePrefixHtml + timeOnly(endTime) + smallHtmlTerminator,
-            };
-
+    var popoverOptionsGenerator = function(startTime, endTime) {
+        var syncStartTimePrefixHtml = "<small><strong>Sync start time: </strong>";
+        var syncEndTimePrefixHtml = "<small><strong>Sync end time: </strong>";
+        var smallHtmlTerminator = "</small>";
+        return {
+            html : true,
+            trigger : "hover",
+            content : syncStartTimePrefixHtml + timeOnly(startTime) + smallHtmlTerminator + "<br/>"
+                    + syncEndTimePrefixHtml + timeOnly(endTime) + smallHtmlTerminator,
         };
 
-        this.ghPopoverEnabler = function(jQueryElement) {
-            if (self.SyncGHStartTime && self.SyncGHEndTime) {
-                var options = popoverOptionsGenerator(self.SyncGHStartTime(), self.SyncGHEndTime());
-                jQueryElement.popover(options);
-                return true;
-            }
-        };
-        
-        this.SerializedStackTrace = kb.observable(model,'SerializedStackTrace');
-        
-        this.toggleStackTraceCommand = function() {
-            if (self.showStackTraceCommand()) self.showStackTraceCommand(false);
-            else self.showStackTraceCommand(true);
-        };
-        
-        this.showStackTraceCommand = ko.observable(false);
-        
-        this.shouldShowStackTrace = ko.computed(function() {
-            return self.Status() === FAILURE && self.SerializedStackTrace() && self.showStackTraceCommand();
-        });
-        
-        
-        this.statusStyle = ko.computed(function () {
-            if (self.Status() === FAILURE && self.SerializedStackTrace()){
-                return "popoverStyle";
-            }
-            return "";
-        });
+    };
 
-        this.acPopoverEnabler = function(jQueryElement) {
-            if (self.SyncACStartTime && self.SyncACEndTime) {
-                var options = popoverOptionsGenerator(self.SyncACStartTime(), self.SyncACEndTime());
-                options.placement = "top";
-                jQueryElement.popover(options);
-                return true;
-            }
-        };
+    this.ghPopoverEnabler = function(jQueryElement) {
+        if (self.SyncGHStartTime && self.SyncGHEndTime) {
+            var options = popoverOptionsGenerator(self.SyncGHStartTime(), self.SyncGHEndTime());
+            jQueryElement.popover(options);
+            return true;
+        }
+    };
 
-        this.acSyncTimeDuration = ko.computed(function() {
-            if (self.SyncACStartTime && self.SyncACEndTime) {
-                return calculateDurationInSeconds(self.SyncACEndTime(), self.SyncACStartTime());
+    this.SerializedStackTrace = kb.observable(model, 'SerializedStackTrace');
 
-            }
+    this.toggleStackTraceCommand = function() {
+        if (self.showStackTraceCommand())
+            self.showStackTraceCommand(false);
+        else
+            self.showStackTraceCommand(true);
+    };
 
-        });
+    this.showStackTraceCommand = ko.observable(false);
 
-        this.ghSyncTimeDuration = ko.computed(function() {
-            if (self.SyncGHStartTime && self.SyncGHEndTime) {
-                return calculateDurationInSeconds(self.SyncGHEndTime(), self.SyncGHStartTime());
+    this.shouldShowStackTrace = ko.computed(function() {
+        return self.Status() === FAILURE && self.SerializedStackTrace() && self.showStackTraceCommand();
+    });
 
-            }
+    this.statusStyle = ko.computed(function() {
+        if (self.Status() === FAILURE && self.SerializedStackTrace()) {
+            return "popoverStyle";
+        }
+        return "";
+    });
 
-        });
+    this.acPopoverEnabler = function(jQueryElement) {
+        if (self.SyncACStartTime && self.SyncACEndTime) {
+            var options = popoverOptionsGenerator(self.SyncACStartTime(), self.SyncACEndTime());
+            options.placement = "top";
+            jQueryElement.popover(options);
+            return true;
+        }
+    };
 
-        this.classCss = ko.computed((function() {
-            if (self.warnings().length > 0) {
+    this.acSyncTimeDuration = ko.computed(function() {
+        if (self.SyncACStartTime && self.SyncACEndTime) {
+            return calculateDurationInSeconds(self.SyncACEndTime(), self.SyncACStartTime());
+
+        }
+
+    });
+
+    this.ghSyncTimeDuration = ko.computed(function() {
+        if (self.SyncGHStartTime && self.SyncGHEndTime) {
+            return calculateDurationInSeconds(self.SyncGHEndTime(), self.SyncGHStartTime());
+
+        }
+
+    });
+
+    this.classCss = ko.computed((function() {
+        if (self.warnings().length > 0) {
+            return "warning";
+        }
+        var status = self.Status();
+
+        if (status != undefined) {
+
+            if (status.toLowerCase() === SUCCESS.toLowerCase()) {
+                return "success";
+            } else if (status.toLowerCase() === CONFLICT.toLowerCase()) {
                 return "warning";
+            } else if (status.toLowerCase() === FAILURE.toLowerCase()) {
+                return "error";
+            } else if (status.toLowerCase() === ONGOING.toLowerCase()) {
+                return "info";
             }
-            var status = self.Status();
+        }
+        return "";
 
-            if (status != undefined) {
+    }));
 
-                if (status.toLowerCase() === SUCCESS.toLowerCase()) {
-                    return "success";
-                } else if (status.toLowerCase() === CONFLICT.toLowerCase()) {
-                    return "warning";
-                } else if (status.toLowerCase() === FAILURE.toLowerCase()) {
-                    return "error";
-                } else if (status.toLowerCase() === ONGOING.toLowerCase()) {
-                    return "info";
-                }
-            }
-            return "";
-
-        }));
-
-        return this;
-    }
-});
+    return this;
+};

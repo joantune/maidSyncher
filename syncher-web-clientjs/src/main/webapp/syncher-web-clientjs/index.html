@@ -70,7 +70,7 @@ body {
                             <th>Status</th>
                         </tr>
                     </thead>
-                   <tbody data-bind="pager: {array: syncLogs, itemsPerPage: 10, customPagerId: 'pager' }">
+                   <tbody data-bind="pager: {array: syncLogs}">
                         <tr data-bind="css: $data.representationRowClass">
                         <tr
                             data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && hasItems()) || ($parent.hideSyncs() == false)">

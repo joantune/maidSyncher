@@ -22,7 +22,7 @@ ko.bindingHandlers.pager = {
 
             var pagerModel = viewModel[id + '$_pager'] = {};
 
-            var itemsPerPage = ko.utils.unwrapObservable(valueAccessor()).itemsPerPage;
+            var itemsPerPage = ko.utils.unwrapObservable(valueAccessor()).itemsPerPage || 10;
             var currentPageObs = pages = ko.observable(1);
             pagerModel['currentPage'] = currentPageObs;
             pagerModel['pagedArray'] = ko.computed(function() {
