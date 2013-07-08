@@ -28,7 +28,18 @@ ko.bindingHandlers.pager = {
             pagerModel['pagedArray'] = ko.computed(function() {
                 var collection = ko.utils.unwrapObservable(valueAccessor()).array;
                 var firstItemIndex = itemsPerPage * (currentPageObs() -1);
-                return collection.slice(firstItemIndex, firstItemIndex + itemsPerPage);
+                var slicedCollection = collection.slice(firstItemIndex, firstItemIndex + itemsPerPage);
+                if (ko.utils.unwrapObservable(valueAccessor()).viewModel) {
+                    var _ViewModelConstructor = ko.utils.unwrapObservable(valueAccessor()).viewModel;
+                    var slicedArrayObs = ko.observableArray();
+                    slicedCollection.forEach(function(item) {
+                        slicedArrayObs.push(new _ViewModelConstructor(item));
+                    } );
+                    return slicedArrayObs();
+                }
+                else {
+                    return slicedCollection;
+                }
             });
             var numPages = ko.computed(function() {
                 return Math.ceil(ko.utils.unwrapObservable(valueAccessor()).array().length / itemsPerPage);

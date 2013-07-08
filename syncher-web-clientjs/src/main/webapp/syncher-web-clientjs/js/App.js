@@ -49,35 +49,39 @@ syncLogs.fetch({
             self = this;
 
             // self.syncLogsAll = kb.observable(model, 'synclogs');
+            self.hasItems = function(item) {
+                return item.actions().length > 0 || item.warnings().length > 0 || item.conflicts().length > 0;
+            };
 
-//            self.syncLogsAll = kb.collectionObservable(syncLogs, {
-//                models_only : true
-//            });
-//            self.currentPageObs = ko.observable(1);
-//            self.filter_fn = ko.computed(function() {
-//                    return function(model, huh) {
-//                        return true;
-//                }
-//            });
-            self.syncLogs = kb.collectionObservable(syncLogs, {
-                view_model : LogViewModel
-                //filters: self.filter_fn
+            self.syncLogsAll = kb.collectionObservable(syncLogs, {
+                models_only : true
             });
-
-            // self.syncLogs = ko.computed(function() {
-            // var itemsPerPage = 10;
-            // var firstItemIndex = itemsPerPage * (self.currentPageObs() - 1);
-            // if (self.syncLogsAll() == null) {
-            // return ko.observableArray([]);
-            // } else {
-            // var slicedCollection =
-            // self.syncLogsAll.collection().slice(firstItemIndex,
-            // firstItemIndex + itemsPerPage);
-            // return kb.collectionObservable(slicedCollection, {
-            // view_model : LogViewModel
-            // });
+            self.currentPageObs = ko.observable(1);
+            // self.filter_fn = ko.computed(function() {
+            // return function(model, huh) {
+            // return true;
             // }
             // });
+            // self.syncLogs = kb.collectionObservable(syncLogs, {
+            // view_model : LogViewModel
+            // filters: self.filter_fn
+            // });
+
+//            self.syncLogs = ko.computed(function() {
+//                var itemsPerPage = 10;
+//                var firstItemIndex = itemsPerPage * (self.currentPageObs() - 1);
+//                if (self.syncLogsAll() == null) {
+//                    return ko.observableArray([]);
+//                } else {
+//                    var slicedCollection = self.syncLogsAll().slice(firstItemIndex,
+//                            firstItemIndex + itemsPerPage);
+//                    var slicedArray = ko.observableArray();
+//                    slicedCollection.forEach(function(item) {
+//                        slicedArray.push(new LogViewModel(item));
+//                    });
+//                    return slicedArray();
+//                }
+//            });
 
             self.hideSyncs = ko.observable(false);
 
@@ -271,9 +275,6 @@ var LogViewModel = function(model) {
     });
     this.warnings = kb.collectionObservable(model.get('warnings'), {
         view_model : WarningsViewModel
-    });
-    this.hasItems = ko.computed(function() {
-        return self.actions().length > 0 || self.warnings().length > 0 || self.conflicts().length > 0;
     });
 
     var popoverOptionsGenerator = function(startTime, endTime) {

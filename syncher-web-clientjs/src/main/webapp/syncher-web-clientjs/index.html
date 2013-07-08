@@ -54,7 +54,7 @@ body {
             </p>
 
             <p>
-                Nr synchronizations: <span data-bind="text: syncLogs().length"></span>
+                Nr synchronizations: <span data-bind="text: syncLogsAll().length"></span>
             </p>
 
             <div id="syncLogs">
@@ -70,10 +70,10 @@ body {
                             <th>Status</th>
                         </tr>
                     </thead>
-                   <tbody data-bind="pager: {array: syncLogs}">
+                   <tbody data-bind="pager: {array: syncLogsAll, viewModel: LogViewModel}">
                         <tr data-bind="css: $data.representationRowClass">
                         <tr
-                            data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && hasItems()) || ($parent.hideSyncs() == false)">
+                            data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && $parent.hasItems($data)) || ($parent.hideSyncs() == false)">
                             <td><span data-bind="html:  friendlyDateTime(SyncStartTime(), true)"> </span> <span
                                 class="muted" data-bind="text: '('+ humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
                             <td data-bind="text: actions().length" />
