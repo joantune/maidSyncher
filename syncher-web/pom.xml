@@ -46,7 +46,7 @@
                     <webApp>
                         <contextPath>/xpto</contextPath>
                         <baseResource implementation="org.eclipse.jetty.util.resource.ResourceCollection">
-                            <resourcesAsCSV>src/main/webapp/,../syncher-web-clientjs/src/main/webapp/,../../partialWspace/bennu/portal-frameworks/bankai/src/main/webapp</resourcesAsCSV>
+                            <resourcesAsCSV>src/main/webapp/,../syncher-web-clientjs/src/main/webapp/</resourcesAsCSV>
                         </baseResource>
                     </webApp>
                     <systemProperties>

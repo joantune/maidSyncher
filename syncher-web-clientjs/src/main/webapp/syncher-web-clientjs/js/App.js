@@ -67,21 +67,21 @@ syncLogs.fetch({
             // filters: self.filter_fn
             // });
 
-//            self.syncLogs = ko.computed(function() {
-//                var itemsPerPage = 10;
-//                var firstItemIndex = itemsPerPage * (self.currentPageObs() - 1);
-//                if (self.syncLogsAll() == null) {
-//                    return ko.observableArray([]);
-//                } else {
-//                    var slicedCollection = self.syncLogsAll().slice(firstItemIndex,
-//                            firstItemIndex + itemsPerPage);
-//                    var slicedArray = ko.observableArray();
-//                    slicedCollection.forEach(function(item) {
-//                        slicedArray.push(new LogViewModel(item));
-//                    });
-//                    return slicedArray();
-//                }
-//            });
+            // self.syncLogs = ko.computed(function() {
+            // var itemsPerPage = 10;
+            // var firstItemIndex = itemsPerPage * (self.currentPageObs() - 1);
+            // if (self.syncLogsAll() == null) {
+            // return ko.observableArray([]);
+            // } else {
+            // var slicedCollection = self.syncLogsAll().slice(firstItemIndex,
+            // firstItemIndex + itemsPerPage);
+            // var slicedArray = ko.observableArray();
+            // slicedCollection.forEach(function(item) {
+            // slicedArray.push(new LogViewModel(item));
+            // });
+            // return slicedArray();
+            // }
+            // });
 
             self.hideSyncs = ko.observable(false);
 
@@ -165,9 +165,20 @@ var ActionsViewModel = function(model) {
     this.rowClass = ko.computed(function() {
         return successUtil("success", "error", "", self.success());
     });
+    
+    this.typeOfChangeEvent = kb.observable(model, 'typeOfChangeEvent');
 
     this.changedDescriptors = kb.observable(model, 'changedDescriptors');
 
+    this.shortTypeOfChangeEvent = ko.computed(function() {
+        debugger;
+        if (self.typeOfChangeEvent !== undefined && self.typeOfChangeEvent() != null) 
+            return "(" + self.typeOfChangeEvent().charAt(0) + ")";
+        else
+            return "";
+
+        
+    });
     this.actionOriginPopoverContent = ko.computed(function() {
         if (self.changedDescriptors() != null) {
             var descriptorsStrings = "";
@@ -177,7 +188,8 @@ var ActionsViewModel = function(model) {
             // to trim the last ", "
             descriptorsStrings = descriptorsStrings.substring(0, descriptorsStrings.length - 2);
 
-            return "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>"
+            return "<p><small><strong>Type:</strong> " + self.typeOfChangeEvent() + "</small></p>"
+                    + "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>"
                     + "<p><small><a href=\"" + self.urlOriginObject() + "\" target='_blank'>Link</a></small></p>";
         } else
             return "";

@@ -41,6 +41,7 @@ class SyncActionLog {
 	String errorDescription;
 	String actionDescription;
 	String typeOriginObject (REQUIRED);
+	TypeOfChangeEvent typeOfChangeEvent (REQUIRED);
 }
 
 class SyncWarningLog {

@@ -24,6 +24,7 @@ public class SyncActionLog extends SyncActionLog_Base {
         setTypeOriginObject(originObject.getClass().getName());
         setDsiObject(syncDSIObject);
         setChangedDescriptors(syncEvent.getChangedPropertyDescriptorNames());
+        setTypeOfChangeEvent(syncEvent.getTypeOfChangeEvent());
     }
 
 
