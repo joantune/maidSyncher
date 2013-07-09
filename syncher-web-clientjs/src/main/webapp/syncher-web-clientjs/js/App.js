@@ -258,8 +258,8 @@ var ConflictsViewModel = function(model) {
         		"<tbody>" +
         		    "<tr>" +
         		        "<td><strong>Type:</strong></td>" +
-        		        "<td>"+ self.eventOneTypeOfChangeEvent() + "</td>" +
-        		        "<td>"+ self.eventTwoTypeOfChangeEvent() + "</td>" +
+        		        "<td>"+ self.eventOneShortName() + "</td>" +
+        		        "<td>"+ self.eventTwoShortName() + "</td>" +
         		    "</tr>" +
         		    "<tr>" +
         		        "<td><strong>Changed Dsc:</strong></td>" +
