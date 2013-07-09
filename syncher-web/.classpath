@@ -28,5 +28,9 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/maid-syncher"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/syncher-main"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/syncher-web-clientjs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/syncher-web-restserver"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

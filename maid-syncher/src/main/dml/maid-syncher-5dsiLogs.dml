@@ -52,7 +52,10 @@ class SyncWarningLog {
 
 class SyncEventConflictLog {
 	TypeOfChangeEvent eventOneTypeOfChangeEvent (REQUIRED);
+	Strings eventOneChangedDescriptors (REQUIRED);
+	
 	TypeOfChangeEvent eventTwoTypeOfChangeEvent (REQUIRED);
+	Strings eventTwoChangedDescriptors (REQUIRED);
 }
 
 relation SynchableObjectSyncEventConflictLogEventOne {

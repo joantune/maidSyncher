@@ -40,6 +40,9 @@ public class SyncEventConflictLogViewer implements JsonViewer<SyncEventConflictL
 
         jsonObject.add("winnerObject", ctx.view(obj.getWinnerObject()));
 
+        jsonObject.add("eventTwoChangedDescriptors", ctx.view(obj.getEventTwoChangedDescriptors()));
+        jsonObject.add("eventOneChangedDescriptors", ctx.view(obj.getEventOneChangedDescriptors()));
+
         return jsonObject;
 
     }

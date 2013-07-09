@@ -14,6 +14,9 @@ public class SyncEventConflictLog extends SyncEventConflictLog_Base {
 
         setEventOneTypeOfChangeEvent(syncEvent.getTypeOfChangeEvent());
         setEventTwoTypeOfChangeEvent(syncEventAlreadyPresent.getTypeOfChangeEvent());
+
+        setEventOneChangedDescriptors(syncEvent.getChangedPropertyDescriptorNames());
+        setEventTwoChangedDescriptors(syncEventAlreadyPresent.getChangedPropertyDescriptorNames());
     }
 
     public void markSecondAsWinner() {
