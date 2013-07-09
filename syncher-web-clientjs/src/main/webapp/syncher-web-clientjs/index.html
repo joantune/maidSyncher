@@ -143,7 +143,7 @@ body {
                             data-bind="text: '(' + actions().length + ')'"></span></a></li>
                     <li><a href="#warnings" data-toggle="tab">Warnings <span
                             data-bind="text: '(' + warnings().length + ')'"></span></a></li>
-                    <li><a href="#conflicts" data-toggle="tab">Conflicts <span
+                    <li><a href="#conflicts" data-toggle="tab">Potential Conflicts <span
                             data-bind="text: '(' + conflicts().length + ')'"></span></a></li>
                 </ul>
                 <div class="tab-content">
@@ -191,7 +191,29 @@ body {
 
 
                     </div>
-                    <div class="tab-pane" id="conflicts">...</div>
+                    <div class="tab-pane" id="conflicts">
+                    <table class="table table-hover-clickable">
+                            <thead>
+                                <tr>
+                                    <th>Event one</th>
+                                    <!-- <th></th> -->
+                                    <th>Event two</th>
+                                    <!-- <th></th> -->
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: conflicts">
+                                <tr class="info" data-bind="bootstrapPopover: {html: true, content: popoverDescriptionContent, trigger: 'click', placement:'top'}">
+                                    <td><i data-bind="css: eventStatusRep(eventOneOriginator().id)"></i>  <span data-bind="text: eventOneShortName"></span></td>
+                                    <!-- <td data-bind="html: eventStatusRep(eventOneOriginator().id)"></td> -->
+                                    
+                                    <td><i data-bind="css: eventStatusRep(eventTwoOriginator().id)"></i>  <span data-bind="text: eventTwoShortName"></span></td>
+                                    <!-- <td data-bind="text: eventTwoShortName"></td>
+                                    <td data-bind="html: eventStatusRep(eventTwoOriginator().id)"></td> -->
+                                </tr>
+                            </tbody>
+                        </table>
+                    
+                    </div>
                 </div>
 
 

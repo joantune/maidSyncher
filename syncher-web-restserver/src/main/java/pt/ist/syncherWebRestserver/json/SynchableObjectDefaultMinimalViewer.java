@@ -25,7 +25,7 @@ public class SynchableObjectDefaultMinimalViewer implements JsonViewer<Synchable
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("id", obj.getExternalId());
         jsonObject.addProperty("remoteId", obj.getId());
-        jsonObject.addProperty(SynchableObject.DSC_URL, obj.getUrl());
+        jsonObject.addProperty(SynchableObject.DSC_URL, obj.getHtmlUrl());
         jsonObject.add(SynchableObject.DSC_LAST_SYNC_TIME, ctx.view(obj.getLastSynchTime()));
         jsonObject.addProperty("className", obj.getClass().getName());
         return jsonObject;

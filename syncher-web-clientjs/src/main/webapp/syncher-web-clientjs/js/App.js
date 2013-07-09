@@ -109,6 +109,16 @@ syncLogs.fetch({
                                 callback(argument, null)
                             }
                         });
+                    },
+                    conflicts : function(callback) {
+                        currentSyncLog.model.get('conflicts').fetch({
+                            success : function(argument) {
+                                callback(null, argument)
+                            },
+                            error : function(argument) {
+                                callback(argument, null)
+                            }
+                        });
                     }
                 }, function(err, results) {
                     displayLoadingScreen(false);
@@ -157,6 +167,115 @@ var calculateDurationInSeconds = function(endTime, startTime) {
     return end.diff(start, 'seconds', true);
 }
 
+var TypeOfChangeEventAbbreviator = function(koObsWithType) {
+    if (koObsWithType !== undefined && koObsWithType() != null)
+        return "(" + koObsWithType().charAt(0) + ")";
+    else
+        return "";
+}
+
+var ClassNameTrimmer = function(className) {
+    if (className) {
+        firstChar = className.lastIndexOf('.') + 1;
+        if (firstChar > 0) {
+            className = className.substring(firstChar);
+        }
+    }
+    return className;
+}
+
+var StringArrayToString = function(stringArray) {
+    var descriptorsStrings = "";
+    if (stringArray && stringArray != null) {
+        stringArray.forEach(function(value) {
+            descriptorsStrings += value + ", ";
+        });
+        // to trim the last ", "
+        descriptorsStrings = descriptorsStrings.substring(0, descriptorsStrings.length - 2);
+    }
+    return descriptorsStrings;
+}
+
+var ConflictsViewModel = function(model) {
+    var self = this;
+    self.eventOneTypeOfChangeEvent = kb.observable(model, 'eventOneTypeOfChangeEvent');
+    self.eventTwoTypeOfChangeEvent = kb.observable(model, 'eventTwoTypeOfChangeEvent');
+    self.eventOneOriginator = kb.observable(model, 'eventOneOriginator');
+    self.eventTwoOriginator = kb.observable(model, 'eventTwoOriginator');
+    self.winnerObject = kb.observable(model, 'winnerObject');
+    self.eventTwoChangedDescriptors = kb.observable(model, 'eventTwoChangedDescriptors');
+    self.eventOneChangedDescriptors = kb.observable(model, 'eventOneChangedDescriptors');
+
+    self.eventOneTypeOfChangeEventAbbr = ko.computed(function() {
+        return TypeOfChangeEventAbbreviator(self.eventOneTypeOfChangeEvent);
+    });
+    self.eventTwoTypeOfChangeEventAbbr = ko.computed(function() {
+        return TypeOfChangeEventAbbreviator(self.eventTwoTypeOfChangeEvent);
+    });
+
+    self.eventOneShortName = ko.computed(function() {
+        if (self.eventOneOriginator() != null)
+            return ClassNameTrimmer(self.eventOneOriginator().className) + " " + self.eventOneTypeOfChangeEventAbbr();
+    });
+    self.eventTwoShortName = ko.computed(function() {
+        if (self.eventTwoOriginator() != null)
+            return ClassNameTrimmer(self.eventTwoOriginator().className) + " " + self.eventTwoTypeOfChangeEventAbbr();
+    });
+
+    self.eventStatusRep = function(id) {
+        if (id && self.winnerObject() != null) {
+            if (id === self.winnerObject().id) {
+                // return "<i class='icon-ok-circle'></i>";
+                return 'icon-ok-circle';
+            } else {
+                // return "<i class='icon-ban-circle'></i>";
+                return 'icon-ban-circle';
+            }
+        }
+        return "";
+    };
+
+    self.popoverDescriptionContent = ko.computed(function() {
+        var eventOneOUrl = (self.eventOneOriginator && self.eventOneOriginator() != null) ? self.eventOneOriginator().url : "#";
+        var eventTwoOUrl = (self.eventTwoOriginator && self.eventTwoOriginator() != null) ? self.eventTwoOriginator().url : "#";
+//        return "<h5>Event One</h5> "
+//        + "<p><small><strong>Type:</strong> " + self.eventOneTypeOfChangeEvent()
+//        + "</small></p>" + "<p><small><strong>Changed descriptors:</strong> " + StringArrayToString(self.eventOneChangedDescriptors())
+//        + "</small></p>" + "<p><small><a href=\"" + eventOneOUrl+ "\" target='_blank'>Link</a></small></p>"
+//        +"<h5>Event Two</h5> "
+//        + "<p><small><strong>Type:</strong> " + self.eventTwoTypeOfChangeEvent()
+//        + "</small></p>" + "<p><small><strong>Changed descriptors:</strong> " + StringArrayToString(self.eventTwoChangedDescriptors())
+//        + "</small></p>" + "<p><small><a href=\"" + eventTwoOUrl + "\" target='_blank'>Link</a></small></p>";
+
+        return "<table class='table table-condensed'>" +
+        		"<thead>" +
+        		    "<tr>" +
+        		        "<th></th>" +
+        		        "<th>Event One</th>" +
+        		        "<th>Event Two</th>" +
+        		    "</tr>" +
+        		"</thead>" +
+        		"<tbody>" +
+        		    "<tr>" +
+        		        "<td><strong>Type:</strong></td>" +
+        		        "<td>"+ self.eventOneTypeOfChangeEvent() + "</td>" +
+        		        "<td>"+ self.eventTwoTypeOfChangeEvent() + "</td>" +
+        		    "</tr>" +
+        		    "<tr>" +
+        		        "<td><strong>Changed Dsc:</strong></td>" +
+        		        "<td>" +StringArrayToString(self.eventOneChangedDescriptors())+ "</td>" +
+        		        "<td>" + StringArrayToString(self.eventTwoChangedDescriptors())+ "</td>" +
+        		    "</tr>" +
+        		    "<tr>" +
+        		        "<td><strong>Links:</strong></td>" +
+        		        "<td><a href=\"" + eventOneOUrl+ "\" target='_blank'>link</a></td>" +
+        		        "<td><a href=\"" + eventTwoOUrl+ "\" target='_blank'>link</a></td>" +
+        		    "</tr>" +
+        		"</tbody>" +
+        		"</table> ";
+    });
+}
+
 var ActionsViewModel = function(model) {
 
     var self = this;
@@ -165,34 +284,23 @@ var ActionsViewModel = function(model) {
     this.rowClass = ko.computed(function() {
         return successUtil("success", "error", "", self.success());
     });
-    
+
     this.typeOfChangeEvent = kb.observable(model, 'typeOfChangeEvent');
 
     this.changedDescriptors = kb.observable(model, 'changedDescriptors');
 
     this.shortTypeOfChangeEvent = ko.computed(function() {
-        debugger;
-        if (self.typeOfChangeEvent !== undefined && self.typeOfChangeEvent() != null) 
-            return "(" + self.typeOfChangeEvent().charAt(0) + ")";
-        else
-            return "";
-
-        
+        return TypeOfChangeEventAbbreviator(self.typeOfChangeEvent);
     });
     this.actionOriginPopoverContent = ko.computed(function() {
-        if (self.changedDescriptors() != null) {
-            var descriptorsStrings = "";
-            self.changedDescriptors().forEach(function(value) {
-                descriptorsStrings += value + ", ";
-            })
-            // to trim the last ", "
-            descriptorsStrings = descriptorsStrings.substring(0, descriptorsStrings.length - 2);
-
+        if (self.changedDescriptors() != null ) {
+            
+        var descriptorsStrings = StringArrayToString(self.changedDescriptors());
             return "<p><small><strong>Type:</strong> " + self.typeOfChangeEvent() + "</small></p>"
                     + "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>"
                     + "<p><small><a href=\"" + self.urlOriginObject() + "\" target='_blank'>Link</a></small></p>";
-        } else
-            return "";
+        }
+        else return "";
     });
 
     this.syncEndTime = kb.observable(model, 'syncEndTime');
@@ -209,14 +317,7 @@ var ActionsViewModel = function(model) {
     });
 
     this.trimmedTypeOriginObject = ko.computed(function() {
-        var toReturn = self.typeOriginObject();
-        if (toReturn) {
-            firstChar = self.typeOriginObject().lastIndexOf('.') + 1;
-            if (firstChar > 0) {
-                toReturn = toReturn.substring(firstChar);
-            }
-        }
-        return toReturn;
+        return ClassNameTrimmer(self.typeOriginObject());
     });
 
     this.successIcon = ko.computed(function() {
@@ -281,7 +382,9 @@ var LogViewModel = function(model) {
     });
     this.Status = kb.observable(model, 'Status');
     this.SyncStartTime = kb.observable(model, 'SyncStartTime');
-    this.conflicts = kb.collectionObservable(model.get('conflicts'));
+    this.conflicts = kb.collectionObservable(model.get('conflicts'), {
+        view_model : ConflictsViewModel
+    });
     this.actions = kb.collectionObservable(model.get('actions'), {
         view_model : ActionsViewModel
     });
