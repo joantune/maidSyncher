@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.egit.github.core.client.GitHubClient;
@@ -37,6 +38,7 @@ import pt.ist.fenixframework.DomainRoot;
 import pt.ist.fenixframework.FenixFramework;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.domain.activeCollab.ACInstance;
+import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIllegalConflict;
 import pt.ist.maidSyncher.domain.github.GHOrganization;
@@ -284,6 +286,18 @@ public class MaidRoot extends MaidRoot_Base {
 
     private boolean processUpdateAndDeleteOrUpdate(SyncEvent syncEvent, SyncEvent syncEventAlreadyPresent,
             List<SyncEvent> syncEventsToDelete) {
+        //let's make sure this is really a conflict
+
+        //if the two syncEvents are to be applied on the same target universe
+        if (syncEventAlreadyPresent.getTargetSyncUniverse().equals(syncEvent.getTargetSyncUniverse())) {
+            //and both are for the ACTaskCategory, it's not a conflict at all (as long as it's not the same category)
+            if (syncEvent.getOriginObject().getClass().equals(ACTaskCategory.class)
+                    && syncEventAlreadyPresent.getOriginObject().getClass().equals(ACTaskCategory.class)) {
+                if (!ObjectUtils.equals(syncEvent.getOriginObject(), syncEventAlreadyPresent.getOriginObject())) {
+                    return true;
+                }
+            }
+        }
         SyncEventConflictLog syncEventConflictLog = new SyncEventConflictLog(syncEvent, syncEventAlreadyPresent);
         MaidRoot.getInstance().getCurrentSyncLog().addSyncConflictLogs(syncEventConflictLog);
         if (syncEvent.getDateOfChange().compareTo(syncEventAlreadyPresent.getDateOfChange()) <= 0) {
