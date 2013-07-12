@@ -168,7 +168,6 @@ public class GHRepositorySyncTest {
             }
         });
 
-
         SyncEvent updateSyncEvent =
                 TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghRepository,
                         Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
@@ -207,6 +206,110 @@ public class GHRepositorySyncTest {
             for (ACTaskCategory acTaskCategory : acProject.getTaskCategoriesDefinedSet()) {
                 if (acTaskCategory.getName().equalsIgnoreCase(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_NAME)) {
                     foundTaskCategory = true;
+                }
+            }
+            assertTrue("ACProject name: " + acProject.getName() + " nr task categories: "
+                    + acProject.getTaskCategoriesDefinedSet().size(), foundTaskCategory);
+        }
+
+    }
+
+    @SuppressWarnings("static-access")
+    @Test
+    @Atomic(mode = TxMode.WRITE)
+    public void createWithPreviousRepositories() throws IOException {
+
+        when(requestProcessor.getBasicUrlForPath(Mockito.anyString())).thenAnswer(new Answer<String>() {
+
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return (String) invocation.getArguments()[0];
+            }
+        });
+
+        when(requestProcessor.processPost(Mockito.isA(ACCategory.class), Mockito.anyString())).then(new Answer<JSONObject>() {
+
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
+                ACCategory acCategory = (ACCategory) invocation.getArguments()[0];
+                String uriString = (String) invocation.getArguments()[1];
+
+                Integer projectId = Integer.valueOf(StringUtils.substringBetween(uriString, "projects/", "/tasks"));
+
+                //let's return an appropriate random id
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("id", randomIDGenerator.nextInt(2000));
+                jsonObject.put("is_archived", 0);
+                jsonObject.put("parent_class", ACCategory.PROJECT_CLASS);
+                jsonObject.put("parent_id", projectId);
+                jsonObject.put("name", acCategory.getName());
+                return jsonObject;
+
+            }
+        });
+
+//let's create another repository
+        GHRepository otherGhRepository = new GHRepository();
+        DSIRepository otherDSIRepository = new DSIRepository();
+
+        otherGhRepository.setName(GH_REPOSITORY_ALTERNATIVE_NAME);
+        ghRepository.setDsiObjectRepository(otherDSIRepository);
+
+        SyncEvent updateSyncEvent =
+                TestUtils.syncEventGenerator(TypeOfChangeEvent.CREATE, this.ghRepository,
+                        Arrays.asList(PropertyUtils.getPropertyDescriptors(Repository.class)));
+
+        SyncActionWrapper syncActionWrapper = ghRepository.sync(updateSyncEvent);
+
+        syncActionWrapper.sync();
+
+        //so, we should have four creates of categories.
+        //one for the new GHRepository on the two existing projects, plus two for the
+        //two existing repositories on the new default project. Plus the one for the create of the project
+
+
+        verify(requestProcessor, times(5)).processPost(acObjectCaptor.capture(), pathCaptor.capture());
+
+        //now let's make sure that the categories posted are correct
+        int nrCategoryCreationsForNewRep = 0;
+        int nrCategoryCreationsForAlternativeRep = 0;
+        for (ACObject acObject : acObjectCaptor.getAllValues()) {
+            if (acObject instanceof ACCategory) {
+                ACCategory acCategory = (ACCategory) acObject;
+                if (acCategory.getName().equals(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_NAME)) {
+                    nrCategoryCreationsForNewRep++;
+                } else if (acCategory.getName().equals(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_ALTERNATIVE_NAME)) {
+                    nrCategoryCreationsForAlternativeRep++;
+                }
+            } else if (acObject instanceof pt.ist.maidSyncher.api.activeCollab.ACProject) {
+                pt.ist.maidSyncher.api.activeCollab.ACProject acProjectCreated =
+                        (pt.ist.maidSyncher.api.activeCollab.ACProject) acObject;
+                assertEquals(GH_REPOSITORY_NAME, acProjectCreated.getName());
+
+            } else
+                fail();
+        }
+
+        assertEquals(3, nrCategoryCreationsForNewRep);
+        assertEquals(1, nrCategoryCreationsForAlternativeRep);
+
+        //let's make sure that all of the active projects have task categories for the
+        //repository
+        Set<ACProject> activeProjects = ACProject.getActiveProjects();
+        assertEquals(3, activeProjects.size()); //one for each project and another for the default
+        //that should have been made
+
+        //now let's verify that each project has the needed task category
+        for (ACProject acProject : activeProjects) {
+            boolean foundTaskCategory = false;
+            for (ACTaskCategory acTaskCategory : acProject.getTaskCategoriesDefinedSet()) {
+                if (acTaskCategory.getName().equalsIgnoreCase(ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_NAME)
+                        || acTaskCategory.getName().equalsIgnoreCase(
+                                ACTaskCategory.REPOSITORY_PREFIX + GH_REPOSITORY_ALTERNATIVE_NAME)) {
+                    foundTaskCategory = true;
+                } else {
+                    foundTaskCategory = false;
+                    break;
                 }
             }
             assertTrue("ACProject name: " + acProject.getName() + " nr task categories: "
