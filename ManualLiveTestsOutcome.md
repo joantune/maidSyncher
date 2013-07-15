@@ -8,9 +8,11 @@
 
 - [X] - SyncEvents of different objects on the same 'target side' - at least for ACTaskCategory should not create a conflict - create a test case ??
 
-- When creating a GHRepository, the recently created ACProject does not get the categories from the other repositories
+- [X] - When creating a GHRepository, the recently created ACProject does not get the categories from the other repositories
 
-- ACTask - assigning an ACTaskCategory that has a valid GHRepository, does not create the GHIssue - also, there is always afterwards, a perpetual update on the ACTask detected ??
+- ACTask - assigning an ACTaskCategory that has a valid GHRepository, does not create the GHIssue
+ 	 - [X] also, there is always afterwards, a perpetual update on the ACTask detected ?? - this only happens when the ACTask already exists
+- 
 
 
 

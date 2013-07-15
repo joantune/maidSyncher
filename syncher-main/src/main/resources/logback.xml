@@ -10,6 +10,10 @@
     <logger name="pt.ist" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
+    <!--   <logger name="pt.ist.fenixframework" level="INFO">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    -->
 
 <!--
     <logger name="pt.ist.fenixWebFramework.servlets.filters.ProfilingFilter" level="INFO">

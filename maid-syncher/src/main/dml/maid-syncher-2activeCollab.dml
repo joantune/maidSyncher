@@ -278,7 +278,9 @@ relation ACTaskACUserOtherAssignees {
 
 
 relation ACTaskACTaskCategory {
-	ACTask playsRole task;
+	ACTask playsRole tasks {
+		multiplicity *;
+	}
 	ACTaskCategory playsRole taskCategory;
 }
 

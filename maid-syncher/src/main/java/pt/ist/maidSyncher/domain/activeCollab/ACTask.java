@@ -72,6 +72,12 @@ public class ACTask extends ACTask_Base {
                 acTask, "assigneeId")) : Collections.EMPTY_SET;
     }
 
+    @Override
+    public void setTaskCategory(ACTaskCategory taskCategory) {
+        //yes, this is here (for debug purposes and because of eclipse _Base mixups)
+        super.setTaskCategory(taskCategory);
+    }
+
     private Collection<String> processOtherAssignees(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
 
         boolean somethingChanged = false;
@@ -113,7 +119,7 @@ public class ACTask extends ACTask_Base {
 
     @Override
     public Collection<String> copyPropertiesFrom(Object orig) throws IllegalAccessException, InvocationTargetException,
-            NoSuchMethodException {
+    NoSuchMethodException {
         Set<String> changedDescriptors = new HashSet<>(super.copyPropertiesFrom(orig));
 
         pt.ist.maidSyncher.api.activeCollab.ACTask acTask = (pt.ist.maidSyncher.api.activeCollab.ACTask) orig;
@@ -162,6 +168,7 @@ public class ACTask extends ACTask_Base {
                 acTask, "labelId")) : Collections.EMPTY_SET;
 
     }
+
 
     private Collection<String> processCategory(pt.ist.maidSyncher.api.activeCollab.ACTask acTask) {
         ACTaskCategory newTaskCategory = ACTaskCategory.findById(acTask.getCategoryId());
@@ -465,7 +472,7 @@ public class ACTask extends ACTask_Base {
                 new SyncWarningLog(MaidRoot.getInstance().getCurrentSyncLog(),
                         "Id of ACTask changed!!. It shouldn't have happened, oh well. SyncEvent: " + triggerEvent);
                 break;
-            //the ones that we don't have to do anything
+                //the ones that we don't have to do anything
             case DSC_PERMALINK:
             case DSC_CREATED_ON:
             case DSC_UPDATED_ON:
@@ -473,8 +480,8 @@ public class ACTask extends ACTask_Base {
             case DSC_UPDATED_BY_ID:
             case DSC_DUE_ON:
                 break;
-            //for now, let's do nothing with the id
-            //of who created it
+                //for now, let's do nothing with the id
+                //of who created it
             case DSC_CREATED_BY_ID:
                 break;
             case DSC_NAME:
@@ -525,7 +532,7 @@ public class ACTask extends ACTask_Base {
                 if (ghIssue != null) {
                     ghRepository = ghIssue.getRepository();
                 } else {
-                    if (getTaskCategory().hasGHSide() == false) {
+                    if (getTaskCategory() == null || getTaskCategory().hasGHSide() == false) {
                         return Collections.emptySet();
                         //we cannot do anything, this object has no GH side
                     }
@@ -625,7 +632,7 @@ public class ACTask extends ACTask_Base {
 
             private GHIssue updateIssueSimpleFieldsIfNeccessary(Issue ghIssueToUpdate, GHIssue ghIssue,
                     GHRepository ghRepository, Set<SynchableObject> changedObjects, boolean createInsteadOfEdit)
-                    throws IOException {
+                            throws IOException {
                 Issue issue = ghIssueToUpdate;
                 if (taskNameChanged) {
                     issue = ghIssue.getNewPrefilledIssue(issue);
