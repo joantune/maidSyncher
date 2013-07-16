@@ -281,49 +281,8 @@ public class ACSubTask extends ACSubTask_Base {
                 if (ACTaskCategory.hasGHSide(acTaskCategory) == false) {
                     return Collections.emptySet();
                 }
+                createGHIssueForSubTask(changedObjects, parentACTask, acTaskCategory);
 
-                //let's create a new GHIssue on the other side
-                Issue issue = new Issue();
-
-                //let's get the parent issue
-                DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
-                GHIssue parentGHIssue = dsiSubTask.getParentIssue().getGhIssue();
-
-                //the name
-                issue.setTitle(getName());
-
-                issue.setBody(GHIssue.applySubTaskBodyPrefix(null, parentGHIssue));
-                issue.setState(getComplete() == null ? GHIssue.STATE_OPEN : getComplete() ? GHIssue.STATE_CLOSED : GHIssue.STATE_OPEN);
-
-                //set the milestones of the parent
-
-                //the repository should come from the parentACTask's ACTaskCategory
-                DSIRepository dsiRepository = (DSIRepository) acTaskCategory.getDSIObject();
-                GHRepository gitHubRepository = dsiRepository.getGitHubRepository();
-                try {
-
-                    GHObjectWrapper syncGHMilestoneFromACMilestone =
-                            parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
-                    if (syncGHMilestoneFromACMilestone.wasJustCreated)
-                        changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
-
-                    //taking care of the label
-                    GHObjectWrapper syncGHLabelFromACProject =
-                            parentACTask.syncGHLabelFromACProject(parentACTask.getProject(), gitHubRepository, issue);
-                    if (syncGHLabelFromACProject.wasJustCreated)
-                        changedObjects.add(syncGHLabelFromACProject.ghObject);
-
-                    //let's sync it
-                    IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
-                    Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
-                    if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
-                        //we must now edit it and close it
-                        createdIssue = issueService.editIssue(gitHubRepository, issue);
-                        changedObjects.add(GHIssue.process(createdIssue, gitHubRepository, true));
-                    }
-                } catch (IOException ex) {
-                    throw new SyncActionError(ex, changedObjects);
-                }
                 return changedObjects;
 
             }
@@ -355,5 +314,60 @@ public class ACSubTask extends ACSubTask_Base {
             }
         };
 
+    }
+
+    /**
+     * 
+     * @param changedObjects
+     * @param parentACTask
+     * @param acTaskCategory
+     * 
+     *            Creates the GHIssue for this ACSubTask. It needs the parent issue to exist and have a GH side (
+     *            {@link DSISubTask} with {@link DSISubTask#getParentIssue()} and {@link DSIIssue#getGhIssue()})
+     */
+    public void createGHIssueForSubTask(Set<SynchableObject> changedObjects,
+            pt.ist.maidSyncher.domain.activeCollab.ACTask parentACTask, ACTaskCategory acTaskCategory) {
+        //let's create a new GHIssue on the other side
+        Issue issue = new Issue();
+
+        //let's get the parent issue
+        DSISubTask dsiSubTask = (DSISubTask) getDSIObject();
+        GHIssue parentGHIssue = dsiSubTask.getParentIssue().getGhIssue();
+
+        //the name
+        issue.setTitle(getName());
+
+        issue.setBody(GHIssue.applySubTaskBodyPrefix(null, parentGHIssue));
+        issue.setState(getComplete() == null ? GHIssue.STATE_OPEN : getComplete() ? GHIssue.STATE_CLOSED : GHIssue.STATE_OPEN);
+
+        //set the milestones of the parent
+
+        //the repository should come from the parentACTask's ACTaskCategory
+        DSIRepository dsiRepository = (DSIRepository) acTaskCategory.getDSIObject();
+        GHRepository gitHubRepository = dsiRepository.getGitHubRepository();
+        try {
+
+            GHObjectWrapper syncGHMilestoneFromACMilestone =
+                    parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
+            if (syncGHMilestoneFromACMilestone.wasJustCreated)
+                changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
+
+            //taking care of the label
+            GHObjectWrapper syncGHLabelFromACProject =
+                    parentACTask.syncGHLabelFromACProject(parentACTask.getProject(), gitHubRepository, issue);
+            if (syncGHLabelFromACProject.wasJustCreated)
+                changedObjects.add(syncGHLabelFromACProject.ghObject);
+
+            //let's sync it
+            IssueService issueService = new IssueService(MaidRoot.getInstance().getGitHubClient());
+            Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
+            if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
+                //we must now edit it and close it
+                createdIssue = issueService.editIssue(gitHubRepository, issue);
+                changedObjects.add(GHIssue.process(createdIssue, gitHubRepository, true));
+            }
+        } catch (IOException ex) {
+            throw new SyncActionError(ex, changedObjects);
+        }
     }
 }
