@@ -534,7 +534,7 @@ public class GHIssue extends GHIssue_Base {
      */
     public static String applySubTaskBodyPrefix(String body, GHIssue parentGHIssue) {
         String subTaskBodyPrefixString = getSubTaskBodyPrefix(parentGHIssue);
-        String newBody = body;
+        String newBody = body == null ? "" : body;
 
         //let's try to find it
         if (StringUtils.contains(body, subTaskBodyPrefixString)) {

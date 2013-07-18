@@ -10,7 +10,8 @@
 
 - [X] - When creating a GHRepository, the recently created ACProject does not get the categories from the other repositories
 
-- 
+- [X] ACTask with subtasks - assigning an ACTaskCategory that has a valid GHRepository, creates the GHIssue, as intended, but then creates the corresponding ACTasks (which is not supposed to)
+
 
 - [X] ACTask - assigning an ACTaskCategory that has a valid GHRepository, does not create the GHIssue - at C is ok, on Update is lacking
  	 - [X] also, there is always afterwards, a perpetual update on the ACTask detected ?? - this only happens when the ACTask already exists
@@ -26,3 +27,7 @@ Issues:
 
  - CategoryId of an ACTask is always changing ?!?!
  
+ 
+Verified situations: 
+
+- ACSubTask - closing one closes the corresponding GHIssue

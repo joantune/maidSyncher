@@ -96,7 +96,6 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
         String milestoneNumberString = (String) issueMap.get(IssueService.FILTER_MILESTONE);
         assertEquals(String.valueOf(GH_MILESTONE_NUMBER), milestoneNumberString);
 
-
         //seen that we didn't had it first, we must had a creation of it
         verify(gitHubClient).post(Mockito.anyString(), milestoneCaptor.capture(), Mockito.eq(Milestone.class));
 
@@ -121,6 +120,16 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
         setupStubsForGHIssueCreation();
 
         acSubTask.setComplete(Boolean.TRUE);
+        when(gitHubClient.post(Mockito.anyString(), Mockito.any(Object.class), Mockito.eq(Issue.class))).thenAnswer(
+                new Answer<Issue>() {
+
+                    @Override
+                    public Issue answer(InvocationOnMock invocation) throws Throwable {
+                        Issue issue = new Issue();
+                        issue.setId(123l);
+                        return issue;
+                    }
+                });
 
         Collection<PropertyDescriptor> propertyDescriptorsToUse =
                 Collections2.filter(
@@ -145,10 +154,25 @@ public class ACSubTaskSyncTest extends ACTaskSyncTest {
         //the creation of the issue associated with this subtask
         verify(gitHubClient, times(2)).post(stringPostUriCaptor.capture(), postCaptor.capture(), Mockito.eq(Issue.class));
 
-        Map<Object, Object> issueMap = postCaptor.getValue();
+        //we ought to have two values here
+
+        List<Map<Object, Object>> issueMaps = postCaptor.getAllValues();
+
+        assertEquals(2, issueMaps.size());
+        boolean foundNulledState = false;
+        boolean foundClosedState = false;
+        for (Map<Object, Object> issueMap : issueMaps) {
+            Object stateObject = issueMap.get(IssueService.FILTER_STATE);
+            if (stateObject == null) {
+                foundNulledState = true;
+            } else if (stateObject instanceof String && GHIssue.STATE_CLOSED.equalsIgnoreCase((String) stateObject)) {
+                foundClosedState = true;
+            }
+        }
 
         //everything else is checked in the other methods, let's just check if we are creating a closed issue
-        assertEquals(GHIssue.STATE_CLOSED, issueMap.get(IssueService.FILTER_STATE));
+        assertTrue(foundClosedState);
+        assertTrue(foundNulledState);
     }
 
     void setupStubsForGHIssueCreation() throws IOException {

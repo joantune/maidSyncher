@@ -140,7 +140,7 @@ public class ACSubTask extends ACSubTask_Base {
         return syncActionWrapperToReturn;
     }
 
-    private SyncActionWrapper syncUpdateEvent(SyncEvent syncEvent) {
+    private SyncActionWrapper syncUpdateEvent(final SyncEvent syncEvent) {
         final Set<String> tickedDescriptors = new HashSet<>();
         boolean auxChangedName = false;
         boolean auxChangedCompletion = false;
@@ -222,20 +222,17 @@ public class ACSubTask extends ACSubTask_Base {
 
             @Override
             public SyncEvent getOriginatingSyncEvent() {
-                // TODO Auto-generated method stub
-                return null;
+                return syncEvent;
             }
 
             @Override
             public Collection<DSIObject> getSyncDependedDSIObjects() {
-                // TODO Auto-generated method stub
-                return null;
+                return Collections.emptyList();
             }
 
             @Override
             public Set<Class> getSyncDependedTypesOfDSIObjects() {
-                // TODO Auto-generated method stub
-                return null;
+                return Collections.singleton((Class) DSIRepository.class);
             }
 
             @Override
@@ -349,7 +346,7 @@ public class ACSubTask extends ACSubTask_Base {
 
             GHObjectWrapper syncGHMilestoneFromACMilestone =
                     parentACTask.syncGHMilestoneFromACMilestone(parentACTask.getMilestone(), gitHubRepository, issue);
-            if (syncGHMilestoneFromACMilestone.wasJustCreated)
+            if (syncGHMilestoneFromACMilestone != null && syncGHMilestoneFromACMilestone.wasJustCreated)
                 changedObjects.add(syncGHMilestoneFromACMilestone.ghObject);
 
             //taking care of the label
@@ -363,9 +360,13 @@ public class ACSubTask extends ACSubTask_Base {
             Issue createdIssue = issueService.createIssue(gitHubRepository, issue);
             if (issue.getState().equalsIgnoreCase(GHIssue.STATE_CLOSED)) {
                 //we must now edit it and close it
-                createdIssue = issueService.editIssue(gitHubRepository, issue);
-                changedObjects.add(GHIssue.process(createdIssue, gitHubRepository, true));
+                createdIssue.setState(GHIssue.STATE_CLOSED);
+                createdIssue = issueService.editIssue(gitHubRepository, createdIssue);
             }
+            GHIssue ghIssue = GHIssue.process(createdIssue, gitHubRepository, true);
+            ghIssue.setDsiObjectSubTask(getDsiObjectSubTask());
+            ghIssue.setDsiObjectIssue(null);
+            changedObjects.add(ghIssue);
         } catch (IOException ex) {
             throw new SyncActionError(ex, changedObjects);
         }

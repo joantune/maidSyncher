@@ -773,8 +773,7 @@ public class ACTaskSyncTest {
     }
 
     static ACSubTask initializeSubTaskAndCorrespondingGHIssue(ACTask parentTask, String subTaskName,
-            GHRepository ghRepositoryToUse,
-            boolean createCorrespondingGHSide) {
+            GHRepository ghRepositoryToUse, boolean createCorrespondingGHSide) {
         //let's create a couple of subtasks to make sure that they are also moved
         ACSubTask acSubTaskOne = new ACSubTask();
         DSISubTask subTaskOne = new DSISubTask(parentTask.getDsiObjectIssue());
@@ -789,6 +788,10 @@ public class ACTaskSyncTest {
             ghIssueAssociatedWithSubTaskOne.setTitle(subTaskName);
             ghIssueAssociatedWithSubTaskOne.setDsiObjectSubTask(subTaskOne);
             ghIssueAssociatedWithSubTaskOne.setNumber(GH_SUBTASK_ONE_ISSUE_NUMBER);
+        } else {
+            if (acSubTaskOne.getDsiObjectSubTask().getGhIssue() != null)
+                acSubTaskOne.getDsiObjectSubTask().setGhIssue(null);
+
         }
         return acSubTaskOne;
     }

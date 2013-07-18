@@ -571,6 +571,8 @@ public class ACTask extends ACTask_Base {
                         //now let's do the same for each subtask
                         for (ACSubTask acSubTask : getSubTasksSet()) {
                             //let's migrate this
+                            if (acSubTask.getDsiObjectSubTask().getParentIssue().getGhIssue() == null)
+                                acSubTask.getDsiObjectSubTask().getParentIssue().setGhIssue(newGhCreatedIssue);
                             processGHIssueFromACSubTaskMigration(newGHRepository, acSubTask, changedObjects);
                         }
 
