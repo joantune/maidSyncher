@@ -1,0 +1,582 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Strict//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>/Users/joantune/Documents/Work-CIIST/WorkStationFiles/maidSyncher/architecture/.index.md.html</title>
+
+
+<style type="text/css">
+
+.markdown-body {
+    border: 1px solid #CACACA;
+    padding: 30px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.markdown-body h2 {
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.markdown-body code {
+    white-space: nowrap;
+}
+
+.markdown-body code, .markdown-body tt {
+    background-color: #F8F8F8;
+    border: 1px solid #EAEAEA;
+    border-radius: 3px 3px 3px 3px;
+    margin: 0 2px;
+    padding: 0 5px;
+}
+
+.markdown-body .highlight pre, .markdown-body pre {
+    background-color: #F8F8F8;
+    border: 1px solid #CCCCCC;
+    border-radius: 3px 3px 3px 3px;
+    font-size: 13px;
+    line-height: 19px;
+    overflow: auto;
+    padding: 6px 10px;
+}
+
+pre, code, tt {
+    font-family: Consolas,"Liberation Mono",Courier,monospace;
+    font-size: 12px;
+}
+</style>
+
+
+<script type="text/javascript">
+
+function getDocumentScrollTop() 
+{
+   var res = document.body.scrollTop || document.documentElement.scrollTop || window.pageYOffset || 0;
+   // alert(res);
+   return res;
+}
+
+function setDocumentScrollTop(ypos) 
+{
+	window.scrollTo(0, ypos);
+}
+
+</script>
+
+
+</head>
+<body class="markdown-body">
+<hr><p>layout: page</p>
+
+<h2>
+<a name="root-" class="anchor" href="#root-"><span class="octicon octicon-link"></span></a>root: "../"</h2>
+
+<h2>
+<a name="architecture" class="anchor" href="#architecture"><span class="octicon octicon-link"></span></a>Architecture</h2>
+
+<p>The MaidSyncher is made of the following parts:</p>
+
+<p><a href="../images/GeneralArchitecture.png" target="_blank"><img src="../images/GeneralArchitecture.png" alt="General architecture" title="General architecture" style="max-width:100%;"></a></p>
+
+<ul>
+<li>
+<strong><em>maid-syncher</em></strong> - The principal domain of the application. It contains the domain model that: persists 
+the two representations of the GitHub (*GH*) and ActiveCollab (*AC*) artifacts, used to keep track of changes made to them on the servers;
+contains all of the core sync logic and logs; contains the AC REST lib used to communicate with the AC sevice; </li>
+<li>
+<strong><em>maid-syncher-tests</em></strong> - JUnit tests that run agains the <code>maid-syncher</code> module</li>
+<li>
+<strong><em>syncher-main</em></strong> - classic 'main' Java command line executable - and used also as scheduler task - that takes care of getting
+data from the AC and GH services, and triggering the sync proccesses (and logs) making sure that atomicity is set where it needs to.</li>
+<li>
+<strong><em>syncher-web-clientjs</em></strong> - html markup and templates, longside with the Javascript MVVM application (Knockback, soon bennu-knockout + knockback);</li>
+<li>
+<strong><em>syncher-web-restserver</em></strong> - The root of all of the REST api, plus the integration with the <a href="https://github.com/ist-dsi/bennu/tree/develop-2.0/server/bennu-scheduler"><code>bennu-scheduler</code></a>
+module, that uses the syncher-main as a recurring task to sync both services (GH and AC);</li>
+<li>
+<strong><em>syncher-web</em></strong> - the webapp final package a mixture of: <code>syncher-web-clientjs</code> and <code>syncher-web-restserver</code>, plus the web
+app configuration</li>
+</ul><h3>
+<a name="domain-model" class="anchor" href="#domain-model"><span class="octicon octicon-link"></span></a>Domain Model</h3>
+
+<p>The domain model of the application is briefly explained here. Instead of being an exhaustive explanation
+of all the classes, this explanation separates them into groups and explains their general role on the 
+application.</p>
+
+<h4>
+<a name="package-ptistmaidsyncherapiactivecollab" class="anchor" href="#package-ptistmaidsyncherapiactivecollab"><span class="octicon octicon-link"></span></a>Package <code>pt.ist.maidSyncher.api.activeCollab</code>
+</h4>
+
+<p>Library used to communicate via AC's REST API with the AC service. It was almost fully developed by a non Java developer,
+which explains a bit of its style (i.e. not using for each'es; not using gson reflection to serialize/
+deserialize the beans to and from JSON, etc).</p>
+
+<h4>
+<a name="lib-orgeclipseegitgithubcore" class="anchor" href="#lib-orgeclipseegitgithubcore"><span class="octicon octicon-link"></span></a>Lib <code>org.eclipse.egit.github.core</code>
+</h4>
+
+<p>Library used to communicate with GH's services via its REST api. Original project page, 
+<a href="https://github.com/eclipse/egit-github">here</a>. </p>
+
+<h4>
+<a name="persisted-instances" class="anchor" href="#persisted-instances"><span class="octicon octicon-link"></span></a>Persisted instances</h4>
+
+<p>The application persists all of the GH and AC artifacts it encounters, so that it can track the changes
+that were made to them (Updates, and of what fields, Creates, Deletes, etc). The next topics explain
+in its generality, the different packages and their relationships.</p>
+
+
+
+<h5>
+<a name="package-ptistmaidsyncherdomainactivecollab" class="anchor" href="#package-ptistmaidsyncherdomainactivecollab"><span class="octicon octicon-link"></span></a>Package <code>pt.ist.maidSyncher.domain.activeCollab</code>
+</h5>
+
+<p>Persisted instances of AC's artifacts. The class names are the same as the ones of the classes of the
+<code>pt.ist.maidSyncher.api.activeCollab</code> package. i.e. AC[Name of artifact]</p>
+
+<p><em>which I admit, that it wasn't the best choice due to the need to add the full classname</em></p>
+
+<p>It also has the <a href="#synchingBehaviour">sync behaviour</a> implementation.</p>
+
+<h5>
+<a name="package-ptistmaidsyncherdomaingithub" class="anchor" href="#package-ptistmaidsyncherdomaingithub"><span class="octicon octicon-link"></span></a>Package <code>pt.ist.maidSyncher.domain.github</code>
+</h5>
+
+<p>Persisted instances of GH's artifacts. The class names follow the same convention as the activeCollab ones
+i.e. GH[Name of artifact on GH and Egit library];</p>
+
+<p>It also has the <a href="#synchingBehaviour">sync behaviour</a> implementation.</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h5>
+<a name="package-ptistmaidsyncherdomaindsi" class="anchor" href="#package-ptistmaidsyncherdomaindsi"><span class="octicon octicon-link"></span></a>Package <code>pt.ist.maidSyncher.domain.dsi</code>
+</h5>
+
+<p>It provides all of the classes that serve the purpose of bridging between the persisted instances on
+one service and their persisted counterparts on the other service. e.g. an <code>ACTask</code> has a one-to-one relation to 
+a <code>DSIIssue</code> which in place has a one-to-one relation to a <code>GHIssue</code>.</p>
+
+<h4>
+<a name="package-ptistmaidsyncherdomainsync" class="anchor" href="#package-ptistmaidsyncherdomainsync"><span class="octicon octicon-link"></span></a>Package <code>pt.ist.maidSyncher.domain.sync</code>
+</h4>
+
+<p>Contains all of the persisted and not persisted classes that are synchronization artifacts, in more details:</p>
+
+<ul>
+<li>
+<p>Package <code>pt.ist.maidSyncher.domain.logs</code> all of the persisted logs (shown on the web interface):</p>
+
+<ul>
+<li>
+<code>SyncLog</code> - the Log of a synchronization, that can have multiple <code>SyncActionLog</code>,
+<code>SyncEventConflictLog</code> and <code>SyncWarningLog</code>;</li>
+<li>
+<code>SyncActionLog</code> - log that relates on a one-on-one relationship with the 
+<a href="#syncActionWrapper"><code>SyncActionWrapper</code></a>, containing all of the info regarding the 
+success/failure of the wrapper, as well as details on its action;</li>
+<li>
+<code>SyncEventConflictLog</code> when several updates on the same 'DSI' object (i.e. an object
+from the <a href="#domainDsi"><code>pt.ist.maidSyncher.domain.dsi</code></a> package) are made, the result,
+can be a conflict were only one of the objects wins. Imagine an update on the description
+of an ACTask and an update on the GHIssue description, only one of those actions should
+endure. If any conflict is detected, a log is made, and it is shown on the web interface.</li>
+<li>
+<code>SyncWarningLog</code> - If any kind of warning is detected when creating/executing a Sync or 
+a SyncAction, e.g. when the Sync code of an artifact fails to consider a change on a given
+artifact field.</li>
+</ul>
+</li>
+<li><p>Class <code>APIObjectWrapper</code> - simple wrapper to all of the instances of both <code>pt.ist.maidSyncher.api.activeCollab</code>
+and <code>org.eclipse.egit.github.core</code>, that provides a method to make sure that the object is still 'fresh' i.e.
+that it's as up to date as the one currently on the server. And another method to get that instance.</p></li>
+<li><p>Class <code>SyncActionWrapper</code> - an interface for all of the Sync actions that the application does. 
+All of the 'sync code' is responsible to create an instance of this class, that is the way that the application
+has to apply the needed changes on both services. Its API also provides a way to specify the run order of the
+actions based on its dependencies. e.g. an ACSubTask requires that its parent ACTask has already been synched,
+as well as all of changes detected in all of the <code>DSIRepository</code> instances. (more details, <a href="#acSubTaskSync">here</a>).</p></li>
+<li><p>Class <code>SyncEvent</code> - when a change between what is persisted and what is on the service is detected, an
+instance of this class is generated. Detailing both the fields that changed, the type of change, universe,etc.
+Typically, each <code>SyncEvent</code> will lead to the creation of a <code>SyncAction</code> (unless a conflict between two <code>SyncEvent</code>s
+is detected. If so, only one <code>SyncEvent</code> will endure). If the <code>SyncAction</code> execution doesn't go as planned,
+the <code>SyncEvent</code> should remain on the 'toProcess' list of the application;</p></li>
+</ul><h4>
+<a name="class-synchableobject" class="anchor" href="#class-synchableobject"><span class="octicon octicon-link"></span></a>Class <code>SynchableObject</code>
+</h4>
+
+<p>It is the basis of all the persisted versions of both ACs and GHs artifacts. More notibly, it contains:</p>
+
+<ul>
+<li><p>the method <code>findOrCreateAndProccess</code> - responsible to find an already existing AC or GH artifact,
+based on either the ID or its URL (or create a new one if needed).
+ If this method is called as the result of a SyncAction, it should
+not generate a SyncEvent, thus the boolean flag <code>skipGenerateSyncEvent</code> should be set to true;</p></li>
+<li><p>the method <code>generateSyncEvent</code> - generates the <code>SyncEvent</code> instances - and adds them to the queue,
+which might result in a conflict.</p></li>
+<li><p>the methods <code>copyPropertiesFrom</code> and <code>copyPropertiesTo</code> - inspired on BeanUtils's 
+<a href="http://commons.apache.org/proper/commons-beanutils/apidocs/org/apache/commons/beanutils/BeanUtils.html#copyProperties(java.lang.Object,%20java.lang.Object">copyProperties</a>)
+but that at the same time returns the Strings of the PropertyDescriptors that changed. And are
+fitted to be used with egit's GH REST API lib - which uses flow like methods that would normally be ignored
+by the Vanilla flavour of the BeanUtils#copyProperties  </p></li>
+</ul><p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="synching-behaviour" class="anchor" href="#synching-behaviour"><span class="octicon octicon-link"></span></a>Synching behaviour</h3>
+
+<p>This section describes, in detail, the synching behaviour of this aplication, given creations/updates of GHs and ACs
+artifacts e.g. what happens on GitHub when an ActiveCollab task (ACTask) is created.</p>
+
+<p>For the purpose of this tutorial, the next topics will cover the several artifacts of GH and AC services.
+Each artifact will have a topic, and creations (CREATE) updates (UPDATE) and delete (DELETE) behaviours, will be
+explained in detail. These are the specifications of the App itself, what it ought to do, and is subject to being
+replaced with actual live documentation, if eventually BDD is used in this project (as this is a good candidate for that
+:)).</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="actask---activecollabs-task-artifact" class="anchor" href="#actask---activecollabs-task-artifact"><span class="octicon octicon-link"></span></a>ACTask - ActiveCollab's Task artifact;</h3>
+
+<p>By default, an ACTask will not have a corresponding GHIssue on the GH side. In order to have one, a
+TaskCategory that corresponds to a Repository must be assigned. As a convention, those categories will have
+the name of: 'R-' which will correspond to a repository on the GitHub side. Assigning a TaskCategory
+to an ACTask that corresponds to a GHRepository, will create a corresponding GHIssue (and eventually multiple others for
+any subtasks) where:</p>
+
+<ul>
+<li>The GHLabel will have at least the project label of the ACProject where the task is;</li>
+<li>If the ACTask has a milestone, a milestone with the same name will be used/created on the GHRepository;</li>
+<li>For each ACSubTask belonging to the ACTask, a GHIssue will be created, and its description will
+make a reference to the 'parent' GHIssue (as GH does not provide the same Task&lt;-&gt;Subtask hierarchy that AC does);</li>
+</ul><h4>
+<a name="create" class="anchor" href="#create"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<p>When the creation of an ACTask is detected, the following actions take place:</p>
+
+<p>If the ACTask has a Category (ACTaskCategory) that does not have a GitHub side (no associated
+GHRepository), no sync action takes place;</p>
+
+<p>If it has a GitHub side, an Issue will be created on the GH side, with the following characteristics:</p>
+
+<ul>
+<li>GHRepository associated with the ACTaskCategory;</li>
+<li>GHLabel P- - the GHLabel is created if it doesn't exist;</li>
+<li>GHMilestone, in case an ACMilestone is associated with the task, with the same name as the one on the ACProject.
+If this GHMilestone doesn't yet exist, it is created;</li>
+<li>Body with the same content as the <code>ACTask#getBody()</code>;</li>
+<li>Title with the same content as <code>ACTask#getName()</code>;</li>
+</ul><h4>
+<a name="update" class="anchor" href="#update"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>
+<p>If the <code>ACTaskCategory</code> changed, and the new <code>ACTaskCategory</code> has a GitHubSide:</p>
+
+<ul>
+<li>A new corresponding <code>GHIssue</code> is created on the new <code>GHRepository</code> (taken out from the new <code>ACTaskCategory</code>);</li>
+<li>
+<p>If we used to have an 'old' <code>GHIssue</code> on another <code>GHRepository</code>:</p>
+
+<ul>
+<li>Move the old issue:</li>
+<li>Set the label 'deleted' on the old <code>GHIssue</code> (if the label doesn't exist, create it;</li>
+<li>Close the old <code>GHIssue</code>;</li>
+<li>Put a reference on the description of the old <code>GHIssue</code> to the new one</li>
+</ul>
+</li>
+<li>
+<p>For each <code>ACSubTask</code>, if any exists, do the following:</p>
+
+<ul>
+<li>If the old <code>GHIssue</code> corresponding to this <code>ACSubTask</code> doesn't exist - use the 
+<code>ACSubTask#createGHIssueForSubTask()</code> to create the new corresponding <code>GHIssue</code>;</li>
+<li>If an old <code>GHIssue</code> exists:
+
+<ul>
+<li>Create the new <code>GHIssue</code> in the new <code>GHRepository</code>
+</li>
+<li>'Move the old issue' (see description above)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>If the ACTaskCategory hasn't changed, or the new ACTaskCategory doesn't have a GitHub 
+side: - then a simple field changed - i.e. name; body; complete; project; milestone; and the corresponding
+parts of the GHIssue will change, title; description; state; label; milestone.</p></li>
+<li><p>If the new ACTaskCategory doesn't have a GitHubSide, nothing happens now - Bug?;</p></li>
+</ul><h4>
+<a name="delete---todo--" class="anchor" href="#delete---todo--"><span class="octicon octicon-link"></span></a>DELETE - TODO -</h4>
+
+<ul>
+<li>
+<p>Question - apply the 'Deleted' label to the GHIssue, if any exists, and close it;</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="actaskcategory---activecollabs-task-category-artifact" class="anchor" href="#actaskcategory---activecollabs-task-category-artifact"><span class="octicon octicon-link"></span></a>ACTaskCategory - ActiveCollab's Task Category artifact;</h3>
+</li>
+</ul><p>All of the actions on this artifact (<code>CREATE</code> <code>UPDATE</code> and <code>DELETE</code>) are ignored, as this artifact is not
+directly synched (it is going to be used to indicate the GHRepository of a Task, but creation and applying
+the right Task Categories to the right tasks is a responsability of other artifacts. (more 
+specifically: the <a href="#ghIssueSync">GHIssue sync</a>; <a href="#acProjectSync">ACProject sync</a>, and others).</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="acproject---activecollabs-project-artifact" class="anchor" href="#acproject---activecollabs-project-artifact"><span class="octicon octicon-link"></span></a>ACProject - ActiveCollab's Project artifact;</h3>
+
+<p>An ACProject will have a corresponding GHLabel on each GHRepository available;
+This GHLabel will make possible for a user to select in which ACProject the GHIssue's corresponding ACTask will be
+placed.</p>
+
+<p>Also, for each GHRepository, a default ACProject with the same name will be created/used where by default the
+corresponding ACTask's of each GHIssue on those repositories will be placed. </p>
+
+<h4>
+<a name="create-1" class="anchor" href="#create-1"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>In case a project is archived, no sync action occurs;</li>
+<li>For each GHRepository known, a corresponding P- label will be created/used;</li>
+<li>For all of the known GHRepository instances, a ACTaskCategory will be created/used;</li>
+</ul><h4>
+<a name="update-1" class="anchor" href="#update-1"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>if the ACProject is archived, all the GHLabels on all of the GHRepository's are deleted;</li>
+<li>if the name of the ACProject changes, all of the names of the GHLabels on all GHRepository's are changed; </li>
+</ul><h4>
+<a name="delete---todo---1" class="anchor" href="#delete---todo---1"><span class="octicon octicon-link"></span></a>DELETE - TODO -</h4>
+
+<ul>
+<li>
+<p>Like when an UPDATE is detected and the ACProject is archived, the GHLabels of all the GHRepository's should
+be deleted;</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="acsubtask" class="anchor" href="#acsubtask"><span class="octicon octicon-link"></span></a>ACSubTask</h3>
+</li>
+</ul><p>Seen that GitHub does not have the same Task -&gt; Subtask hierarchy that ActiveCollab has, we decided to still
+create a GHIssue on the GitHub for each ACSubTask, as long as the ACTask a ACTaskCategory with a valid GHRepository.</p>
+
+<h4>
+<a name="create-2" class="anchor" href="#create-2"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>If the parent ACTask does not have a GHSide, nothing is done, if else:
+
+<ul>
+<li>A GHIssue with a description pointing to the 'parent' GHIssue will be created;</li>
+</ul>
+</li>
+</ul><h4>
+<a name="update-2" class="anchor" href="#update-2"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>If the name, or state (complete or open) is changed, the corresponding GHIssue (if any) is updated;</li>
+</ul><h4>
+<a name="delete---todo---2" class="anchor" href="#delete---todo---2"><span class="octicon octicon-link"></span></a>DELETE - TODO -</h4>
+
+<ul>
+<li>If a corresponding GHIssue exists, the label DELETED should be applied to it and it should be closed - i.e. the
+same that should happen to a GHIssue of a deleted ACTask;</li>
+</ul><p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="acmilestone---activecollab-milestone-artifact" class="anchor" href="#acmilestone---activecollab-milestone-artifact"><span class="octicon octicon-link"></span></a>ACMilestone - ActiveCollab Milestone artifact;</h3>
+
+<p>ACMilestones are synched per ACTask - i.e. for each ACMilestone, several GHMilestones might exist, in different
+GHRepository instances (as the GHRepository where the ACTask corresponding GHIssue is created might difffer).</p>
+
+<h4>
+<a name="create-3" class="anchor" href="#create-3"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>Nothing is done! A creation of an ACMilestone per se, isn't a reason to create a GHMilestone. The 
+creation of the GHMilestone's will be dictated if there are going to be ACTask instances that use that
+milestone and have an ACTaskCategory with 'a GH side' (check <a href="#acTaskSync">ACTask sync behaviour</a> for more info.). </li>
+</ul><h4>
+<a name="update-3" class="anchor" href="#update-3"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>
+<p>In case any of the following fields change, their correspondents on GH, on possibly multiple instances of GHMilestone,
+will change:</p>
+
+<ul>
+<li>name -&gt; title;</li>
+<li>body -&gt; description;</li>
+<li>dueOn -&gt; dueOn; </li>
+</ul>
+</li>
+</ul><h4>
+<a name="delete---todo---3" class="anchor" href="#delete---todo---3"><span class="octicon octicon-link"></span></a>DELETE - TODO -</h4>
+
+<ul>
+<li>When deleting an ACMilestone, the corresponding GHMilestone(s) should be deleted as well;</li>
+</ul><p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="ghrepository---github-repository-artifact" class="anchor" href="#ghrepository---github-repository-artifact"><span class="octicon octicon-link"></span></a>GHRepository - GitHub Repository artifact;</h3>
+
+<p>Each GHRepository will have a default ACProject on the AC side. Also, each task on that GHRepository
+will be imported to that default ACProject, by default.</p>
+
+<p>Also, the representation of the GHRepository on the AC side will be an ACTaskCategory for that GHRepository
+for each existing ACProject.</p>
+
+<h4>
+<a name="create-4" class="anchor" href="#create-4"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>
+<p>A default ACProject with the same name of the GHRepository is used/created;</p>
+
+<ul>
+<li>If a default ACProject is being created, it is created with a ACTaskCategory instance for each active
+GHRepository found.</li>
+</ul>
+</li>
+<li><p>For each existing ACProject, the new ACTaskCategory that corresponds to this GHRepository, is created
+(with the name R-).</p></li>
+</ul><h4>
+<a name="update-4" class="anchor" href="#update-4"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>
+<p>case the name of the GHRepository changes:</p>
+
+<ul>
+<li>the default ACProject name changes</li>
+<li>All of the ACTaskCategory name change as well</li>
+</ul>
+</li>
+</ul><h4>
+<a name="delete---todo" class="anchor" href="#delete---todo"><span class="octicon octicon-link"></span></a>DELETE - TODO</h4>
+
+<p>??</p>
+
+<p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="ghissue---github-issue-artifact" class="anchor" href="#ghissue---github-issue-artifact"><span class="octicon octicon-link"></span></a>GHIssue - GitHub Issue artifact;</h3>
+
+<p>By default, all GHIssue will have a corresponding ACTask on the default ACProject that exists per repository.
+If a different ACProject is to be used, its corresponding P- should be set on that 
+GHIssue (TODO - for now, all of the GHIssue's are created on the default project).</p>
+
+<p>Also, GHIssues might be mapping to ACSubTasks, only if the ACSubTask is created on the AC side (i.e. with this system,
+it's impossible to create a corresponding ACSubTask from a GHIssue created on the GH side).</p>
+
+<h4>
+<a name="create-5" class="anchor" href="#create-5"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>if the GHIssue has the 'deleted' label, no sync occurs;</li>
+<li>
+<p>Else:</p>
+
+<ul>
+<li>An ACTask with the same name and description (body), and state (complete bool) is created on the default
+repository;
+-If this GHIssue has a GHMilestone, a corresponding ACMilestone will be used/created on the default ACProject;</li>
+<li>Its ACTaskCategory will be set to one that corresponds to the GHRepository;</li>
+</ul>
+</li>
+</ul><h4>
+<a name="update-5" class="anchor" href="#update-5"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<p>Two distinct cases apply:</p>
+
+<ul>
+<li>
+<p><strong>This GHIssue corresponds to an ACTask</strong> :</p>
+
+<ul>
+<li>if the Label changed, the following happens:</li>
+<li>The ACProject of the corresponding ACTask is determined as following:</li>
+<li>if more than one label with a corresponding ACProject is set, or none, the default ACProject is used;</li>
+<li>if only one label with a corresponding ACProject is set, that ACProject is used;</li>
+<li>if the new ACProject (based on the GHLabel) is different from the previous one, an ACTask move happens;</li>
+<li>if the milestone changed, one with the name of the new one is used/created;</li>
+<li>the state (complete/open); body; and title are updated if they have changed;</li>
+</ul>
+</li>
+<li>
+<p><strong>This GHIssue corresponds to an ACSubTask</strong> :</p>
+
+<ul>
+<li>label changes have no impact (only label changes on the parent GHIssue should change the
+location of the childs - TODO);</li>
+<li>Body (description) changes, will make sure that the prefix (relating that issue with its parent)
+will be enforced.</li>
+<li>Title changes will change the name of the ACSubTask;</li>
+</ul>
+</li>
+</ul><h4>
+<a name="delete" class="anchor" href="#delete"><span class="octicon octicon-link"></span></a>DELETE</h4>
+
+<ul>
+<li>There are no GHIssue deletes, only applying the DELETE label, where nothing should happen ( - TODO: test if
+there the syncs do not occur when DELETE label is set -)</li>
+</ul><p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="ghmilestone---github-milestone-artifact" class="anchor" href="#ghmilestone---github-milestone-artifact"><span class="octicon octicon-link"></span></a>GHMilestone - GitHub Milestone artifact;</h3>
+
+<p>GHMilestone instances can have multiple ACMilestone instances, in different projects, depending on which ACProject
+the corresponding ACTasks of the GHIssue instances that use the GHMilestone are.</p>
+
+<p>The GHMilestone synchronization will partially be dealt by the <a href="#acTaskSync">ACTask sync</a> method. However,
+updates to its fields will be tracked by synched in the GHMilestone#sync method </p>
+
+<h4>
+<a name="create-6" class="anchor" href="#create-6"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>Nothing is done, the creation of the corresponding ACMilestone is defined by the <a href="#acTaskSync">ACTask sync</a>;</li>
+</ul><h4>
+<a name="update-6" class="anchor" href="#update-6"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>Changes to the following simple fields (description/title/dueOn) will be repeated on the equivalent ActiveCollab
+'side';</li>
+</ul><h4>
+<a name="delete-1" class="anchor" href="#delete-1"><span class="octicon octicon-link"></span></a>DELETE</h4>
+
+<ul>
+<li>Delete the potential multiple ACMilestone instances associated with this ACMilestone - TODO - ;</li>
+</ul><p><a>&lt;!-- placeholder --&gt;</a></p>
+
+<h3>
+<a name="ghlabel---github-label-artifact" class="anchor" href="#ghlabel---github-label-artifact"><span class="octicon octicon-link"></span></a>GHLabel - GitHub Label artifact;</h3>
+
+<p>GHLabels are the way we have to choose the ACProject to use on the GitHub side. Special labels with the name
+P- should be created for each existing ACProject, and setting <strong>one</strong> of those labels on a
+GHIssue should make the corresponding ACTask be created on that ACProject. (more details <a href="#ghIssueSync">here</a>)</p>
+
+<h4>
+<a name="create-7" class="anchor" href="#create-7"><span class="octicon octicon-link"></span></a>CREATE</h4>
+
+<ul>
+<li>Nothing is done. Creation of the 'special' GHLabels is done on the <a href="#acProjectSync">ACProject sync</a>; and the
+'normal' GH labels are not synched; </li>
+</ul><h4>
+<a name="update-7" class="anchor" href="#update-7"><span class="octicon octicon-link"></span></a>UPDATE</h4>
+
+<ul>
+<li>Updates of label changes is also controlled by the <a href="#acProjectSync">ACProject sync</a>, whereas also the 'regular'
+GHLabels aren't synched;</li>
+</ul><h4>
+<a name="delete---todo-1" class="anchor" href="#delete---todo-1"><span class="octicon octicon-link"></span></a>DELETE - TODO</h4>
+
+<ul>
+<li>TODO: define behaviour;</li>
+</ul>
+</body>
+</html>

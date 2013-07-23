@@ -1,0 +1,8 @@
+baseurl: /maidsyncher
+safe: true
+lsi: false
+markdown: redcarpet
+redcarpet:
+  extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "strikethrough", "superscript", "with_toc_data"]
+pygments: true
+
