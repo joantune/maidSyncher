@@ -80,7 +80,7 @@ in its generality, the different packages and their relationships.
 ##### Package `pt.ist.maidSyncher.domain.activeCollab`
 
 Persisted instances of AC's artifacts. The class names are the same as the ones of the classes of the
-`pt.ist.maidSyncher.api.activeCollab` package. i.e. AC[Name of artifact]
+`pt.ist.maidSyncher.api.activeCollab` package. i.e. AC&lt;Name of artifact&gt;
 
 _which I admit, that it wasn't the best choice due to the need to add the full classname_
 
@@ -89,11 +89,11 @@ It also has the [sync behaviour](#synchingBehaviour) implementation.
 ##### Package `pt.ist.maidSyncher.domain.github`
 
 Persisted instances of GH's artifacts. The class names follow the same convention as the activeCollab ones
-i.e. GH[Name of artifact on GH and Egit library];
+i.e. GH&lt;Name of artifact on GH and Egit library&gt;;
 
 It also has the [sync behaviour](#synchingBehaviour) implementation.
 
-<a id="domainDsi"><!-- placeholder --></a>
+<a id="domainDsi">  </a>
 ##### Package `pt.ist.maidSyncher.domain.dsi`
 
 It provides all of the classes that serve the purpose of bridging between the persisted instances on
@@ -152,13 +152,13 @@ It is the basis of all the persisted versions of both ACs and GHs artifacts. Mor
  which might result in a conflict.
  
  - the methods `copyPropertiesFrom` and `copyPropertiesTo` - inspired on BeanUtils's 
- [copyProperties](http://commons.apache.org/proper/commons-beanutils/apidocs/org/apache/commons/beanutils/BeanUtils.html#copyProperties(java.lang.Object, java.lang.Object))
+ [copyProperties](http://commons.apache.org/proper/commons-beanutils/apidocs/org/apache/commons/beanutils/BeanUtils.html#copyProperties )
  but that at the same time returns the Strings of the PropertyDescriptors that changed. And are
  fitted to be used with egit's GH REST API lib - which uses flow like methods that would normally be ignored
  by the Vanilla flavour of the BeanUtils#copyProperties  
 		 
 
-<a id="synchingBehaviour"><!-- placeholder --></a>
+<a id="synchingBehaviour">  </a>
 ### Synching behaviour
 
 This section describes, in detail, the synching behaviour of this aplication, given creations/updates of GHs and ACs
@@ -172,19 +172,19 @@ replaced with actual live documentation, if eventually BDD is used in this proje
 
 
 
-<a id="acTaskSync"><!-- placeholder --></a>
+<a id="acTaskSync">  </a>
 ### ACTask - ActiveCollab's Task artifact;
 
 By default, an ACTask will not have a corresponding GHIssue on the GH side. In order to have one, a
 TaskCategory that corresponds to a Repository must be assigned. As a convention, those categories will have
-the name of: 'R-<repository name>' which will correspond to a repository on the GitHub side. Assigning a TaskCategory
+the name of: 'R-&lt;repository name&gt;' which will correspond to a repository on the GitHub side. Assigning a TaskCategory
 to an ACTask that corresponds to a GHRepository, will create a corresponding GHIssue (and eventually multiple others for
 any subtasks) where:
  
  - The GHLabel will have at least the project label of the ACProject where the task is;
  - If the ACTask has a milestone, a milestone with the same name will be used/created on the GHRepository;
  - For each ACSubTask belonging to the ACTask, a GHIssue will be created, and its description will
- make a reference to the 'parent' GHIssue (as GH does not provide the same Task<->Subtask hierarchy that AC does);
+ make a reference to the 'parent' GHIssue (as GH does not provide the same Task&lt;-&gt;Subtask hierarchy that AC does);
    
 
 #### CREATE
@@ -197,7 +197,7 @@ GHRepository), no sync action takes place;
 If it has a GitHub side, an Issue will be created on the GH side, with the following characteristics:
  
  - GHRepository associated with the ACTaskCategory;
- - GHLabel P-<name of the ACProject> - the GHLabel is created if it doesn't exist;
+ - GHLabel P-&lt;name of the ACProject&gt; - the GHLabel is created if it doesn't exist;
  - GHMilestone, in case an ACMilestone is associated with the task, with the same name as the one on the ACProject.
  If this GHMilestone doesn't yet exist, it is created;
  - Body with the same content as the `ACTask#getBody()`;
@@ -235,7 +235,7 @@ If it has a GitHub side, an Issue will be created on the GH side, with the follo
  - Question - apply the 'Deleted' label to the GHIssue, if any exists, and close it;
  
  
- <a id="acTaskCategorySync"><!-- placeholder --></a>
+ <a id="acTaskCategorySync">  </a>
 ### ACTaskCategory - ActiveCollab's Task Category artifact;
 
 All of the actions on this artifact (`CREATE` `UPDATE` and `DELETE`) are ignored, as this artifact is not
@@ -243,7 +243,7 @@ directly synched (it is going to be used to indicate the GHRepository of a Task,
 the right Task Categories to the right tasks is a responsability of other artifacts. (more 
 specifically: the [GHIssue sync](#ghIssueSync); [ACProject sync](#acProjectSync), and others).
 
- <a id="acProjectSync"><!-- placeholder --></a>
+ <a id="acProjectSync">  </a>
 ### ACProject - ActiveCollab's Project artifact;
 
 An ACProject will have a corresponding GHLabel on each GHRepository available;
@@ -256,7 +256,7 @@ corresponding ACTask's of each GHIssue on those repositories will be placed.
 #### CREATE
 
  - In case a project is archived, no sync action occurs;
- - For each GHRepository known, a corresponding P-<name of ACProject> label will be created/used;
+ - For each GHRepository known, a corresponding P-&lt;name of ACProject&gt; label will be created/used;
  - For all of the known GHRepository instances, a ACTaskCategory will be created/used;
  
 #### UPDATE
@@ -270,7 +270,7 @@ corresponding ACTask's of each GHIssue on those repositories will be placed.
  be deleted;
  
 
- <a id="acSubTaskSync"><!-- placeholder --></a>
+ <a id="acSubTaskSync">  </a>
 ### ACSubTask
 
 Seen that GitHub does not have the same Task -> Subtask hierarchy that ActiveCollab has, we decided to still
@@ -290,7 +290,7 @@ create a GHIssue on the GitHub for each ACSubTask, as long as the ACTask a ACTas
  - If a corresponding GHIssue exists, the label DELETED should be applied to it and it should be closed - i.e. the
  same that should happen to a GHIssue of a deleted ACTask;
  
-<a id="acMilestoneSync"><!-- placeholder --></a>
+<a id="acMilestoneSync">  </a>
 ### ACMilestone - ActiveCollab Milestone artifact;
 
 ACMilestones are synched per ACTask - i.e. for each ACMilestone, several GHMilestones might exist, in different
@@ -316,7 +316,7 @@ GHRepository instances (as the GHRepository where the ACTask corresponding GHIss
  - When deleting an ACMilestone, the corresponding GHMilestone(s) should be deleted as well;
 
 
-<a id="ghRepositorySync"><!-- placeholder --></a>
+<a id="ghRepositorySync">  </a>
 ### GHRepository - GitHub Repository artifact;
 
 Each GHRepository will have a default ACProject on the AC side. Also, each task on that GHRepository
@@ -333,7 +333,7 @@ for each existing ACProject.
   GHRepository found.
   
  - For each existing ACProject, the new ACTaskCategory that corresponds to this GHRepository, is created
- (with the name R-<repository name>).
+ (with the name R-&lt;repository name&gt;).
  
 #### UPDATE 
 
@@ -345,11 +345,11 @@ for each existing ACProject.
 #### DELETE - TODO
 ??
 
-<a id="ghIssueSync"><!-- placeholder --></a>
+<a id="ghIssueSync">  </a>
 ### GHIssue - GitHub Issue artifact;
 
 By default, all GHIssue will have a corresponding ACTask on the default ACProject that exists per repository.
-If a different ACProject is to be used, its corresponding P-<name of ACProject to use> should be set on that 
+If a different ACProject is to be used, its corresponding P-&lt;name of ACProject to use&gt; should be set on that 
 GHIssue (TODO - for now, all of the GHIssue's are created on the default project).
 
 Also, GHIssues might be mapping to ACSubTasks, only if the ACSubTask is created on the AC side (i.e. with this system,
@@ -389,7 +389,7 @@ Two distinct cases apply:
  there the syncs do not occur when DELETE label is set -)
 
 
-<a id="ghMilestoneSync"><!-- placeholder --></a>
+<a id="ghMilestoneSync">  </a>
 ### GHMilestone - GitHub Milestone artifact;
 
 GHMilestone instances can have multiple ACMilestone instances, in different projects, depending on which ACProject
@@ -409,11 +409,11 @@ updates to its fields will be tracked by synched in the GHMilestone#sync method
 
  - Delete the potential multiple ACMilestone instances associated with this ACMilestone - TODO - ;
 
-<a id="ghLabelSync"><!-- placeholder --></a>
+<a id="ghLabelSync">  </a>
 ### GHLabel - GitHub Label artifact;
 
 GHLabels are the way we have to choose the ACProject to use on the GitHub side. Special labels with the name
-P-<ACProject name> should be created for each existing ACProject, and setting **one** of those labels on a
+P-&lt;ACProject name&gt; should be created for each existing ACProject, and setting **one** of those labels on a
 GHIssue should make the corresponding ACTask be created on that ACProject. (more details [here](#ghIssueSync))
 
 #### CREATE
