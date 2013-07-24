@@ -1,4 +1,4 @@
-baseurl: /maidsyncher
+baseurl: /maidSyncher
 safe: true
 lsi: false
 #markdown: RDiscount
