@@ -1,0 +1,14 @@
+# FF persistence database
+
+#this example db.alias uses a MySQL connection to port 3306 on localhost on DB syncherMaid 
+#alter the URL below to alter any of the details
+
+dbAlias=//localhost:3306/syncherMaid?useUnicode=true&amp;characterEncoding=UTF-8&amp;clobCharacterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull
+
+dbUsername=root
+dbPassword=password
+
+
+updateRepositoryStructureIfNeeded=true
+
+canCreateDomainMetaObjects=false

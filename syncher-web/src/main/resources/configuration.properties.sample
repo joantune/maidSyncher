@@ -6,3 +6,7 @@ github.organization.name=sandbox-org-maidSync
 ac.server.host=host.com
 ac.server.token=kindaSelfExplanatory
 
+#Cron like entry that dictates the periodicity that the Synch will occur.
+#By default, it has the value below (every 10 minutes).
+sync.task.cron.schedule=*/10 * * * *
+
