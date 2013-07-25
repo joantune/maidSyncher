@@ -2,7 +2,7 @@
 *.class
 target
 configuration.properties
-fenix-framework.properties
+#fenix-framework.properties
 result.json
 .project
 .settings/
