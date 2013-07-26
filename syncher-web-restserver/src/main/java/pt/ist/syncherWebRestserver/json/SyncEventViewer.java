@@ -33,8 +33,8 @@ public class SyncEventViewer implements JsonViewer<SyncEvent> {
         jsonObject.add("dateOfChange", ctx.view(syncEvent.getDateOfChange()));
         jsonObject.add("dsiElement", ctx.view(syncEvent.getDsiElement()));
         jsonObject.add("originObject", ctx.view(syncEvent.getOriginObject()));
-        jsonObject.add("targetSyncUniverse", ctx.view(syncEvent.getTargetSyncUniverse()));
-        jsonObject.add("typeOfChangeEvent", ctx.view(syncEvent.getTypeOfChangeEvent()));
+        jsonObject.add("targetSyncUniverse", ctx.view(syncEvent.getTargetSyncUniverse(), EnumViewer.class));
+        jsonObject.add("typeOfChangeEvent", ctx.view(syncEvent.getTypeOfChangeEvent(), EnumViewer.class));
         return jsonObject;
     }
 

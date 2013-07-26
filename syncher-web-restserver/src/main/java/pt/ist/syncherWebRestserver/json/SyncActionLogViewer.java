@@ -41,7 +41,7 @@ public class SyncActionLogViewer implements JsonViewer<SyncActionLog> {
         jsonObject.addProperty("errorDescription", obj.getErrorDescription());
         jsonObject.addProperty("actionDescription", obj.getActionDescription());
         jsonObject.addProperty("typeOriginObject", obj.getTypeOriginObject());
-        jsonObject.add("typeOfChangeEvent", ctx.view(obj.getTypeOfChangeEvent()));
+        jsonObject.add("typeOfChangeEvent", ctx.view(obj.getTypeOfChangeEvent(), EnumViewer.class));
         jsonObject.add("changedDescriptors", ctx.view(obj.getChangedDescriptors()));
 
         jsonObject.add("dsiObject", ctx.view(obj.getDsiObject(), DSIObjectIdAndClassViewer.class));

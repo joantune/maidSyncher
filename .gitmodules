@@ -4,3 +4,6 @@
 [submodule "knockout-paged"]
 	path = knockout-paged
 	url = https://github.com/lelandrichardson/knockout-paged.git
+[submodule "bennu"]
+	path = bennu
+	url = git@github.com:joantune/bennu.git
