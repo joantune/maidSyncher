@@ -7,3 +7,6 @@
 [submodule "bennu"]
 	path = bennu
 	url = git@github.com:joantune/bennu.git
+[submodule "ist-dsi-maven"]
+	path = ist-dsi-maven
+	url = git@github.com:ist-dsi/ist-dsi-maven.git
