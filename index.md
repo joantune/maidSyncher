@@ -14,13 +14,23 @@ MaidSyncher is a  tool that is used to bidirectionally sync artifacts (tasks/sub
 
 Checkout the depended modules:
 
-	git submodule update
+	git submodule update --recursive --init
 
 Install egit:
 
 	cd egit-github/org.eclipse.egit.github.core
 	mvn -f pom-jar.xml install
 	
+Install the `fenix-framework-project` snapshot pom
+
+	cd ist-dsi-maven
+	mvn install
+	
+Install the `bennu` modules.
+	
+	cd bennu
+	mvn clean install  
+
 Install the several modules easily with the aggregator pom:
 
 	cd ../../
@@ -118,7 +128,11 @@ if you already have compiled the project, or
 
 to compile it and run the synching commands.
 
+After that, by default, the website should be available at `http://localhost:8080/syncher-web-clientjs/`
+
 **NOTE:** running this app will change your ActiveCollab and GitHub instances. In a good way :) (at least hopefully! no, really, read the fine manual first on the expected behavior, plus, take into account that things might not be fully working as intended, if possible, run on test instances first).
+
+
  
 
 
