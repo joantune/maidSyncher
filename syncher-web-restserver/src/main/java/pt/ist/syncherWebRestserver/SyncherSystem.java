@@ -39,7 +39,6 @@ public class SyncherSystem {
 
         LOGGER.info("initing Synch task");
 
-
     }
 
     @Atomic(mode = TxMode.WRITE)
@@ -47,6 +46,9 @@ public class SyncherSystem {
         Properties schedulerConfigurationProperties = new Properties();
         schedulerConfigurationProperties.load(SyncherSystem.class.getResourceAsStream("/configuration.properties"));
         String schedule = schedulerConfigurationProperties.getProperty("sync.task.cron.schedule");
+        String shouldDisableScheduleString = schedulerConfigurationProperties.getProperty("sync.task.cron.disable");
+        final Boolean shouldDisableSchedule =
+                shouldDisableScheduleString == null ? false : Boolean.valueOf(shouldDisableScheduleString);
         if (schedule == null) {
             LOGGER.warn("No schedule configuration found (on configuration.properties, property 'sync.task.cron.schedule') going with each 10 minutes");
             schedule = "*/10 * * * *";
@@ -57,18 +59,22 @@ public class SyncherSystem {
         boolean systemAlreadyInited = false;
         for (TaskSchedule taskSchedule : SchedulerSystem.getInstance().getTaskScheduleSet()) {
             if (taskSchedule.getTaskClassName().equalsIgnoreCase(SyncherTask.class.getName())) {
-                if (taskSchedule.getSchedule().equalsIgnoreCase(schedule) == false) {
-                    LOGGER.info("Found the task scheduled but with a different schedule. Previous schedule: "
-                            + taskSchedule.getSchedule() + " new Schedule: " + schedule);
+                if (shouldDisableSchedule) {
                     taskSchedule.delete();
                 } else {
-                    systemAlreadyInited = true;
+                    if (taskSchedule.getSchedule().equalsIgnoreCase(schedule) == false) {
+                        LOGGER.info("Found the task scheduled but with a different schedule. Previous schedule: "
+                                + taskSchedule.getSchedule() + " new Schedule: " + schedule);
+                        taskSchedule.delete();
+                    } else {
+                        systemAlreadyInited = true;
 
+                    }
+                    break;
                 }
-                break;
             }
         }
-        if (systemAlreadyInited == false) {
+        if (systemAlreadyInited == false && !shouldDisableSchedule) {
             LOGGER.info("Adding syncher task");
             new TaskSchedule(SyncherTask.class.getName(), schedule);
 

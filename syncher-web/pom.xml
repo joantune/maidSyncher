@@ -44,7 +44,7 @@
                     <stopPort>9999</stopPort>
                     <encoding>UTF-8</encoding>
                     <webApp>
-                        <contextPath>/xpto</contextPath>
+                        <contextPath>/</contextPath>
                         <baseResource implementation="org.eclipse.jetty.util.resource.ResourceCollection">
                             <resourcesAsCSV>src/main/webapp/,../syncher-web-clientjs/src/main/webapp/</resourcesAsCSV>
                         </baseResource>

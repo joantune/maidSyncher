@@ -6,7 +6,13 @@ github.organization.name=sandbox-org-maidSync
 ac.server.host=host.com
 ac.server.token=kindaSelfExplanatory
 
+#The locales that are going to be supported
+locales=pt-PT,en-US,en-GB
+
 #Cron like entry that dictates the periodicity that the Synch will occur.
 #By default, it has the value below (every 10 minutes).
 sync.task.cron.schedule=*/10 * * * *
 
+#Disable the scheduling of the synching task (usual for doing it manually)
+#By default, it is set to false
+sync.task.cron.disable=true
