@@ -80,16 +80,16 @@ in its generality, the different packages and their relationships.
 ##### Package `pt.ist.maidSyncher.domain.activeCollab`
 
 Persisted instances of AC's artifacts. The class names are the same as the ones of the classes of the
-`pt.ist.maidSyncher.api.activeCollab` package. i.e. AC&lt;Name of artifact&gt;
+`pt.ist.maidSyncher.api.activeCollab` package. i.e. `AC&lt;Name of artifact&gt;`
 
-_which I admit, that it wasn't the best choice due to the need to add the full classname_
+_which I admit, that it wasn't the best choice due to the need to add the full classname most of the times_
 
 It also has the [sync behaviour](#synchingBehaviour) implementation.
 
 ##### Package `pt.ist.maidSyncher.domain.github`
 
 Persisted instances of GH's artifacts. The class names follow the same convention as the activeCollab ones
-i.e. GH&lt;Name of artifact on GH and Egit library&gt;;
+i.e. `GH&lt;Name of artifact on GH and Egit library&gt;`;
 
 It also has the [sync behaviour](#synchingBehaviour) implementation.
 
@@ -162,10 +162,10 @@ It is the basis of all the persisted versions of both ACs and GHs artifacts. Mor
 ### Synching behaviour
 
 This section describes, in detail, the synching behaviour of this aplication, given creations/updates of GHs and ACs
-artifacts e.g. what happens on GitHub when an ActiveCollab task (ACTask) is created.
+artifacts e.g. what happens on GitHub when an ActiveCollab task (`ACTask`) is created.
 
 For the purpose of this tutorial, the next topics will cover the several artifacts of GH and AC services.
-Each artifact will have a topic, and creations (CREATE) updates (UPDATE) and delete (DELETE) behaviours, will be
+Each artifact will have a topic, and creations (`CREATE`) updates (`UPDATE`) and delete (`DELETE`) behaviours, will be
 explained in detail. These are the specifications of the App itself, what it ought to do, and is subject to being
 replaced with actual live documentation, if eventually BDD is used in this project (as this is a good candidate for that
 :)).
@@ -173,37 +173,39 @@ replaced with actual live documentation, if eventually BDD is used in this proje
 
 
 <a id="acTaskSync">  </a>
-### ACTask - ActiveCollab's Task artifact;
+### `ACTask` - ActiveCollab's Task artifact;
 
-By default, an ACTask will not have a corresponding GHIssue on the GH side. In order to have one, a
+By default, an `ACTask` will not have a corresponding `GHIssue` on the GH side. In order to have one, a
 TaskCategory that corresponds to a Repository must be assigned. As a convention, those categories will have
-the name of: 'R-&lt;repository name&gt;' which will correspond to a repository on the GitHub side. Assigning a TaskCategory
-to an ACTask that corresponds to a GHRepository, will create a corresponding GHIssue (and eventually multiple others for
+the name of: `R-&lt;repository name&gt;` which will correspond to a repository on the GitHub side. Assigning a TaskCategory
+to an `ACTask` that corresponds to a `GHRepository`, will create a corresponding `GHIssue` (and eventually multiple others for
 any subtasks) where:
  
- - The GHLabel will have at least the project label of the ACProject where the task is;
- - If the ACTask has a milestone, a milestone with the same name will be used/created on the GHRepository;
- - For each ACSubTask belonging to the ACTask, a GHIssue will be created, and its description will
- make a reference to the 'parent' GHIssue (as GH does not provide the same Task&lt;-&gt;Subtask hierarchy that AC does);
+ - The `GHLabel` will have at least the project label of the `ACProject` where the `ACTask` is located;
+ - If the `ACTask` has a milestone, a milestone with the same name will be used/created on the `GHRepository`;
+ - For each `ACSubTask` belonging to the `ACTask`, a `GHIssue` will be created, and its description will
+ make a reference to the 'parent' `GHIssue` (as GH does not provide the same Task&lt;-&gt;Subtask hierarchy that AC does);
    
 
-#### CREATE
+#### `CREATE`
 
-When the creation of an ACTask is detected, the following actions take place:
+When the creation of an `ACTask` is detected, the following actions take place:
 
-If the ACTask has a Category (ACTaskCategory) that does not have a GitHub side (no associated
-GHRepository), no sync action takes place;
+If the `ACTask` has a Category (`ACTaskCategory`) that does not have a GitHub side (no associated
+`GHRepository`), no sync action takes place;
 
 If it has a GitHub side, an Issue will be created on the GH side, with the following characteristics:
  
- - GHRepository associated with the ACTaskCategory;
- - GHLabel P-&lt;name of the ACProject&gt; - the GHLabel is created if it doesn't exist;
- - GHMilestone, in case an ACMilestone is associated with the task, with the same name as the one on the ACProject.
- If this GHMilestone doesn't yet exist, it is created;
+ - `GHRepository` associated with the `ACTaskCategory`;
+ - `GHLabel` named `P-&lt;name of the ACProject&gt;` - this `GHLabel` will be created if it doesn't exist;
+ - in case an `ACMilestone` is associated with the task, an `GHMilestone` with the same name as the one on the `ACProject` will be created/used.
  - Body with the same content as the `ACTask#getBody()`;
  - Title with the same content as `ACTask#getName()`;
 
-#### UPDATE
+#### `UPDATE`
+
+If the `ACTask` has a Category (`ACTaskCategory`) that does not have a GitHub side (no associated
+`GHRepository`), no sync action takes place;
 
  - If the `ACTaskCategory` changed, and the new `ACTaskCategory` has a GitHubSide:
  	
@@ -223,133 +225,129 @@ If it has a GitHub side, an Issue will be created on the GH side, with the follo
  		   - Create the new `GHIssue` in the new `GHRepository`
  		   - 'Move the old issue' (see description above)
  		   
- - If the ACTaskCategory hasn't changed, or the new ACTaskCategory doesn't have a GitHub 
- side: - then a simple field changed - i.e. name; body; complete; project; milestone; and the corresponding
- parts of the GHIssue will change, title; description; state; label; milestone.
+ - If the `ACTaskCategory` hasn't changed, and the current one has a GH side, then the the simple fields that have changed, are updated - i.e. name; body; complete; project; milestone; that correspondond to the following `GHIssue` fields: title; description; state; label; milestone (in order).
  
- - If the new ACTaskCategory doesn't have a GitHubSide, nothing happens now - Bug?;
- 
- 		   
-#### DELETE - TODO -
+#### `DELETE`
 
- - Question - apply the 'Deleted' label to the GHIssue, if any exists, and close it;
+Nothing is done on the GHSide
+ 
  
  
  <a id="acTaskCategorySync">  </a>
-### ACTaskCategory - ActiveCollab's Task Category artifact;
+### `ACTaskCategory` - ActiveCollab's Task Category artifact;
 
 All of the actions on this artifact (`CREATE` `UPDATE` and `DELETE`) are ignored, as this artifact is not
 directly synched (it is going to be used to indicate the GHRepository of a Task, but creation and applying
 the right Task Categories to the right tasks is a responsability of other artifacts. (more 
-specifically: the [GHIssue sync](#ghIssueSync); [ACProject sync](#acProjectSync), and others).
+specifically: the [`GHIssue` sync](#ghIssueSync); [ACProject sync](#acProjectSync), and others).
 
  <a id="acProjectSync">  </a>
-### ACProject - ActiveCollab's Project artifact;
+### `ACProject` - ActiveCollab's Project artifact;
 
-An ACProject will have a corresponding GHLabel on each GHRepository available;
-This GHLabel will make possible for a user to select in which ACProject the GHIssue's corresponding ACTask will be
+An `ACProject` will have a corresponding `GHLabel` on each `GHRepository` available;
+This `GHLabel` will make possible for a user to select in which `ACProject` the `GHIssue`'s corresponding `ACTask` will be
 placed.
 
-Also, for each GHRepository, a default ACProject with the same name will be created/used where by default the
-corresponding ACTask's of each GHIssue on those repositories will be placed. 
+Also, for each `GHRepository`, a default `ACProject` with the same name of the repository will be created/used in which, by default, the
+`ACTask`'s corresponding to each `GHIssue` on that repository will be placed. 
 
-#### CREATE
+#### `CREATE`
 
  - In case a project is archived, no sync action occurs;
- - For each GHRepository known, a corresponding P-&lt;name of ACProject&gt; label will be created/used;
- - For all of the known GHRepository instances, a ACTaskCategory will be created/used;
+ - For each `GHRepository` known, a corresponding `P-&lt;name of ACProject&gt;` label will be created/used;
+ - For all of the known `GHRepository` instances, an `ACTaskCategory` will be created/used;
  
-#### UPDATE
+#### `UPDATE`
 
- - if the ACProject is archived, all the GHLabels on all of the GHRepository's are deleted;
- - if the name of the ACProject changes, all of the names of the GHLabels on all GHRepository's are changed; 
+ - if the `ACProject` is archived, all the `GHLabel`s on all of the `GHRepository`'s are deleted;
+ - if the name of the `ACProject` changes, all of the names of the `GHLabel`s on all `GHRepository`'s are changed; 
  
-#### DELETE - TODO -
+#### `DELETE` - TODO -
  
- - Like when an UPDATE is detected and the ACProject is archived, the GHLabels of all the GHRepository's should
- be deleted;
+ - Like when an `UPDATE` is detected and the `ACProject` is archived, the GHLabels of all the GHRepository's should be deleted;
  
 
  <a id="acSubTaskSync">  </a>
-### ACSubTask
+### `ACSubTask` - ActiveCollab's subtask artifact;
 
 Seen that GitHub does not have the same Task -> Subtask hierarchy that ActiveCollab has, we decided to still
-create a GHIssue on the GitHub for each ACSubTask, as long as the ACTask a ACTaskCategory with a valid GHRepository.
+create a `GHIssue` on the GitHub for each `ACSubTask`, as long as the `ACSubTask`'s 'parent' `ACTask` has an `ACTaskCategory` with an associated `GHRepository` (It has a 'GH side').
 
-#### CREATE
+#### `CREATE`
 
- - If the parent ACTask does not have a GHSide, nothing is done, if else:
- 	- A GHIssue with a description pointing to the 'parent' GHIssue will be created;
+ - If the parent `ACTask` does not have a GHSide, nothing is done, else:
+ 	- A `GHIssue` with a description pointing to the 'parent' `GHIssue` will be created;
 
 #### UPDATE
 
- - If the name, or state (complete or open) is changed, the corresponding GHIssue (if any) is updated;
+ - If the name, or state (complete or open) is changed, the corresponding `GHIssue` (if any) is updated;
  
 #### DELETE - TODO -
 
- - If a corresponding GHIssue exists, the label DELETED should be applied to it and it should be closed - i.e. the
- same that should happen to a GHIssue of a deleted ACTask;
+ - If a corresponding `GHIssue` exists, the label `DELETED` should be applied to it and it should be closed - i.e. the
+ same that should happen to a `GHIssue` of a deleted `ACTask`;
  
 <a id="acMilestoneSync">  </a>
-### ACMilestone - ActiveCollab Milestone artifact;
+### `ACMilestone` - ActiveCollab Milestone artifact;
 
-ACMilestones are synched per ACTask - i.e. for each ACMilestone, several GHMilestones might exist, in different
-GHRepository instances (as the GHRepository where the ACTask corresponding GHIssue is created might difffer).
+`ACMilestone`s are synched per `ACTask` - i.e. for each `ACMilestone`, several `GHMilestone`s might exist, in different
+`GHRepository` instances (as the `GHRepository` where the `GHIssue `of the corresponding `ACTask` is created, might differ).
 
-#### CREATE
+#### `CREATE`
  
- - Nothing is done! A creation of an ACMilestone per se, isn't a reason to create a GHMilestone. The 
- creation of the GHMilestone's will be dictated if there are going to be ACTask instances that use that
- milestone and have an ACTaskCategory with 'a GH side' (check [ACTask sync behaviour](#acTaskSync) for more info.). 
+ - Nothing is done! A creation of an `ACMilestone` per se, isn't a reason to create a `GHMilestone`. The 
+ creation of the `GHMilestone`'s will be dictated if there are going to be `ACTask` instances that use that
+ milestone and have an `ACTaskCategory` with 'a GH side' (check [`ACTask` sync behaviour](#acTaskSync) for more info.). 
  
-#### UPDATE
+#### `UPDATE`
 
- - In case any of the following fields change, their correspondents on GH, on possibly multiple instances of GHMilestone,
+ - In case any of the following fields change, their correspondents on GH, on the possible multiple instances of `GHMilestone`,
  will change:
  	
  	- name -> title;
  	- body -> description;
  	- dueOn -> dueOn; 
    
-#### DELETE - TODO -
+#### `DELETE` - TODO -
 
- - When deleting an ACMilestone, the corresponding GHMilestone(s) should be deleted as well;
+ - When deleting an `ACMilestone`, the corresponding `GHMilestone`(s) should be deleted as well;
 
 
 <a id="ghRepositorySync">  </a>
-### GHRepository - GitHub Repository artifact;
+### `GHRepository` - GitHub Repository artifact;
 
-Each GHRepository will have a default ACProject on the AC side. Also, each task on that GHRepository
-will be imported to that default ACProject, by default.
+Each `GHRepository` will have a default `ACProject` on the AC side. Also, each task on that `GHRepository`
+will be imported to that default `ACProject`, by default.
 
-Also, the representation of the GHRepository on the AC side will be an ACTaskCategory for that GHRepository
-for each existing ACProject.
+Also, the representation of the `GHRepository` on the AC side will be an `ACTaskCategory` for that `GHRepository`
+for each existing `ACProject`.
 
-#### CREATE
+#### `CREATE`
 
- - A default ACProject with the same name of the GHRepository is used/created;
+ - A default `ACProject` with the same name of the `GHRepository` is used/created;
   
-  - If a default ACProject is being created, it is created with a ACTaskCategory instance for each active
-  GHRepository found.
+  - If a default `ACProject` is being created, it is created with a `ACTaskCategory` instance for each active `GHRepository` found.
   
- - For each existing ACProject, the new ACTaskCategory that corresponds to this GHRepository, is created
- (with the name R-&lt;repository name&gt;).
+ - For each existing `ACProject`, the new `ACTaskCategory` that corresponds to this `GHRepository`, is created
+ (with the name 'R-&lt;repository name&gt;').
  
-#### UPDATE 
+#### `UPDATE` 
 
- - case the name of the GHRepository changes:
+ - in case the name of the `GHRepository` changes:
  	
- 	- the default ACProject name changes
- 	- All of the ACTaskCategory name change as well
+ 	- the default `ACProject` name changes
+ 	- All of the `ACTaskCategory` name changes as well
  	
-#### DELETE - TODO
-??
+#### `DELETE` - TODO
+ 
+ - Each `ACTaskCategory` of this repository, should change name to 'P-&lt;name of GHRepository&gt;-Deleted`;
+ - On the default `ACProject`, a Category with the name 'Deleted repository' is applied; If such category does not exist on the AC instance, it is created;  
 
 <a id="ghIssueSync">  </a>
-### GHIssue - GitHub Issue artifact;
+### `GHIssue` - GitHub Issue artifact;
 
-By default, all GHIssue will have a corresponding ACTask on the default ACProject that exists per repository.
-If a different ACProject is to be used, its corresponding P-&lt;name of ACProject to use&gt; should be set on that 
+By default, all `GHIssue`s will have a corresponding `ACTask` on the default `ACProject` that exists per repository.
+If a different `ACProject` is to be used, its corresponding P-&lt;name of ACProject to use&gt; should be set on that 
 GHIssue (TODO - for now, all of the GHIssue's are created on the default project).
 
 Also, GHIssues might be mapping to ACSubTasks, only if the ACSubTask is created on the AC side (i.e. with this system,
