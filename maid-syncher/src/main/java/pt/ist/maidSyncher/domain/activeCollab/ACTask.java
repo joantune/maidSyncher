@@ -505,6 +505,12 @@ public class ACTask extends ACTask_Base {
 
                 try {
 
+                    //if the ACTaskCategory has no GHSide, let's do nothing here
+                    if (ACTaskCategory.hasGHSide(getTaskCategory()) == false) {
+                        //let's just not do anything in this case, as this might have been a mistake
+                        return Collections.emptySet();
+                    }
+
                     ACTaskCategory taskCategory = getTaskCategory();
                     GHRepository newGHRepository = null;
                     //setting the newGHRepository

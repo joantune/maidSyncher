@@ -772,6 +772,45 @@ public class ACTaskSyncTest {
 
     }
 
+    @Atomic(mode = TxMode.WRITE)
+    @Test
+    public void updateFromGHSideToNonGHSide() throws IOException {
+
+        //let's also init the milestone to make sure it is created
+        initializeACMilestone();
+        //and subtasks (without GH side)
+        initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_ONE_NAME, ghRepository, true);
+        initializeSubTaskAndCorrespondingGHIssue(acTask, AC_SUB_TASK_TWO_NAME, ghRepository, true);
+
+        //let's remove the task category - taking out the 'ghSide'
+        acTask.setTaskCategory(null);
+
+        //setup the stubs
+        setupStubToReplyWithPhonyMilestone(gitHubClient);
+
+        setupStubToReplyWithPhonyLabel();
+
+        //let's get the property descriptors for the right fields
+        Collection<PropertyDescriptor> propertyDescriptorsToUse =
+                TestUtils.propertyDescriptorsToUseMinus(pt.ist.maidSyncher.api.activeCollab.ACTask.class, ACTask.DSC_PROJECT_ID,
+                        ACTask.DSC_MILESTONE_ID, ACTask.DSC_ID);
+
+        SyncEvent updateToCreatGHSide = TestUtils.syncEventGenerator(TypeOfChangeEvent.UPDATE, acTask, propertyDescriptorsToUse);
+
+        SyncActionWrapper sync = acTask.sync(updateToCreatGHSide);
+
+        sync.sync();
+
+        //verifications
+
+        //nothing should have been done
+        verify(gitHubClient, never()).post(Mockito.anyString(), postCaptor.capture(), Mockito.eq(Issue.class));
+
+        //a creation of a GHMilestone on the other side
+        verify(gitHubClient, never()).post(Mockito.anyString(), milestoneCaptor.capture(), Mockito.eq(Milestone.class));
+
+    }
+
     static ACSubTask initializeSubTaskAndCorrespondingGHIssue(ACTask parentTask, String subTaskName,
             GHRepository ghRepositoryToUse, boolean createCorrespondingGHSide) {
         //let's create a couple of subtasks to make sure that they are also moved
