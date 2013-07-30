@@ -10,3 +10,6 @@
 [submodule "ist-dsi-maven"]
 	path = ist-dsi-maven
 	url = git@github.com:ist-dsi/ist-dsi-maven.git
+[submodule "bennu-knockout"]
+	path = bennu-knockout
+	url = git@github.com:jcarvalho/bennu-knockout.git
