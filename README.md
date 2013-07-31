@@ -1,8 +1,5 @@
 # MaidSyncher
-
-This tool is used to bidirectionally sync tasks between an ActiveCollab instance, and the GitHub issues of an organization.
-
-Basic configuration and usage details are shown on this page. But full documentation, including synching behavior, can be found [here](http://joantune.github.io/maidSyncher/)
+MaidSyncher is a  tool that is used to bidirectionally sync artifacts (tasks/subtasks/projects/etc) between an ActiveCollab instance, and the GitHub issues of an organization.
 
 <a id="setup">  </a>
 ## Configuration and usage
@@ -130,4 +127,3 @@ After that, by default, the website should be available at `http://localhost:808
 
 **NOTE:** running this app will change your ActiveCollab and GitHub instances. In a good way :) (at least hopefully! no, really, read the fine manual first on the expected behavior, plus, take into account that things might not be fully working as intended, if possible, run on test instances first).
 
- 
