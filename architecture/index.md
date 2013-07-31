@@ -271,18 +271,18 @@ Also, for each `GHRepository`, a default `ACProject` with the same name of the r
 ### `ACSubTask` - ActiveCollab's subtask artifact;
 
 Seen that GitHub does not have the same Task -> Subtask hierarchy that ActiveCollab has, we decided to still
-create a `GHIssue` on the GitHub for each `ACSubTask`, as long as the `ACSubTask`'s 'parent' `ACTask` has an `ACTaskCategory` with an associated `GHRepository` (It has a 'GH side').
+create a `GHIssue` on the GitHub for each `ACSubTask`, as long as the `ACSubTask`'s 'parent' `ACTask` has an `ACTaskCategory` with an associated `GHRepository` (i.e. the parent `ACTask` has a 'GH side').
 
 #### `CREATE`
 
  - If the parent `ACTask` does not have a GHSide, nothing is done, else:
  	- A `GHIssue` with a description pointing to the 'parent' `GHIssue` will be created;
 
-#### UPDATE
+#### `UPDATE`
 
  - If the name, or state (complete or open) is changed, the corresponding `GHIssue` (if any) is updated;
  
-#### DELETE - TODO -
+#### `DELETE` - TODO -
 
  - If a corresponding `GHIssue` exists, the label `DELETED` should be applied to it and it should be closed - i.e. the
  same that should happen to a `GHIssue` of a deleted `ACTask`;
@@ -301,8 +301,7 @@ create a `GHIssue` on the GitHub for each `ACSubTask`, as long as the `ACSubTask
  
 #### `UPDATE`
 
- - In case any of the following fields change, their correspondents on GH, on the possible multiple instances of `GHMilestone`,
- will change:
+ - In case any of the following fields change in the milestone, their correspondents fields on the possible various GH artifacts, will change accordingly:
  	
  	- name -> title;
  	- body -> description;
@@ -347,82 +346,83 @@ for each existing `ACProject`.
 ### `GHIssue` - GitHub Issue artifact;
 
 By default, all `GHIssue`s will have a corresponding `ACTask` on the default `ACProject` that exists per repository.
-If a different `ACProject` is to be used, its corresponding P-&lt;name of ACProject to use&gt; should be set on that 
-GHIssue (TODO - for now, all of the GHIssue's are created on the default project).
+If a different `ACProject` is to be used, its corresponding `GHLabel` with name 'P-&lt;name of `ACProject` to use&gt;' should be set on that 
+`GHIssue` (**TODO** - for now, all of the `GHIssue`'s are created on the default project).
 
-Also, GHIssues might be mapping to ACSubTasks, only if the ACSubTask is created on the AC side (i.e. with this system,
-it's impossible to create a corresponding ACSubTask from a GHIssue created on the GH side).
+Also, `GHIssue`s might be mapping to `ACSubTask`s. This should only happen if the `ACSubTask` is created on the AC side (i.e. with this system,
+it's impossible to create a corresponding `ACSubTask` from a `GHIssue` created on the GH side).
 
-#### CREATE
- - if the GHIssue has the 'deleted' label, no sync occurs;
+#### `CREATE`
+
+ - if the `GHIssue` has the 'deleted' label, no sync occurs;
  - Else:
   
-   - An ACTask with the same name and description (body), and state (complete bool) is created on the default
+   - An `ACTask` with the same name and description (body), and state (complete) is created on the default
     repository;
-    -If this GHIssue has a GHMilestone, a corresponding ACMilestone will be used/created on the default ACProject;
-    - Its ACTaskCategory will be set to one that corresponds to the GHRepository;
+    -If this `GHIssue` has a `GHMilestone`, a corresponding `ACMilestone` will be used/created on the default `ACProject`;
+    - Its `ACTaskCategory` will be set to one that corresponds to the `GHRepository`;
 
-#### UPDATE
+#### `UPDATE`
 
 Two distinct cases apply:
 	
- - **This GHIssue corresponds to an ACTask** :
+ - **This `GHIssue` corresponds to an `ACTask`** :
   - if the Label changed, the following happens:
-   - The ACProject of the corresponding ACTask is determined as following:
-    - if more than one label with a corresponding ACProject is set, or none, the default ACProject is used;
-    - if only one label with a corresponding ACProject is set, that ACProject is used;
-   - if the new ACProject (based on the GHLabel) is different from the previous one, an ACTask move happens;
+   - The `ACProject` of the corresponding `ACTask` is determined as following:
+    - if more than one label with a corresponding `ACProject` is set, or none, the default `ACProject` is used;
+    - if only one label with a corresponding `ACProject` is set, that `ACProject` is used;
+   - if the new `ACProject` (based on the `GHLabel`) is different from the previous one, an `ACTask` 'move' to another `ACProject` happens;
    - if the milestone changed, one with the name of the new one is used/created;
    - the state (complete/open); body; and title are updated if they have changed;
 	
- - **This GHIssue corresponds to an ACSubTask** :
-  - label changes have no impact (only label changes on the parent GHIssue should change the
+ - **This `GHIssue` corresponds to an `ACSubTask`** :
+  - label changes have no impact (only label changes on the parent `GHIssue` should change the
 	  location of the childs - TODO);
   - Body (description) changes, will make sure that the prefix (relating that issue with its parent)
     will be enforced.
-  - Title changes will change the name of the ACSubTask;
+  - Title changes will change the name of the `ACSubTask`;
 
-#### DELETE
- - There are no GHIssue deletes, only applying the DELETE label, where nothing should happen ( - TODO: test if
- there the syncs do not occur when DELETE label is set -)
+#### `DELETE`
+ - There are no `GHIssue` deletes, only applying the `DELETE` label, where nothing should happen ( - TODO: test if
+ there the syncs do not occur when `DELETE` label is set -)
 
 
 <a id="ghMilestoneSync">  </a>
-### GHMilestone - GitHub Milestone artifact;
+### `GHMilestone` - GitHub Milestone artifact;
 
-GHMilestone instances can have multiple ACMilestone instances, in different projects, depending on which ACProject
-the corresponding ACTasks of the GHIssue instances that use the GHMilestone are.
+`GHMilestone` instances can have multiple `ACMilestone` instances, in different projects, depending on which `ACProject`
+the corresponding `ACTask`s of the `GHIssue` instances that use the `GHMilestone` are.
 
-The GHMilestone synchronization will partially be dealt by the [ACTask sync](#acTaskSync) method. However,
-updates to its fields will be tracked by synched in the GHMilestone#sync method 
+The `GHMilestone` synchronization will partially be dealt by the [`ACTask` sync](#acTaskSync) method. However,
+updates to its fields will be tracked and synched by the `GHMilestone#sync` method 
 
-#### CREATE
- - Nothing is done, the creation of the corresponding ACMilestone is defined by the [ACTask sync](#acTaskSync);
+#### `CREATE`
+ - Nothing is done, the creation of the corresponding `ACMilestone` is left to be done by the [`ACTask` sync](#acTaskSync), if necessary;
  
-#### UPDATE
+#### `UPDATE`
  - Changes to the following simple fields (description/title/dueOn) will be repeated on the equivalent ActiveCollab
  'side';
 
-#### DELETE
+#### `DELETE`
 
- - Delete the potential multiple ACMilestone instances associated with this ACMilestone - TODO - ;
+ - Delete the potential multiple `ACMilestone` instances associated with this `ACMilestone` - TODO - ;
 
 <a id="ghLabelSync">  </a>
-### GHLabel - GitHub Label artifact;
+### `GHLabel` - GitHub Label artifact;
 
-GHLabels are the way we have to choose the ACProject to use on the GitHub side. Special labels with the name
-P-&lt;ACProject name&gt; should be created for each existing ACProject, and setting **one** of those labels on a
-GHIssue should make the corresponding ACTask be created on that ACProject. (more details [here](#ghIssueSync))
+`GHLabel`s are the way we have to choose the `ACProject` to use on the GitHub side. Special labels with the name
+'P-&lt;ACProject name&gt;' should be created by this system for each existing `ACProject`, and setting **one** of those labels on a
+`GHIssue` should create/move the corresponding `ACTask` on that `ACProject`. (more details [here](#ghIssueSync))
 
-#### CREATE
- - Nothing is done. Creation of the 'special' GHLabels is done on the [ACProject sync](#acProjectSync); and the
+#### `CREATE`
+ - Nothing is done. Creation of the 'special' GHLabels is done on the [`ACProject` sync](#acProjectSync); and the
  'normal' GH labels are not synched; 
 
-#### UPDATE
- - Updates of label changes is also controlled by the [ACProject sync](#acProjectSync), whereas also the 'regular'
- GHLabels aren't synched;
+#### `UPDATE`
+ - Updates of label changes is also controlled by the [`ACProject` sync](#acProjectSync), whereas also the 'regular'
+ `GHLabel`s aren't synched;
 
-#### DELETE - TODO
+#### `DELETE` - TODO
  - TODO: define behaviour;
 
 
