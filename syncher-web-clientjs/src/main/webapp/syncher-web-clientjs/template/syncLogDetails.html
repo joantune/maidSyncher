@@ -1,0 +1,132 @@
+       <div id="details" class="modal hide fadel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+            aria-hidden="true" data-bind="if: selectedSyncLog">
+            <!-- ko with: selectedSyncLog -->
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h3>Sync Details</h3>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong>Start time:</strong> <span data-bind="text: AppUtils.friendlyNamedDateTime(SyncStartTime())"></span>
+                </p>
+                <div class="alert alert-error alert-overflow" data-bind="visible: shouldShowStackTrace">
+                    <button type="button" class="close" data-bind="click: toggleStackTraceCommand">&times;</button>
+                    <strong>Failure!</strong> <small class="text-mini" data-bind="text: SerializedStackTrace"></small>
+                </div>
+                <table class="table-condensed table-bordered-outline">
+                    <tbody>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td><span id="statusModal" data-bind="text: Status, css: statusStyle, click: toggleStackTraceCommand"></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>GitHub sync time:</strong></td>
+                            <td>
+                                <!--                                 <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
+                                id="ghSyncTime" data-bind="text: ghSyncTimeDuration() + 's'"></span> --> <span
+                                class="popoverStyle" id="ghSyncTime"
+                                data-bind="text: ghSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
+                            </td>
+                            <td><strong>ActiveCollab sync time:</strong></td>
+                            <td>
+                                <!--  <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
+                                id="acSyncTime" data-bind="text: acSyncTimeDuration() + 's'"></span> --> <span
+                                class="popoverStyle" id="acSyncTime"
+                                data-bind="text: acSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <td><strong>Sync actions:</strong></td>
+                            <td><span data-bind="text: NrGeneratedSyncActions"></span></td>
+                            <td><strong>Prev. Sync actions:</strong></td>
+                            <td><span data-bind="text: NrGeneratedSyncActionsFromRemainingSyncEvents"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p></p>
+                <ul class="nav nav-tabs">
+                    <li class="active"><a data-toggle="tab" href="#actions">Actions <span
+                            data-bind="text: '(' + actions().length + ')'"></span></a></li>
+                    <li><a href="#warnings" data-toggle="tab">Warnings <span
+                            data-bind="text: '(' + warnings().length + ')'"></span></a></li>
+                    <li><a href="#conflicts" data-toggle="tab">Potential Conflicts <span
+                            data-bind="text: '(' + conflicts().length + ')'"></span></a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="actions">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Start time</th>
+                                    <th>Duration</th>
+                                    <th>Origin Object</th>
+                                    <th>Success</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: actions">
+                                <tr data-bind="css: rowClass">
+                                    <td data-bind="text: $parent.AppUtils.timeOnly(syncStartTime())"></td>
+                                    <td class="muted" data-bind="text: duration() + 's'"></td>
+                                    <td>
+                                    <!-- <a class="syncAction"
+                                        data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }"
+                                        target="_blank"></a> -->
+                                    <a class="syncAction"
+                                        data-bind="text: trimmedTypeOriginObject, bootstrapPopover: {html: true, content: actionOriginPopoverContent, trigger: 'click' }"
+                                        target="_blank"></a> <span data-bind="text: shortTypeOfChangeEvent"></span>
+                                        </td>
+                                    <td data-bind="html: successIcon"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <div class="tab-pane" id="warnings">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: warnings">
+                                <tr class="warning">
+                                    <td><i class="icon-warning-sign"></i> <span data-bind="text: description"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+
+                    </div>
+                    <div class="tab-pane" id="conflicts">
+                    <table class="table table-hover-clickable">
+                            <thead>
+                                <tr>
+                                    <th>Event one</th>
+                                    <!-- <th></th> -->
+                                    <th>Event two</th>
+                                    <!-- <th></th> -->
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: conflicts">
+                                <tr class="info" data-bind="bootstrapPopover: {html: true, content: popoverDescriptionContent, trigger: 'click', placement:'top'}">
+                                    <td><i data-bind="css: eventStatusRep(eventOneOriginator())"></i>  <span data-bind="text: eventOneShortName"></span></td>
+                                    <!-- <td data-bind="html: eventStatusRep(eventOneOriginator().id)"></td> -->
+                                    
+                                    <td><i data-bind="css: eventStatusRep(eventTwoOriginator())"></i>  <span data-bind="text: eventTwoShortName"></span></td>
+                                    <!-- <td data-bind="text: eventTwoShortName"></td>
+                                    <td data-bind="html: eventStatusRep(eventTwoOriginator().id)"></td> -->
+                                </tr>
+                            </tbody>
+                        </table>
+                    
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn" data-dismiss="modal">Close</a>
+            </div>
+            <!-- /ko -->
+        </div>

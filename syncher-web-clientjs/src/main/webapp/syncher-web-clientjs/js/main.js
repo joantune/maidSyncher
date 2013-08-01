@@ -1,43 +1,135 @@
 requirejs.config({
-    paths: {
-    	less: 'libs/less-1.3.3.min',
-    	jquery: 'libs/jquery',
-    	bootstrap: 'libs/bootstrap.min',
+    paths : {
+        less : 'libs/less-1.3.3.min',
+        jquery : 'libs/jquery',
+        bootstrap : 'libs/bootstrap.min',
         // Backbone
-        backbone: 'libs/backbone-min',
-        underscore: 'libs/underscore',
-        knockback: 'libs/knockback-core'
-        backbone-relational: 'libs/backbone-relational'
-        //moment: 'libs/moment.min'
-        //async: 'libs/async'
-        
+        backbone : 'libs/backbone-min',
+        underscore : 'libs/underscore',
+        knockback : 'libs/knockback-core',
+        backboneRelational : 'libs/backbone-relational',
+        jqueryBlockUi : 'libs/jquery.blockUI'
+
+    // moment: 'libs/moment.min'
+    // async: 'libs/async'
+
     },
-    shim: {
-        "underscore": {
-            deps: [],
-            exports: "_"
+    shim : {
+        "bootstrap" : {
+            deps : ["jquery"],
+            exports : "$"
         },
-        "backbone": {
-            deps: ["jquery", "underscore"],
-            exports: "Backbone"
+        "underscore" : {
+            deps : [],
+            exports : "_"
         },
+//        "knockback" : {
+//          deps: ["backboneRelational", "knockout"],
+//          exports: "kb"
+//        },
+        "backboneRelational" : {
+            deps : [ "backbone"],
+            exports : "Backbone"
+        },
+        "backbone" : {
+            deps : [ "jquery", "underscore" ],
+            exports : "Backbone"
+        },
+        "jqueryBlockUi" : {
+            deps : [ "jquery" ],
+            exports : "$.blockUI"
+        }
     }
 });
 
-require(['knockout', 
-         'bennu-knockout',
-         'collections/TransactionalContextCollection',
-         'viewModels/TransactionalContextViewModel',
-         'viewModels/NewTxViewModel'], function(ko, bennuKo, TrasactionalContextCollection, TransactionalContextViewModel, NewTxViewModel) {
+require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/RemainingSyncEvents',
+        'models/SyncLogsRelational','viewModels/LogViewModel' ],
+        function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational) {
+    // --
+    var idCounter = 0;
+    ko.bindingHandlers.pager = {
+            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                var contents = $(element).html();
 
-        var collection = new TrasactionalContextCollection();
-        collection.fetch({
-            success: function () {
-                collection.sort();
-                var viewModel = new TransactionalContextViewModel(collection);
-                var modalViewModel = new NewTxViewModel(collection);
-                bennuKo.loadPage('mainView', viewModel, 'LongTxManagement');
-                bennuKo.loadPage('newTxModal', modalViewModel, 'NewTxModal');
+               
+                if (ko.utils.unwrapObservable(valueAccessor()).customPagerId) {
+                    var id = ko.utils.unwrapObservable(valueAccessor()).customPagerId;
+                }
+                else {
+                    var id = 'pager' + idCounter++;
+                }
+
+                var pagerModel = viewModel[id + '$_pager'] = {};
+
+                var itemsPerPage = ko.utils.unwrapObservable(valueAccessor()).itemsPerPage || 10;
+                var currentPageObs = pages = ko.observable(1);
+                pagerModel['currentPage'] = currentPageObs;
+                pagerModel['pagedArray'] = ko.computed(function() {
+                    var collection = ko.utils.unwrapObservable(valueAccessor()).array;
+                    var firstItemIndex = itemsPerPage * (currentPageObs() -1);
+                    var slicedCollection = collection.slice(firstItemIndex, firstItemIndex + itemsPerPage);
+                    if (ko.utils.unwrapObservable(valueAccessor()).viewModel) {
+                        var _ViewModelConstructor = require(ko.utils.unwrapObservable(valueAccessor()).viewModel);
+                        var slicedArrayObs = ko.observableArray();
+                        slicedCollection.forEach(function(item) {
+                            slicedArrayObs.push(new _ViewModelConstructor(item));
+                        } );
+                        return slicedArrayObs();
+                    }
+                    else {
+                        return slicedCollection;
+                    }
+                });
+                var numPages = ko.computed(function() {
+                    return Math.ceil(ko.utils.unwrapObservable(valueAccessor()).array().length / itemsPerPage);
+                });
+                pagerModel['next'] = function() {
+                    if(currentPageObs() < numPages()) {
+                        currentPageObs(currentPageObs() + 1);
+                    }
+                }
+                pagerModel['previous'] = function() {
+                    if(currentPageObs() > 1) {
+                        currentPageObs(currentPageObs() - 1);
+                    }
+                }
+                pagerModel['numPages'] = numPages;
+
+                $(element).html(' <!-- ko foreach: ' + id+ '$_pager.pagedArray -->' + contents + '<!-- /ko -->');
+
+                $(element).append('<div data-bind="with: ' + id +'$_pager">\
+                    <div class="pagination pagination-small">\
+                        <ul>\
+                            <li data-bind="css: { disabled: currentPage() == 1 }"><a href="#" data-bind="click: previous">&laquo;</a></li>\
+                            <li data-bind="css: { disabled: currentPage() == numPages() }"><a href="#" data-bind="click: next">&raquo;</a></li>\
+                        </ul>\
+                    </div></div>');
             }
+        };
+    //--
+            var syncLogs = new SyncLogsRelational();
+
+            syncLogs.fetch({
+                success : function() {
+                    var remainingEvents = new RemainingSyncEvents();
+                    remainingEvents.fetch();
+
+                    var syncLogsViewModel = new SyncLogsViewModel(syncLogs, remainingEvents);
+                    bennuKo.loadPage('syncLogs', syncLogsViewModel, 'syncLogs');
+
+                }
+            });
+
+            //		 
+            // var collection = new TrasactionalContextCollection();
+            // collection.fetch({
+            // success: function () {
+            // collection.sort();
+            // var syncLogsViewModel = new SyncLogsViewModel();
+            // var viewModel = new TransactionalContextViewModel(collection);
+            // var modalViewModel = new NewTxViewModel(collection);
+            // bennuKo.loadPage('syncLogs', viewModel, 'LongTxManagement');
+            // bennuKo.loadPage('newTxModal', modalViewModel, 'NewTxModal');
+            // }
+            // });
         });
-});

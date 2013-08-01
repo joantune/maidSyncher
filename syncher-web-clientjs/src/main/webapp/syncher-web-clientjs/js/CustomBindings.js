@@ -30,7 +30,7 @@ ko.bindingHandlers.pager = {
                 var firstItemIndex = itemsPerPage * (currentPageObs() -1);
                 var slicedCollection = collection.slice(firstItemIndex, firstItemIndex + itemsPerPage);
                 if (ko.utils.unwrapObservable(valueAccessor()).viewModel) {
-                    var _ViewModelConstructor = ko.utils.unwrapObservable(valueAccessor()).viewModel;
+                    var _ViewModelConstructor = require(ko.utils.unwrapObservable(valueAccessor()).viewModel);
                     var slicedArrayObs = ko.observableArray();
                     slicedCollection.forEach(function(item) {
                         slicedArrayObs.push(new _ViewModelConstructor(item));

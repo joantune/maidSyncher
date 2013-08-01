@@ -20,7 +20,7 @@
         </dependency>
          
         <dependency>
-            <groupId>pt.ist.bennu</groupId>
+            <groupId>pt.ist</groupId>
             <artifactId>bennu-knockout</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>

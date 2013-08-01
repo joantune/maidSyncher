@@ -1,4 +1,4 @@
-define(['knockout', 'models/TransactionalContextModel'], function (ko, TransactionalContextModel) {
+define(['knockout', 'knockback', 'AppUtils'], function (ko, kb, AppUtils) {
 
 	var ConflictsViewModel = function(model) {
     var self = this;
@@ -11,22 +11,24 @@ define(['knockout', 'models/TransactionalContextModel'], function (ko, Transacti
     self.eventOneChangedDescriptors = kb.observable(model, 'eventOneChangedDescriptors');
 
     self.eventOneTypeOfChangeEventAbbr = ko.computed(function() {
-        return TypeOfChangeEventAbbreviator(self.eventOneTypeOfChangeEvent);
+        return AppUtils.TypeOfChangeEventAbbreviator(self.eventOneTypeOfChangeEvent);
     });
     self.eventTwoTypeOfChangeEventAbbr = ko.computed(function() {
-        return TypeOfChangeEventAbbreviator(self.eventTwoTypeOfChangeEvent);
+        return AppUtils.TypeOfChangeEventAbbreviator(self.eventTwoTypeOfChangeEvent);
     });
 
     self.eventOneShortName = ko.computed(function() {
         if (self.eventOneOriginator() != null)
-            return ClassNameTrimmer(self.eventOneOriginator().className) + " " + self.eventOneTypeOfChangeEventAbbr();
+            return AppUtils.ClassNameTrimmer(self.eventOneOriginator().className) + " " + self.eventOneTypeOfChangeEventAbbr();
     });
     self.eventTwoShortName = ko.computed(function() {
         if (self.eventTwoOriginator() != null)
-            return ClassNameTrimmer(self.eventTwoOriginator().className) + " " + self.eventTwoTypeOfChangeEventAbbr();
+            return AppUtils.ClassNameTrimmer(self.eventTwoOriginator().className) + " " + self.eventTwoTypeOfChangeEventAbbr();
     });
 
-    self.eventStatusRep = function(id) {
+    self.eventStatusRep = function(model) {
+    if (model && model != null) {
+    	var id = model.id();
         if (id && self.winnerObject() != null) {
             if (id === self.winnerObject().id) {
                 // return "<i class='icon-ok-circle'></i>";
@@ -35,6 +37,7 @@ define(['knockout', 'models/TransactionalContextModel'], function (ko, Transacti
                 // return "<i class='icon-ban-circle'></i>";
                 return 'icon-ban-circle';
             }
+        }
         }
         return "";
     };
@@ -67,8 +70,8 @@ define(['knockout', 'models/TransactionalContextModel'], function (ko, Transacti
         		    "</tr>" +
         		    "<tr>" +
         		        "<td><strong>Changed Dsc:</strong></td>" +
-        		        "<td>" +StringArrayToString(self.eventOneChangedDescriptors())+ "</td>" +
-        		        "<td>" + StringArrayToString(self.eventTwoChangedDescriptors())+ "</td>" +
+        		        "<td>" +AppUtils.StringArrayToString(self.eventOneChangedDescriptors())+ "</td>" +
+        		        "<td>" + AppUtils.StringArrayToString(self.eventTwoChangedDescriptors())+ "</td>" +
         		    "</tr>" +
         		    "<tr>" +
         		        "<td><strong>Links:</strong></td>" +

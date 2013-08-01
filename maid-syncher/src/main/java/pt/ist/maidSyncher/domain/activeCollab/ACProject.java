@@ -14,7 +14,6 @@ package pt.ist.maidSyncher.domain.activeCollab;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.awt.Label;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -24,6 +23,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.egit.github.core.Label;
+import org.eclipse.egit.github.core.service.LabelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -235,7 +236,8 @@ public class ACProject extends ACProject_Base {
                         //getting all labels to be edited - from all repositories
                         Set<GHLabel> labelsToBeEdited = new HashSet<>(dsiProject.getGitHubLabelsSet());
                         for (GHLabel labelToBeEdited : labelsToBeEdited) {
-                            Label labelToEdit = labelService.getLabel(labelToBeEdited.getRepository(), labelToBeEdited.getName());
+                            Label labelToEdit =
+                                    labelService.getLabel(labelToBeEdited.getRepository(), labelToBeEdited.getName());
                             if (allRepositoriesWithAlreadyCorrectLabels.contains(labelToBeEdited.getRepository())) {
                                 //now we have a GHLabel that corresponds to the ACProject that still
                                 //has the old name. We should be deprecating it and using the already existing label with the correct name
