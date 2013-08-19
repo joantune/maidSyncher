@@ -339,7 +339,7 @@ for each existing `ACProject`.
  	
 #### `DELETE` - TODO
  
- - Each `ACTaskCategory` of this repository, should change name to 'P-&lt;name of GHRepository&gt;-Deleted`;
+ - Each `ACTaskCategory` of this repository, should change name to 'R-&lt;name of GHRepository&gt;-Deleted`;
  - On the default `ACProject`, a Category with the name 'Deleted repository' is applied; If such category does not exist on the AC instance, it is created;  
 
 <a id="ghIssueSync">  </a>
