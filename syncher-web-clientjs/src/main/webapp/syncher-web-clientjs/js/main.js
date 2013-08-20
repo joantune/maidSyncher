@@ -101,7 +101,7 @@ require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/
                     <div class="pagination pagination-small">\
                         <ul>\
                             <li data-bind="css: { disabled: currentPage() == 1 }"><a href="#" data-bind="click: previous">&laquo;</a></li>\
-                            <li data-bind="css: { disabled: currentPage() == numPages() }"><a href="#" data-bind="click: next">&raquo;</a></li>\
+                            <li data-bind="css: { disabled: currentPage() == numPages() || numPages() == 0 }"><a href="#" data-bind="click: next">&raquo;</a></li>\
                         </ul>\
                     </div></div>');
             }
