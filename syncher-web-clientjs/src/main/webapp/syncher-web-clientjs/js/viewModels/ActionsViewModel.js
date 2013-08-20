@@ -15,6 +15,9 @@ var ActionsViewModel = function(model) {
     this.shortTypeOfChangeEvent = ko.computed(function() {
         return AppUtils.TypeOfChangeEventAbbreviator(self.typeOfChangeEvent);
     });
+    
+    this.model = model;
+    
     this.actionOriginPopoverContent = ko.computed(function() {
         if (self.changedDescriptors() != null ) {
             

@@ -32,7 +32,7 @@
                                 <!--  <span style="cursor: default; padding: 0 0;" class="btn btn-link btn-muted"
                                 id="acSyncTime" data-bind="text: acSyncTimeDuration() + 's'"></span> --> <span
                                 class="popoverStyle" id="acSyncTime"
-                                data-bind="text: acSyncTimeDuration() + 's', visible: ghSyncTimeDuration() !== undefined"></span>
+                                data-bind="text: acSyncTimeDuration() + 's', visible: acSyncTimeDuration() !== undefined"></span>
                             </td>
 
                         </tr>
@@ -68,13 +68,13 @@
                                 <tr data-bind="css: rowClass">
                                     <td data-bind="text: $parent.AppUtils.timeOnly(syncStartTime())"></td>
                                     <td class="muted" data-bind="text: duration() + 's'"></td>
-                                    <td>
+                                    <td >
                                     <!-- <a class="syncAction"
                                         data-bind="text: trimmedTypeOriginObject, attr: { href: urlOriginObject }"
                                         target="_blank"></a> -->
-                                    <a class="syncAction"
-                                        data-bind="text: trimmedTypeOriginObject, bootstrapPopover: {html: true, content: actionOriginPopoverContent, trigger: 'click' }"
-                                        target="_blank"></a> <span data-bind="text: shortTypeOfChangeEvent"></span>
+                                    <a class="syncAction" style="cursor: pointer;"
+                                        data-bind="text: trimmedTypeOriginObject() + ' ' + shortTypeOfChangeEvent(), bootstrapPopover: {html: true, content: actionOriginPopoverContent, trigger: 'click' }"
+                                        target="_blank"> </a>
                                         </td>
                                     <td data-bind="html: successIcon"></td>
                                 </tr>

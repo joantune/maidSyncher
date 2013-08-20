@@ -46,6 +46,15 @@ require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/
         'models/SyncLogsRelational','viewModels/LogViewModel', 'viewModels/NavbarViewModel', 'AppUtils' ],
         function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational, LogViewModel, NavbarViewModel, AppUtils) {
     // --
+    ko.bindingHandlers.bootstrapPopover = {
+            init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+                var options = valueAccessor();
+                var defaultOptions = {};
+                options = $.extend(true, {}, defaultOptions, options);
+                $(element).popover(options);
+            }
+    };
+    
     var idCounter = 0;
     ko.bindingHandlers.pager = {
             init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {

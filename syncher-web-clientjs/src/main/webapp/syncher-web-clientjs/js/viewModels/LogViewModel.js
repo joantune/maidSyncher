@@ -13,6 +13,9 @@ define([
         self.AppUtils = AppUtils;
 
         this.model = model;
+        
+        this.SyncGHStartTime = kb.observable(model, 'SyncGHStartTime');
+        this.SyncGHEndTime = kb.observable(model, 'SyncGHEndTime');
 
         this.NrGeneratedSyncActions = kb.observable(model, 'NrGeneratedSyncActions');
         this.NrGeneratedSyncActionsFromRemainingSyncEvents = kb.observable(model,
@@ -39,8 +42,8 @@ define([
             return {
                 html : true,
                 trigger : "hover",
-                content : syncStartTimePrefixHtml + timeOnly(startTime) + smallHtmlTerminator + "<br/>"
-                        + syncEndTimePrefixHtml + timeOnly(endTime) + smallHtmlTerminator,
+                content : syncStartTimePrefixHtml + AppUtils.timeOnly(startTime) + smallHtmlTerminator + "<br/>"
+                        + syncEndTimePrefixHtml + AppUtils.timeOnly(endTime) + smallHtmlTerminator,
             };
 
         };
@@ -83,18 +86,21 @@ define([
                 return true;
             }
         };
+        
+        this.SyncACStartTime = kb.observable(model, 'SyncACStartTime');
+        this.SyncACEndTime = kb.observable(model, 'SyncACEndTime');
 
         this.acSyncTimeDuration = ko.computed(function() {
-            if (self.SyncACStartTime && self.SyncACEndTime) {
-                return calculateDurationInSeconds(self.SyncACEndTime(), self.SyncACStartTime());
+            if (self.SyncACStartTime() != null && self.SyncACEndTime() != null) {
+                return AppUtils.calculateDurationInSeconds(self.SyncACEndTime(), self.SyncACStartTime());
 
             }
 
         });
 
         this.ghSyncTimeDuration = ko.computed(function() {
-            if (self.SyncGHStartTime && self.SyncGHEndTime) {
-                return calculateDurationInSeconds(self.SyncGHEndTime(), self.SyncGHStartTime());
+            if (self.SyncGHStartTime() != null && self.SyncGHEndTime() != null) {
+                return AppUtils.calculateDurationInSeconds(self.SyncGHEndTime(), self.SyncGHStartTime());
 
             }
 
