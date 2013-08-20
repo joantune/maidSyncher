@@ -2,6 +2,7 @@ define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'b
     function SyncLogsViewModel(model, remainingEvents) {
         self = this;
         
+        
         self.AppUtils = AppUtils;
 
         // self.syncLogsAll = kb.observable(model, 'synclogs');

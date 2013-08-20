@@ -43,8 +43,8 @@ requirejs.config({
 });
 
 require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/RemainingSyncEvents',
-        'models/SyncLogsRelational','viewModels/LogViewModel' ],
-        function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational) {
+        'models/SyncLogsRelational','viewModels/LogViewModel', 'viewModels/NavbarViewModel', 'AppUtils' ],
+        function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational, LogViewModel, NavbarViewModel, AppUtils) {
     // --
     var idCounter = 0;
     ko.bindingHandlers.pager = {
@@ -115,7 +115,10 @@ require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/
                     remainingEvents.fetch();
 
                     var syncLogsViewModel = new SyncLogsViewModel(syncLogs, remainingEvents);
+                    var currentTime = AppUtils.friendlyDateTimeNow(true);
+                    var navbarViewModel = new NavbarViewModel(currentTime);
                     bennuKo.loadPage('syncLogs', syncLogsViewModel, 'syncLogs');
+                    bennuKo.loadPage('navbar', navbarViewModel, 'navbar');
 
                 }
             });

@@ -102,6 +102,14 @@ friendlyDateTime : function(dateTimeString, styleIt) {
         return amoment.format("DD-MM-YYYY @ HH:mm:ss")
     }
 },
+friendlyDateTimeNow : function(styleIt) {
+    var amoment = moment();
+    if (styleIt) {
+        return amoment.format("[<strong>]DD-MM-YYYY[</strong>] @ HH:mm:ss")
+    } else {
+        return amoment.format("DD-MM-YYYY @ HH:mm:ss")
+    }
+},
 friendlyNamedDateTime : function(dateTimeString) {
     var amoment = moment(dateTimeString);
     return amoment.format("MMMM Do YYYY, HH:mm:ss")
