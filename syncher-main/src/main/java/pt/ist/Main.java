@@ -98,6 +98,10 @@ public class Main {
 
     @Atomic(mode = TxMode.WRITE)
     private static void logStartOfSyncProcess() {
+        SyncLog previousSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
+        if (previousSyncLog != null && previousSyncLog.is(SyncLog.STATUS_ONGOING)) {
+            previousSyncLog.markAsInterrupted();
+        }
         currentSyncLog = new SyncLog();
         MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
 

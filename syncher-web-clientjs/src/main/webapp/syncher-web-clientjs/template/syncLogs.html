@@ -24,9 +24,8 @@
                         </tr>
                     </thead>
                    <tbody data-bind="pager: {array: syncLogsAll, viewModel: 'viewModels/LogViewModel'}">
-                        <tr data-bind="css: $data.representationRowClass">
                         <tr
-                            data-bind="css: classCss, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && $parent.hasItems($data)) || ($parent.hideSyncs() == false)">
+                            data-bind="css: classCss, style: {cursor: isOngoing() ? 'initial' : '' }, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && $parent.hasItems($data)) || ($parent.hideSyncs() == false)">
                             <td><span data-bind="html:  AppUtils.friendlyDateTime(SyncStartTime(), true)"> </span> <span
                                 class="muted" data-bind="text: '('+ AppUtils.humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
                             <td data-bind="text: actions().length" />

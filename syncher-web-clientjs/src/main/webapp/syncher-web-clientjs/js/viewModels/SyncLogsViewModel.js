@@ -1,6 +1,6 @@
 define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'bootstrap'], function(kb, ko, async, AppUtils, bennuKo, $) {
     function SyncLogsViewModel(model, remainingEvents) {
-        self = this;
+        var self = this;
         
         
         self.AppUtils = AppUtils;
@@ -45,6 +45,8 @@ define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'b
         self.remainingSyncEvents = kb.collectionObservable(remainingEvents);
         self.selectedSyncLog = ko.observable(null);
         self.goToLogDetails = function(currentSyncLog) {
+            if (currentSyncLog !== undefined && currentSyncLog != null && currentSyncLog.isOngoing())
+                return;
             AppUtils.displayLoadingScreen(true);
             async.parallel({
                 actions : function(callback) {

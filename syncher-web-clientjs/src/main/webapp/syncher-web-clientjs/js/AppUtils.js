@@ -128,7 +128,8 @@ humanFriendlyFromNow : function(dateTimeString) {
 SUCCESS : "Success",
 CONFLICT : "Conflict",
 FAILURE : "Failure",
-ONGOING : "Ongoing"
+ONGOING : "Ongoing",
+INTERRUPTED : "Interrupted"
 };
 return AppUtils;
 });

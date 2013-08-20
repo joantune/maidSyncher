@@ -99,6 +99,18 @@ define([
             }
 
         });
+        
+        this.is = function(what) {
+            var status = self.Status();
+            if (status === undefined || what === undefined || what == null)
+                return false;
+            else return status.toLowerCase() === what.toLowerCase();
+        };
+        
+        
+        this.isOngoing = ko.computed(function() {
+            return self.is(AppUtils.ONGOING);
+        })
 
         this.classCss = ko.computed((function() {
             if (self.warnings().length > 0) {
@@ -108,13 +120,13 @@ define([
 
             if (status != undefined) {
 
-                if (status.toLowerCase() === AppUtils.SUCCESS.toLowerCase()) {
+                if (self.is(AppUtils.SUCCESS)) {
                     return "success";
-                } else if (status.toLowerCase() === AppUtils.CONFLICT.toLowerCase()) {
+                } else if (self.is(AppUtils.CONFLICT) || self.is(AppUtils.INTERRUPTED)) {
                     return "warning";
-                } else if (status.toLowerCase() === AppUtils.FAILURE.toLowerCase()) {
+                } else if (self.is(AppUtils.FAILURE)) {
                     return "error";
-                } else if (status.toLowerCase() === AppUtils.ONGOING.toLowerCase()) {
+                } else if (self.is(AppUtils.ONGOING)) {
                     return "info";
                 }
             }
