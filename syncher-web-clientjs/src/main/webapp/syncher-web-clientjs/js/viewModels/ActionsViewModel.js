@@ -1,4 +1,4 @@
-define(['knockout', 'knockback', 'AppUtils'], function (ko,kb, AppUtils) {
+define(['knockout', 'knockback', 'AppUtils', 'underscore'], function (ko,kb, AppUtils, _) {
 var ActionsViewModel = function(model) {
 
     var self = this;
@@ -18,13 +18,32 @@ var ActionsViewModel = function(model) {
     
     this.model = model;
     
+    this.changedObjects = kb.observable(model, 'changedObjects');
+    
+    this.changedObjectsToList = function(changedObject, index, changedObjects) {
+        if (changedObject == null)
+            return "";
+        var simpleClassName = AppUtils.ClassNameTrimmer(changedObject.className);
+        this.listContent += '<li><a href="' + changedObject.urlObject + '" target="_blank">' + simpleClassName + "</a></li>\n";
+    }
+    
     this.actionOriginPopoverContent = ko.computed(function() {
         if (self.changedDescriptors() != null ) {
             
-        var descriptorsStrings = AppUtils.StringArrayToString(self.changedDescriptors());
-            return "<p><small><strong>Type:</strong> " + self.typeOfChangeEvent() + "</small></p>"
+        	var descriptorsStrings = AppUtils.StringArrayToString(self.changedDescriptors());
+        	var popoverContent = "<p><small><strong>Type:</strong> " + self.typeOfChangeEvent() + "</small></p>"
                     + "<p><small><strong>Changed descriptors:</strong> " + descriptorsStrings + "</small></p>"
-                    + "<p><small><a href=\"" + self.urlOriginObject() + "\" target='_blank'>Link</a></small></p>";
+                    + "<p><small>Origin object: </small><small><a href=\"" + self.urlOriginObject() + "\" target='_blank'>Link</a></small></p>"
+                    + "<p>Changed objects:</p>";
+        	if (self.changedObjects() != null && self.changedObjects().length > 0) {
+        	    var listObject = {listContent : ""};
+        	    _.each(self.changedObjects(),self.changedObjectsToList, listObject);
+        	    popoverContent += "<ul>" + listObject.listContent + "</ul>";
+        	    
+        	}
+        	else popoverContent += "<p><small>- no information -</small></p>";
+        	
+        	return popoverContent;
         }
         else return "";
     });

@@ -2,12 +2,14 @@ package pt.ist.maidSyncher.domain.sync.logs;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pt.ist.maidSyncher.domain.SynchableObject;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 
 public class SyncActionLog extends SyncActionLog_Base {
@@ -43,6 +45,14 @@ public class SyncActionLog extends SyncActionLog_Base {
             }
 
         }
+    }
+
+    public void markExceptionAndEndOfSync(SyncActionError syncActionError) {
+        setSyncEndTime(new DateTime());
+        setSuccess(Boolean.FALSE);
+        setErrorDescription(ExceptionUtils.getStackTrace(syncActionError));
+        getChangedObjectsSet().addAll(SynchableObject.getLogRepresentation(syncActionError.getChangedObjects()));
+
     }
 
 }

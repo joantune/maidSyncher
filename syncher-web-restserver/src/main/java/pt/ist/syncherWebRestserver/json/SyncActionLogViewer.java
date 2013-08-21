@@ -45,6 +45,7 @@ public class SyncActionLogViewer implements JsonViewer<SyncActionLog> {
         jsonObject.add("changedDescriptors", ctx.view(obj.getChangedDescriptors()));
 
         jsonObject.add("dsiObject", ctx.view(obj.getDsiObject(), DSIObjectIdAndClassViewer.class));
+        jsonObject.add("changedObjects", ctx.view(obj.getChangedObjectsSet(), ChangedObjectLogViewer.class));
         return jsonObject;
     }
 

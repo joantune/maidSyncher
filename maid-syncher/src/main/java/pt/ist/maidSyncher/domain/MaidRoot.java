@@ -40,6 +40,7 @@ import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.domain.activeCollab.ACInstance;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIObject;
+import pt.ist.maidSyncher.domain.exceptions.SyncActionError;
 import pt.ist.maidSyncher.domain.exceptions.SyncEventIllegalConflict;
 import pt.ist.maidSyncher.domain.github.GHOrganization;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
@@ -399,8 +400,8 @@ public class MaidRoot extends MaidRoot_Base {
                 if (SyncEvent.isAbleToRunNow(syncActionWrapper, dsiObjectsToSync)) {
                     SyncActionLog syncActionLog = logSyncStart(syncActionWrapper);
                     try {
-                        atomicProcessSyncAction(syncActionWrapper);
-                        logSyncSuccessAndDeleteSyncEvent(syncActionLog, syncActionWrapper);
+                        Set<SynchableObject> changedObjects = atomicProcessSyncAction(syncActionWrapper);
+                        logSyncSuccessAndDeleteSyncEvent(syncActionLog, syncActionWrapper, changedObjects);
                         actionWrappersIterator.remove();
                     } catch (Exception ex) {
                         logSyncFailure(syncActionLog, ex);
@@ -414,7 +415,12 @@ public class MaidRoot extends MaidRoot_Base {
 
         @Atomic(mode = TxMode.WRITE)
         private void logSyncFailure(SyncActionLog syncActionLog, Exception ex) {
-            syncActionLog.markEndOfSync(false, ExceptionUtils.getFullStackTrace(ex));
+            if (ex instanceof SyncActionError) {
+                syncActionLog.markExceptionAndEndOfSync((SyncActionError) ex);
+            } else {
+                syncActionLog.markEndOfSync(false, ExceptionUtils.getFullStackTrace(ex));
+
+            }
         }
 
         @Atomic(mode = TxMode.WRITE)
@@ -434,19 +440,20 @@ public class MaidRoot extends MaidRoot_Base {
 
         @Atomic(mode = TxMode.WRITE)
         private void logSyncSuccessAndDeleteSyncEvent(SyncActionLog syncActionLog,
-                SyncActionWrapper<? extends SynchableObject> syncActionWrapper) {
+                SyncActionWrapper<? extends SynchableObject> syncActionWrapper, Set<SynchableObject> changedObjects) {
             MaidRoot.getInstance().getSyncEventsToProcessSet().remove(syncActionWrapper.getOriginatingSyncEvent());
             syncActionLog.markEndOfSync(true);
             syncActionWrapper.getOriginatingSyncEvent().delete();
+            syncActionLog.getChangedObjectsSet().addAll(SynchableObject.getLogRepresentation(changedObjects));
 
         }
 
         @Atomic(mode = TxMode.WRITE)
-        private void atomicProcessSyncAction(SyncActionWrapper syncActionWrapper) throws IOException {
+        private Set<SynchableObject> atomicProcessSyncAction(SyncActionWrapper syncActionWrapper) throws IOException {
             LOGGER.info("Running SyncActionWrapper for event: " + syncActionWrapper.getOriginatingSyncEvent().toString());
-            syncActionWrapper.sync();
+            Set<SynchableObject> changedObjects = syncActionWrapper.sync();
             syncActionWrapper.getOriginatingSyncEvent().getDsiElement().setLastSynchedAt(new DateTime());
-
+            return changedObjects;
         }
 
         public Set<SyncActionWrapper<? extends SynchableObject>> getActionWrappers() {

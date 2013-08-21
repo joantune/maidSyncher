@@ -39,6 +39,8 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.fenixframework.Atomic;
+import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.fenixframework.DomainObject;
 import pt.ist.fenixframework.core.WriteOnReadError;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
@@ -54,6 +56,7 @@ import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.sync.logs.ChangedObjectLog;
 import pt.ist.maidSyncher.utils.MiscUtils;
 
 import com.google.common.base.Function;
@@ -84,6 +87,15 @@ public abstract class SynchableObject extends SynchableObject_Base {
         checkNotNull(object);
         checkArgument(clazz.isAssignableFrom(object.getClass()),
                 "Object's class must be a class (or superclass) of " + clazz.getName());
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    public static Set<ChangedObjectLog> getLogRepresentation(Set<SynchableObject> synchableObjects) {
+        Set<ChangedObjectLog> changedObjectLogs = new HashSet<>();
+        for (SynchableObject synchableObject : synchableObjects) {
+            changedObjectLogs.add(new ChangedObjectLog(synchableObject));
+        }
+        return changedObjectLogs;
     }
 
     public static enum ObjectFindStrategy {
