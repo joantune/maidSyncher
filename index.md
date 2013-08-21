@@ -7,7 +7,7 @@ layout: page
 MaidSyncher is a  tool that is used to bidirectionally sync artifacts (tasks/subtasks/projects/etc) between an ActiveCollab instance, and the GitHub issues of an organization.
 
 <a id="setup">  </a>
-## Configuration and usage
+## Installation and configuration
 
 
 ### General instructions
