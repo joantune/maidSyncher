@@ -4,11 +4,13 @@
 </button>
 <a class="brand" href="#">MaidSyncher</a>
 <div class="nav-collapse collapse">
-    <ul class="nav">
-        <li class="active"><a href="#">Sync logs</a></li>
+    <ul class="nav" data-bind="foreach: apps">
+        <li data-bind="css: {active: $parent.selectedId() == templateName }">
+            <a href="#" data-bind="text: name, click: $parent.goToApp"></a>
+       </li>
     </ul>
 </div>
 <!--/.nav-collapse -->
-<p class="navbar-text pull-right">
+<p class="navbar-text pull-right" data-bind="visible: showTimestamp">
     Data refreshed at <span data-bind="html: dateLastFetch"></span>
 </p>

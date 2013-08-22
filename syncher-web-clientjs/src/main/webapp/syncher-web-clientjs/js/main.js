@@ -43,8 +43,8 @@ requirejs.config({
 });
 
 require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/RemainingSyncEvents',
-        'models/SyncLogsRelational','viewModels/LogViewModel', 'viewModels/NavbarViewModel', 'AppUtils' ],
-        function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational, LogViewModel, NavbarViewModel, AppUtils) {
+        'models/SyncLogsRelational','viewModels/LogViewModel', 'viewModels/NavbarViewModel', 'AppUtils', 'SyncLogsInitializer' ],
+        function(ko, bennuKo, SyncLogsViewModel, RemainingSyncEvents, SyncLogsRelational, LogViewModel, NavbarViewModel, AppUtils, SyncLogsInitializer) {
     // --
     ko.bindingHandlers.bootstrapPopover = {
             init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
@@ -116,21 +116,10 @@ require([ 'knockout', 'bennu-knockout', 'viewModels/SyncLogsViewModel', 'models/
             }
         };
     //--
-            var syncLogs = new SyncLogsRelational();
-
-            syncLogs.fetch({
-                success : function() {
-                    var remainingEvents = new RemainingSyncEvents();
-                    remainingEvents.fetch();
-
-                    var syncLogsViewModel = new SyncLogsViewModel(syncLogs, remainingEvents);
-                    var currentTime = AppUtils.friendlyDateTimeNow(true);
-                    var navbarViewModel = new NavbarViewModel(currentTime);
-                    bennuKo.loadPage('syncLogs', syncLogsViewModel, 'syncLogs');
-                    bennuKo.loadPage('navbar', navbarViewModel, 'navbar');
-
-                }
-            });
+    var navbarViewModel = new NavbarViewModel();
+    bennuKo.loadPage('navbar', navbarViewModel, 'navbar');
+    SyncLogsInitializer(navbarViewModel,'syncLogs');
+    
 
             //		 
             // var collection = new TrasactionalContextCollection();

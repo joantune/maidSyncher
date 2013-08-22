@@ -167,7 +167,7 @@ public class Main {
         acConfigurationProperties.load(Main.class.getResourceAsStream("/configuration.properties"));
 
         ACContext acContext = ACContext.getInstance();
-        acContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
+        acContext.setServerBaseUrl(acConfigurationProperties.getProperty(MaidRoot.AC_SERVER_BASE_URL));
         acContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
 
         ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();

@@ -25,7 +25,7 @@ import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
 
 public class ACContext implements RequestProcessor {
 
-    private static String server;
+    private static String serverBaseUrl;
     private static String token;
 
     private static final ACContext instance = new ACContext();
@@ -37,13 +37,11 @@ public class ACContext implements RequestProcessor {
         return instance;
     }
 
-    public void setServer(String server)
-    {
-        ACContext.server = server;
+    public void setServerBaseUrl(String server) {
+        ACContext.serverBaseUrl = server;
     }
 
-    public void setToken(String token)
-    {
+    public void setToken(String token) {
         ACContext.token = token;
     }
 
@@ -62,8 +60,7 @@ public class ACContext implements RequestProcessor {
     }
 
     @Override
-    public Object processGet(String path) throws IOException
-    {
+    public Object processGet(String path) throws IOException {
         return JsonRest.processGet(buildUrl(path));
     }
 
@@ -92,8 +89,7 @@ public class ACContext implements RequestProcessor {
         String toUse = "";
         if (content != null && StringUtils.isBlank(content) == false) {
             toUse = content + "&submitted=submitted";
-        }
-        else {
+        } else {
             toUse = "submitted=submitted";
         }
         return (JSONObject) JsonRest.processPost(toUse, buildUrl(path));
@@ -105,13 +101,13 @@ public class ACContext implements RequestProcessor {
      */
     @Override
     public String getBasicUrlForPath(String pathToAppend) {
-        return "https://" + server + "/ac/api.php?path_info=" + pathToAppend;
+        return serverBaseUrl + "/api.php?path_info=" + pathToAppend;
 
     }
 
     public Set<ACProjectLabel> getACProjectLabels() throws IOException {
         Set<ACProjectLabel> projectLabels = new HashSet<ACProjectLabel>();
-        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=info/labels/project");
+        JSONArray jsonArr = (JSONArray) processGet(serverBaseUrl + "/api.php?path_info=info/labels/project");
         for (Object object : jsonArr) {
             JSONObject jsonObj = (JSONObject) object;
             projectLabels.add(new ACProjectLabel(jsonObj));
@@ -122,8 +118,7 @@ public class ACContext implements RequestProcessor {
 
     public Set<ACTaskLabel> getACTaskLabels() throws IOException {
         Set<ACTaskLabel> taskLabels = new HashSet<ACTaskLabel>();
-        JSONArray jsonArr =
-                (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=info/labels/assignment");
+        JSONArray jsonArr = (JSONArray) processGet(serverBaseUrl + "/api.php?path_info=info/labels/assignment");
         for (Object object : jsonArr) {
             JSONObject jsonObj = (JSONObject) object;
             taskLabels.add(new ACTaskLabel(jsonObj));
@@ -134,7 +129,7 @@ public class ACContext implements RequestProcessor {
 
     public List<ACProject> getActiveProjects() throws IOException {
         List<ACProject> projects = new ArrayList<ACProject>();
-        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=projects");
+        JSONArray jsonArr = (JSONArray) processGet(serverBaseUrl + "/api.php?path_info=projects");
         if (jsonArr != null) {
             for (int i = 0; i < jsonArr.size(); i++)
                 projects.add(new ACProject((JSONObject) jsonArr.get(i)));
@@ -145,7 +140,7 @@ public class ACContext implements RequestProcessor {
 
     public List<ACProject> getArchivedProjects() throws IOException {
         List<ACProject> projects = new ArrayList<ACProject>();
-        JSONArray jsonArr = (JSONArray) processGet("https://" + server + "/ac/api.php?path_info=projects/archive");
+        JSONArray jsonArr = (JSONArray) processGet(serverBaseUrl + "/api.php?path_info=projects/archive");
         if (jsonArr != null) {
             for (int i = 0; i < jsonArr.size(); i++)
                 projects.add(new ACProject((JSONObject) jsonArr.get(i)));
@@ -159,16 +154,15 @@ public class ACContext implements RequestProcessor {
      * @return the 'projects' and the 'projects/archived' projects
      * @throws IOException
      */
-    public List<ACProject> getProjects() throws IOException
-    {
+    public List<ACProject> getProjects() throws IOException {
         List<ACProject> allProjects = new ArrayList<>();
         allProjects.addAll(getActiveProjects());
         allProjects.addAll(getArchivedProjects());
         return allProjects;
     }
 
-    public static String getServer() {
-        return server;
+    public static String getServerBaseUrl() {
+        return serverBaseUrl;
     }
 
 }

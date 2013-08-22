@@ -41,8 +41,9 @@ public class ACInstance extends ACObject {
     public static ACInstance getInstanceForCompanyName() throws IOException {
 
         JSONArray jsonArr =
-                (JSONArray) getRequestProcessor().processGet("https://" + ACContext.getInstance().getServer()
-                        + "/ac/api.php?path_info=people");
+                (JSONArray) getRequestProcessor().processGet(
+                        ACContext.getInstance().getServerBaseUrl()
+                        + "/api.php?path_info=people");
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObj = (JSONObject) object;

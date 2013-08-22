@@ -1,4 +1,5 @@
-define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'bootstrap'], function(kb, ko, async, AppUtils, bennuKo, $) {
+define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'bootstrap'], 
+        function(kb, ko, async, AppUtils, bennuKo, $) {
     function SyncLogsViewModel(model, remainingEvents) {
         var self = this;
         

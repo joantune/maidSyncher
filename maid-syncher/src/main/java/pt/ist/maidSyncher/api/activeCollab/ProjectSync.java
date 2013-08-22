@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import pt.ist.maidSyncher.domain.MaidRoot;
+
 public class ProjectSync
 {
 
@@ -27,7 +29,7 @@ public class ProjectSync
         acConfigurationProperties.load(ProjectSync.class.getResourceAsStream("/configuration.properties"));
 
         ACContext acContext = ACContext.getInstance();
-        acContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
+        acContext.setServerBaseUrl(acConfigurationProperties.getProperty(MaidRoot.AC_SERVER_BASE_URL));
         acContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
 
         ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();

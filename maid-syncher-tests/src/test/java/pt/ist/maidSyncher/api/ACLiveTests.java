@@ -9,6 +9,7 @@ import java.util.Properties;
 import org.junit.BeforeClass;
 
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
+import pt.ist.maidSyncher.domain.MaidRoot;
 
 /**
  * @author João Antunes (joao.antunes@tagus.ist.utl.pt) - 21 de Mai de 2013
@@ -25,7 +26,7 @@ public class ACLiveTests {
         acConfigurationProperties.load(ACLiveTests.class.getResourceAsStream("/configuration.properties"));
 
         ACContext acContext = ACContext.getInstance();
-        acContext.setServer(acConfigurationProperties.getProperty("ac.server.host"));
+        acContext.setServerBaseUrl(acConfigurationProperties.getProperty(MaidRoot.AC_SERVER_BASE_URL));
         acContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
 
     }

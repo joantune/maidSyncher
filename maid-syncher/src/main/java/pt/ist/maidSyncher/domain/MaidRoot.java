@@ -58,6 +58,8 @@ import com.google.gag.annotation.remark.ShoutOutTo;
 
 public class MaidRoot extends MaidRoot_Base {
 
+    public static final String AC_SERVER_BASE_URL = "ac.server.baseUrl";
+
     private static Multimap<DSIObject, SyncEvent> changesBuzz = HashMultimap.create();
 
     private static GitHubClient gitHubClient;
@@ -84,8 +86,8 @@ public class MaidRoot extends MaidRoot_Base {
         }
         ACContext acContext = ACContext.getInstance();
 
-        if (acContext.getServer() == null || StringUtils.isBlank(acContext.getServer())) {
-            acContext.setServer(configurationProperties.getProperty("ac.server.host"));
+        if (acContext.getServerBaseUrl() == null || StringUtils.isBlank(acContext.getServerBaseUrl())) {
+            acContext.setServerBaseUrl(configurationProperties.getProperty(AC_SERVER_BASE_URL));
             acContext.setToken(configurationProperties.getProperty("ac.server.token"));
         }
         if (getGitHubClient() == null) {

@@ -3,6 +3,6 @@ github.oauth2.token=kindaSelfExplanatory
 github.organization.name=sandbox-org-maidSync
 
 #The host of your AC instance
-ac.server.host=host.com
+ac.server.baseUrl=https://host.com/ac
 ac.server.token=kindaSelfExplanatory
 
