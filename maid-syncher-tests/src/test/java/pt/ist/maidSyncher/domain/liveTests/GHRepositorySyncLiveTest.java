@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain;
+package pt.ist.maidSyncher.domain.liveTests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +22,7 @@ import org.eclipse.egit.github.core.Repository;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -36,15 +37,16 @@ import pt.ist.fenixframework.Atomic.TxMode;
 import pt.ist.maidSyncher.api.activeCollab.ACCategory;
 import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
+import pt.ist.maidSyncher.domain.GHRepositorySyncTestsBase;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
-import pt.ist.maidSyncher.domain.dsi.DSIProject;
 import pt.ist.maidSyncher.domain.dsi.DSIRepository;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.test.utils.OfflineSyncTests;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 /**
@@ -52,34 +54,10 @@ import pt.ist.maidSyncher.domain.test.utils.TestUtils;
  * 
  *         Tests the synching {@link GHMilestone#sync(SyncEvent)} method/functionality
  */
+@Category(OfflineSyncTests.class)
 @RunWith(MockitoJUnitRunner.class)
-public class GHRepositorySyncTest {
+public class GHRepositorySyncLiveTest extends GHRepositorySyncTestsBase {
 
-    private static final String GH_REPOSITORY_ALTERNATIVE_NAME = "gh repository alternative name";
-
-    private static final String GH_REPOSITORY_NAME = "gh repository name";
-
-    GHRepository ghRepository;
-
-    DSIRepository dsiRepository;
-
-    ACProject acDefaultProject;
-
-    ACProject acProjectOne;
-
-    ACProject acProjectTwo;
-
-    DSIProject dsiProjectOne;
-
-    DSIProject dsiProjectTwo;
-
-    DSIProject dsiDefaultProject;
-
-    ACTaskCategory acTaskCategoryOfProjectOne;
-
-    ACTaskCategory acTaskCategoryOfProjectTwo;
-
-    ACTaskCategory acTaskCategoryOfDefaultProject;
 
     @Mock
     private static RequestProcessor requestProcessor;
@@ -92,24 +70,19 @@ public class GHRepositorySyncTest {
 
     @Captor
     ArgumentCaptor<String> pathCaptor;
-    final Random randomIDGenerator = new Random();
+    final static Random randomIDGenerator = new Random();
 
+
+
+    @Override
     @Before
     @Atomic
     public void init() throws IOException {
         TestUtils.clearInstancesWithRoot();
-
-        ghRepository = new GHRepository();
-        dsiRepository = new DSIRepository();
-
-        ghRepository.setName(GH_REPOSITORY_NAME);
-        ghRepository.setDsiObjectRepository(dsiRepository);
+        super.init();
 
         acProjectOne = new ACProject();
         acProjectTwo = new ACProject();
-
-        dsiProjectOne = new DSIProject();
-        dsiProjectTwo = new DSIProject();
 
         acProjectOne.setDsiObjectProject(dsiProjectOne);
         acProjectTwo.setDsiObjectProject(dsiProjectTwo);
@@ -358,9 +331,10 @@ public class GHRepositorySyncTest {
 
     }
 
-    private void initDefaultProject() {
+    @Override
+    protected void initDefaultProject() {
+        super.initDefaultProject();
         acDefaultProject = new ACProject();
-        dsiDefaultProject = new DSIProject();
         acDefaultProject.setDsiObjectProject(dsiDefaultProject);
         acDefaultProject.setName(GH_REPOSITORY_NAME);
 

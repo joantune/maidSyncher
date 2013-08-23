@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain;
+package pt.ist.maidSyncher.domain.offlineTests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -23,6 +23,7 @@ import org.eclipse.egit.github.core.client.GitHubResponse;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -34,6 +35,7 @@ import org.mockito.stubbing.Answer;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
+import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.ACMilestone;
 import pt.ist.maidSyncher.domain.dsi.DSIMilestone;
 import pt.ist.maidSyncher.domain.github.GHMilestone;
@@ -42,6 +44,7 @@ import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.test.utils.OfflineSyncTests;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 /**
@@ -49,6 +52,7 @@ import pt.ist.maidSyncher.domain.test.utils.TestUtils;
  * 
  *         Tests the synching {@link ACMilestone#sync(SyncEvent)} method/functionality
  */
+@Category(OfflineSyncTests.class)
 @RunWith(MockitoJUnitRunner.class)
 public class ACMilestoneSyncTest {
 

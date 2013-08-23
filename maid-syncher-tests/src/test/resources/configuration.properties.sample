@@ -1,0 +1,5 @@
+#The host of your test AC instance
+#NOTE your test server's data will be deleted, these properties
+#are only used for the liveTests
+ac.test.server.baseUrl=https://host.com/ac
+ac.test.server.token=kindaSelfExplanatory

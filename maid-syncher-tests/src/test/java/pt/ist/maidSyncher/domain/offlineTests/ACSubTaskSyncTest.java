@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain;
+package pt.ist.maidSyncher.domain.offlineTests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +22,7 @@ import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.Milestone;
 import org.eclipse.egit.github.core.service.IssueService;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -37,6 +38,7 @@ import pt.ist.maidSyncher.domain.github.GHLabel;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.test.utils.OfflineSyncTests;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 import com.google.common.base.Predicate;
@@ -47,6 +49,7 @@ import com.google.common.collect.Collections2;
  * 
  * 
  */
+@Category(OfflineSyncTests.class)
 @RunWith(MockitoJUnitRunner.class)
 public class ACSubTaskSyncTest extends ACTaskSyncTest {
 

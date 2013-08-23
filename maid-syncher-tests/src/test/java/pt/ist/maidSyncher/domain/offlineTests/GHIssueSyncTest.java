@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pt.ist.maidSyncher.domain;
+package pt.ist.maidSyncher.domain.offlineTests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +35,7 @@ import org.joda.time.LocalDate;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -51,6 +52,7 @@ import pt.ist.maidSyncher.api.activeCollab.ACObject;
 import pt.ist.maidSyncher.api.activeCollab.ACSubTask;
 import pt.ist.maidSyncher.api.activeCollab.ACTask;
 import pt.ist.maidSyncher.api.activeCollab.interfaces.RequestProcessor;
+import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.activeCollab.ACProject;
 import pt.ist.maidSyncher.domain.activeCollab.ACTaskCategory;
 import pt.ist.maidSyncher.domain.dsi.DSIIssue;
@@ -66,6 +68,7 @@ import pt.ist.maidSyncher.domain.github.GHUser;
 import pt.ist.maidSyncher.domain.sync.SyncActionWrapper;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent;
+import pt.ist.maidSyncher.domain.test.utils.OfflineSyncTests;
 import pt.ist.maidSyncher.domain.test.utils.TestUtils;
 
 import com.google.common.base.Predicate;
@@ -76,6 +79,7 @@ import com.google.common.collect.Collections2;
  * 
  *         Tests the behaviour of synching a GHIssue
  */
+@Category(OfflineSyncTests.class)
 @RunWith(MockitoJUnitRunner.class)
 public class GHIssueSyncTest {
 
