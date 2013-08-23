@@ -3,3 +3,8 @@
 #are only used for the liveTests
 ac.test.server.baseUrl=https://host.com/ac
 ac.test.server.token=kindaSelfExplanatory
+
+#The name of the company were all the artifacts are going to be 
+# read/created. This company name must exist in AC
+ac.server.test.companyName=Test artifacts
+

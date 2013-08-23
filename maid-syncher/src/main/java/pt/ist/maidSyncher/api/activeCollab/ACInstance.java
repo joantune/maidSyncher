@@ -29,8 +29,6 @@ import org.json.simple.JSONObject;
  */
 public class ACInstance extends ACObject {
 
-    private final static String DEFAULT_COMPANY_NAME = "Direção dos Serviços de Informática (DSI)";
-
     private String name;
     private String classType;
 
@@ -38,7 +36,7 @@ public class ACInstance extends ACObject {
         super(jsonObj);
     }
 
-    public static ACInstance getInstanceForCompanyName() throws IOException {
+    public static ACInstance getInstanceForCompanyName(String companyName) throws IOException {
 
         JSONArray jsonArr =
                 (JSONArray) getRequestProcessor().processGet(
@@ -47,7 +45,7 @@ public class ACInstance extends ACObject {
         if (jsonArr != null) {
             for (Object object : jsonArr) {
                 JSONObject jsonObj = (JSONObject) object;
-                if (JsonRest.getString(jsonObj, "name").equalsIgnoreCase(DEFAULT_COMPANY_NAME)) {
+                if (JsonRest.getString(jsonObj, "name").equalsIgnoreCase(companyName)) {
                     return new ACInstance(jsonObj);
                 }
 
@@ -97,5 +95,6 @@ public class ACInstance extends ACObject {
     public void setClassType(String classType) {
         this.classType = classType;
     }
+
 
 }

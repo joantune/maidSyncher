@@ -6,6 +6,10 @@ github.organization.name=sandbox-org-maidSync
 ac.server.baseUrl=https://host.com/ac
 ac.server.token=kindaSelfExplanatory
 
+#The name of the company were all the artifacts are going to be 
+# read/created. This company must exist in ActiveCollab
+ac.server.companyName=Something inc.
+
 #The locales that are going to be supported
 locales=pt-PT,en-US,en-GB
 

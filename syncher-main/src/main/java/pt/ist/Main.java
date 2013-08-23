@@ -170,7 +170,8 @@ public class Main {
         acContext.setServerBaseUrl(acConfigurationProperties.getProperty(MaidRoot.AC_SERVER_BASE_URL));
         acContext.setToken(acConfigurationProperties.getProperty("ac.server.token"));
 
-        ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName();
+        String companyName = acConfigurationProperties.getProperty("ac.server.companyName");
+        ACInstance instanceForDSI = ACInstance.getInstanceForCompanyName(companyName);
         pt.ist.maidSyncher.domain.activeCollab.ACInstance.process(instanceForDSI);
         System.out.println("ACInstance: " + instanceForDSI.getName());
 

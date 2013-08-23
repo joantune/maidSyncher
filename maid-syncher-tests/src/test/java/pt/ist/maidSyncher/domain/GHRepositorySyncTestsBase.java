@@ -32,6 +32,9 @@ public class GHRepositorySyncTestsBase {
 
     protected static final String GH_REPOSITORY_NAME = "gh repository name";
 
+    protected static final String AC_PROJECT_TWO = "AC project two";
+    protected static final String AC_PROJECT_ONE = "AC project one";
+
     protected GHRepository ghRepository;
 
     protected DSIRepository dsiRepository;
