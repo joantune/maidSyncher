@@ -49,7 +49,7 @@ public class SyncLog extends SyncLog_Base {
     }
 
     @Atomic(mode = TxMode.WRITE)
-    public void registerExceptionAndMarkAsFailed(Exception ex) {
+    public void registerExceptionAndMarkAsFailed(Throwable ex) {
         setSyncEndTime(new DateTime());
         setSerializedStackTrace(ExceptionUtils.getStackTrace(ex));
         markAsFailure();

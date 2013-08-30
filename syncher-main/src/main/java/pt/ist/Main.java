@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -65,6 +66,7 @@ import pt.ist.maidSyncher.domain.github.GHOrganization;
 import pt.ist.maidSyncher.domain.github.GHRepository;
 import pt.ist.maidSyncher.domain.sync.SyncEvent;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
+import pt.utl.ist.fenix.tools.util.Strings;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -75,22 +77,19 @@ public class Main {
 
     private static List<URL> urls = null;
 
-    private static SyncLog currentSyncLog;
-
     // FenixFramework will try automatic initialization when first accessed
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         try {
             logStartOfSyncProcess();
             processAnyRemainingSyncEvents();
             retrieveAndCreateSyncEvents();
             printChangesBuzz();
             applyChanges();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             if (ex.getCause() instanceof WriteOnReadError) { //it shouldn't happen
                 throw (WriteOnReadError) ex.getCause();
             } else {
                 registerExceptionAndMarkAsFailed(ex);
-                throw ex;
             }
         }
         //MaidRoot.getInstance().processChangesBuzz(true);
@@ -102,15 +101,17 @@ public class Main {
         if (previousSyncLog != null && previousSyncLog.is(SyncLog.STATUS_ONGOING)) {
             previousSyncLog.markAsInterrupted();
         }
-        currentSyncLog = new SyncLog();
+        SyncLog currentSyncLog = new SyncLog();
         MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
 
     }
 
     @Atomic(mode = TxMode.WRITE)
-    private static void registerExceptionAndMarkAsFailed(Exception ex) {
-
-        currentSyncLog.registerExceptionAndMarkAsFailed(ex);
+    private static void registerExceptionAndMarkAsFailed(Throwable ex) {
+        if (MaidRoot.getInstance().getCurrentSyncLog() == null) {
+            MaidRoot.getInstance().setCurrentSyncLog(new SyncLog());
+        }
+        MaidRoot.getInstance().getCurrentSyncLog().registerExceptionAndMarkAsFailed(ex);
     }
 
     @Atomic(mode = TxMode.READ)
@@ -128,22 +129,24 @@ public class Main {
             if (ex.getCause() instanceof WriteOnReadError) {
                 throw (WriteOnReadError) ex.getCause();
             } else {
+                SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
                 currentSyncLog.registerExceptionAndMarkAsFailed(ex);
-                throw ex;
             }
         }
     }
 
     @Atomic(mode = TxMode.WRITE)
-    private static void retrieveAndCreateSyncEvents() {
+    private static void retrieveAndCreateSyncEvents() throws Throwable {
+        SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
         MaidRoot.getInstance().setCurrentSyncLog(currentSyncLog);
         try {
             MaidRoot.getChangesBuzz().clear();
             syncGitHub();
             syncActiveCollab();
-        } catch (IOException exception) {
-            LOGGER.error("caught an IO exception", exception);
-            throw new Error(exception);
+        } catch (Throwable throwable) {
+            LOGGER.error("caught an IO exception", throwable);
+            registerExceptionAndMarkAsFailed(throwable);
+            throw throwable;
         }
 
     }
@@ -158,7 +161,27 @@ public class Main {
 
     }
 
+    public static Strings getGHRepositories() throws IOException {
+
+        Set<String> repoStrings = new HashSet<>();
+        GitHubClient gitHubClient = getGitHubClient();
+        String organizationName = configurationProperties.getProperty("github.organization.name");
+
+        RepositoryService repositoryService = new RepositoryService(gitHubClient);
+        OrganizationService organizationService = new OrganizationService(gitHubClient);
+        User organization = organizationService.getOrganization(organizationName);
+
+        List<Repository> repositories = repositoryService.getRepositories(organization.getLogin());
+        for (Repository repository : repositories) {
+            repoStrings.add(repository.getName());
+        }
+
+        return new Strings(repoStrings);
+
+    }
+
     private static void syncActiveCollab() throws IOException {
+        SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
 
         currentSyncLog.setSyncACStartTime(new DateTime());
 
@@ -284,23 +307,38 @@ public class Main {
  */
     }
 
+    static Properties configurationProperties = new Properties();
+    static InputStream configurationInputStream = Main.class.getResourceAsStream("/configuration.properties");
+    static {
+        try {
+            configurationProperties.load(configurationInputStream);
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+    }
+    private static GitHubClient getGitHubClient() throws IOException {
+
+        //let's try to authenticate and get the user and repository list
+
+        String oauth2Token = configurationProperties.getProperty("github.oauth2.token");
+        GitHubClient client = new GitHubClient();
+        client.setOAuth2Token(oauth2Token);
+        return client;
+    }
+
     private static void syncGitHub() throws IOException {
+        SyncLog currentSyncLog = MaidRoot.getInstance().getCurrentSyncLog();
         currentSyncLog.setSyncGHStartTime(new DateTime());
         //this is the first sync task, so let us reset the changesBuzz
         //MaidRoot.getInstance().resetSyncEvents();
 
         //let's try to connect to the GH Account
-        Properties configurationProperties = new Properties();
-        InputStream configurationInputStream = Main.class.getResourceAsStream("/configuration.properties");
-        configurationProperties.load(configurationInputStream);
 
         //let's try to authenticate and get the user and repository list
 
-        String oauth2Token = configurationProperties.getProperty("github.oauth2.token");
         String organizationName = configurationProperties.getProperty("github.organization.name");
 
-        GitHubClient client = new GitHubClient();
-        client.setOAuth2Token(oauth2Token);
+        GitHubClient client = getGitHubClient();
 
         RepositoryService repositoryService = new RepositoryService(client);
         OrganizationService organizationService = new OrganizationService(client);
@@ -327,6 +365,9 @@ public class Main {
 
         System.out.println("List of repositories:");
         for (Repository repository : repositories) {
+            Strings repositoriesToIgnore = MaidRoot.getInstance().getRepositoriesToIgnore();
+            if (repositoriesToIgnore.contains(repository.getName()))
+                continue;
             System.out.println(repository.getName());
             GHRepository.process(repository);
 

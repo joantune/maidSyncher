@@ -1,44 +1,63 @@
-            <h1>Synchronization logs</h1>
-            <p>Below are the sortable, and filtarable, logs of all the synchs. Click on a row to get more info about
-                each synch</p>
 
-            <p>
-                Remaining SyncEvents to process: <span data-bind="text: remainingSyncEvents().length"></span>
-            </p>
+<div class="row-fluid">
 
-            <p>
-                Nr synchronizations: <span data-bind="text: syncLogsAll().length"></span>
-            </p>
+        <h1>Synchronization logs</h1>
+        <button id="runnow" class="btn button-success pull-right" data-bind="visible: isManager, click: runSyncherNow"
+            data-loading-text="Loading...">Run now</button>
+        <p>Below are the sortable, and filtarable, logs of all the synchs. Click on a row to get more info about
+            each synch</p>
 
-            <div id="syncLogs">
-                <label class="checkbox"><input type="checkbox" data-bind="checked: hideSyncs"> Hide
-                    Syncs without side-effects</label>
-                <table class="table table-hover-clickable">
-                    <thead>
-                        <tr>
-                            <th>Date of start</th>
-                            <th>Actions</th>
-                            <th>Conflicts</th>
-                            <th>Warnings</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                   <tbody data-bind="pager: {array: syncLogsAll, viewModel: 'viewModels/LogViewModel'}">
-                        <tr
-                            data-bind="css: classCss, style: {cursor: isOngoing() ? 'initial' : '' }, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && $parent.hasItems($data)) || ($parent.hideSyncs() == false)">
-                            <td><span data-bind="html:  AppUtils.friendlyDateTime(SyncStartTime(), true)"> </span> <span
-                                class="muted" data-bind="text: '('+ AppUtils.humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
-                            <td data-bind="text: actions().length" />
-                            <td data-bind="text: conflicts().length" />
-                            <td><span data-bind="text: warnings().length"></span><!--  ko if: warnings().length > 0 -->
-                                <i class="icon-warning-sign"></i> <!-- /ko --></td>
-                            <td data-bind="text: Status" />
+        <p>
+            Remaining SyncEvents to process: <span data-bind="text: remainingSyncEvents().length"></span>
+        </p>
 
-                        </tr> 
-                    </tbody>
+        <p>
+            Nr synchronizations: <span data-bind="text: syncLogsAll().length"></span>
+        </p>
 
-                </table>
+        <div id="syncLogs">
+            <label class="checkbox"><input type="checkbox" data-bind="checked: hideSyncs"> Hide Syncs
+                without side-effects</label>
+            <table class="table table-hover-clickable">
+                <thead>
+                    <tr>
+                        <th>Date of start</th>
+                        <th>Actions</th>
+                        <th>Conflicts</th>
+                        <th>Warnings</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="pager: {array: syncLogsAll, viewModel: 'viewModels/LogViewModel'}">
+                    <tr
+                        data-bind="css: classCss, style: {cursor: isOngoing() ? 'initial' : '' }, click: $parent.goToLogDetails, visible: ($parent.hideSyncs() == true && $parent.hasItems($data)) || ($parent.hideSyncs() == false)">
+                        <td><span data-bind="html:  AppUtils.friendlyDateTime(SyncStartTime(), true)"> </span> <span
+                            class="muted" data-bind="text: '('+ AppUtils.humanFriendlyFromNow(SyncStartTime()) +')'"></span></td>
+                        <td data-bind="text: actions().length" />
+                        <td data-bind="text: conflicts().length" />
+                        <td><span data-bind="text: warnings().length"></span> <!--  ko if: warnings().length > 0 -->
+                            <i class="icon-warning-sign"></i> <!-- /ko --></td>
+                        <td data-bind="text: Status" />
 
-            </div>
-            
-            <div data-bind="app: 'syncLogDetails'"></div>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div data-bind="app: 'syncLogDetails'"></div>
+        
+    <div class="span12" >
+        <div id="runningNow" class="span4 offset4 alert alert-info fade" data-alert="alert">
+            <button type="button" class="close" data-dismiss="alert">×</button>
+            <strong>Running</strong> Syncher now
+        </div>
+    </div>
+    <div class="span12" >
+        <div id="errorRunningNow" class="span4 offset4 alert alert-error fade" data-alert="alert">
+            <button type="button" class="close" data-dismiss="alert">×</button>
+            <strong>Not possible</strong> to run the syncher.
+        </div>
+    </div>
+    </div>

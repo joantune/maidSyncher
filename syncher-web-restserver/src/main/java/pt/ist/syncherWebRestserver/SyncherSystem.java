@@ -14,6 +14,7 @@ import pt.ist.bennu.scheduler.domain.SchedulerSystem;
 import pt.ist.bennu.scheduler.domain.TaskSchedule;
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
+import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.syncherWebRestserver.tasks.SyncherTask;
 
 /**
@@ -41,20 +42,35 @@ public class SyncherSystem {
 
     }
 
-    @Atomic(mode = TxMode.WRITE)
-    public static void initSchedule() throws IOException {
-        Properties schedulerConfigurationProperties = new Properties();
-        schedulerConfigurationProperties.load(SyncherSystem.class.getResourceAsStream("/configuration.properties"));
+    static Properties schedulerConfigurationProperties = new Properties();
+
+    {
+        try {
+            schedulerConfigurationProperties.load(SyncherSystem.class.getResourceAsStream("/configuration.properties"));
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+    }
+
+    public static String getSchedule() {
         String schedule = schedulerConfigurationProperties.getProperty("sync.task.cron.schedule");
-        String shouldDisableScheduleString = schedulerConfigurationProperties.getProperty("sync.task.cron.disable");
-        final Boolean shouldDisableSchedule =
-                shouldDisableScheduleString == null ? false : Boolean.valueOf(shouldDisableScheduleString);
+
         if (schedule == null) {
             LOGGER.warn("No schedule configuration found (on configuration.properties, property 'sync.task.cron.schedule') going with each 10 minutes");
             schedule = "*/10 * * * *";
         } else {
             LOGGER.info("Schedule of syncherTask: " + schedule);
         }
+        return schedule;
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    public static void initSchedule() throws IOException {
+        //String shouldDisableScheduleString = schedulerConfigurationProperties.getProperty("sync.task.cron.disable");
+        //Boolean shouldDisableSchedule =
+        //       shouldDisableScheduleString == null ? false : Boolean.valueOf(shouldDisableScheduleString);
+        final Boolean shouldDisableSchedule = !MaidRoot.getInstance().getRunScheduler();
+
         LOGGER.debug("Finding existing task");
         boolean systemAlreadyInited = false;
         for (TaskSchedule taskSchedule : SchedulerSystem.getInstance().getTaskScheduleSet()) {
@@ -62,9 +78,9 @@ public class SyncherSystem {
                 if (shouldDisableSchedule) {
                     taskSchedule.delete();
                 } else {
-                    if (taskSchedule.getSchedule().equalsIgnoreCase(schedule) == false) {
+                    if (taskSchedule.getSchedule().equalsIgnoreCase(getSchedule()) == false) {
                         LOGGER.info("Found the task scheduled but with a different schedule. Previous schedule: "
-                                + taskSchedule.getSchedule() + " new Schedule: " + schedule);
+                                + taskSchedule.getSchedule() + " new Schedule: " + getSchedule());
                         taskSchedule.delete();
                     } else {
                         systemAlreadyInited = true;
@@ -76,7 +92,7 @@ public class SyncherSystem {
         }
         if (systemAlreadyInited == false && !shouldDisableSchedule) {
             LOGGER.info("Adding syncher task");
-            new TaskSchedule(SyncherTask.class.getName(), schedule);
+            new TaskSchedule(SyncherTask.class.getName(), getSchedule());
 
         } else {
             LOGGER.info("Syncher task already added previously");

@@ -1,0 +1,46 @@
+
+<div id="settingsModal" class="modal hide fadel" tabindex="-1" role="dialog" aria-labelledby="settingsModal"
+    aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>Settings</h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            <strong>Current schedule setting:</strong> <span class="label" data-bind="text: schedule"></span>
+        </p>
+         <p><strong>Syncher task:</strong></p>
+         <div class="make-switch switch-mini" data-on="success" data-off="danger">
+            <input type="checkbox" data-bind="checked: syncherRunningAux">
+        </div>
+        <p></p>
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#actions">GH Repositories </a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="actions">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ignored</th>
+                            <th>Rep Name</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: { data: ghRepositories, as: 'repository'}">
+                        <tr>
+                            <td><input type="checkbox" data-bind="value: repository, checked: $parent.repositoriesToIgnore"></input></td>
+                            <td data-bind="text: repository"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="#" class="btn btn-info" data-bind="click: saveSettings">Save</a>
+    </div>
+</div>

@@ -3,13 +3,6 @@ package pt.ist.maidSyncher.domain.sync;
 enum pt.ist.maidSyncher.domain.sync.SyncEvent.TypeOfChangeEvent as TypeOfChangeEvent;
 enum pt.ist.maidSyncher.domain.sync.SyncEvent.SyncUniverse as SyncUniverse;
 
-valueType pt.utl.ist.fenix.tools.util.Strings as Strings {
-    externalizeWith {
-        String exportAsString();
-    }
-
-    internalizeWith importFromString();
-}
 
 class SyncEvent {
 	DateTime dateOfChange (REQUIRED);

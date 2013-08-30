@@ -4,13 +4,39 @@
 </button>
 <a class="brand" href="#">MaidSyncher</a>
 <div class="nav-collapse collapse">
-    <ul class="nav" data-bind="foreach: apps">
-        <li data-bind="css: {active: $parent.selectedId() == templateName }">
-            <a href="#" data-bind="text: name, click: $parent.goToApp"></a>
-       </li>
+    <p class="navbar-text pull-right" data-bind="visible: showTimestamp">
+        <span class="navbar divider-vertical"></span> Data refreshed at <span data-bind="html: dateLastFetch"></span>
+    </p>
+    <div class="pull-right">
+        <p class="navbar-text ">
+            <span class="navbar divider-vertical"></span> Syncher:
+
+<!--             <button name="includeicon" type="button" class="btn btn-mini btn-success active" style="margin-top: 0;">
+                Running</button> -->
+                <small class="label label-success" data-bind="visible: syncherRunning() == true">Running</small>
+                <small class="label label-important" data-bind="visible: syncherRunning() == false">Stopped</small>
+        </p>
+        <!-- <i class="icon-ok"></i> -->
+    </div>
+    <ul class="nav pull-right" data-bind="visible: loggedIn">
+        <li><a href="#" data-bind="click:logout">Logout <i class="icon-off"></i></a></li>
+        <li data-bind="visible: isManager"><a data-bind="click: showSettings" href="#">Settings <i class="icon-wrench"></i></a></li>
     </ul>
+    <p class="navbar-text pull-right" data-bind="visible: loggedIn">
+    <span class="divider-vertical"></span>
+    </p>
+    <p class="navbar-text pull-right" data-bind="visible: loggedIn">
+        <span class="divider-vertical"></span> <i class="icon-user"></i> <span data-bind="text: username"></span>
+    </p>
+    <ul class="nav" data-bind="foreach: apps">
+        <li data-bind="css: {active: $parent.selectedId() == templateName }"><a href="#"
+            data-bind="text: name, click: $parent.goToApp"></a></li>
+    </ul>
+    <form class="navbar-form pull-right" data-bind="visible: casEnabled() == false && !loggedIn(), submit: login"
+        action="../api/bennu-core/profile/login">
+        <input class="span2" name="username" type="text" placeholder="Username"> <input class="span2"
+            name="password" type="password" placeholder="Password">
+        <button type="submit" class="btn">Sign in</button>
+    </form>
+    <!--/.nav-collapse -->
 </div>
-<!--/.nav-collapse -->
-<p class="navbar-text pull-right" data-bind="visible: showTimestamp">
-    Data refreshed at <span data-bind="html: dateLastFetch"></span>
-</p>

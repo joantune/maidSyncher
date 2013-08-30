@@ -26,10 +26,12 @@ public class SyncherTask extends CronTask {
         taskLog("Running syncher - triggered by scheduler");
         try {
             Main.main(new String[] {});
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (e.getCause() instanceof WriteOnReadError) { //it shouldn't happen
                 throw (WriteOnReadError) e.getCause();
             }
+            if (e instanceof WriteOnReadError)
+                throw (WriteOnReadError) e;
             getLogger().info("Running syncher - Caught exception", e);
             taskLog("Running syncher - Caught exception", e);
         }

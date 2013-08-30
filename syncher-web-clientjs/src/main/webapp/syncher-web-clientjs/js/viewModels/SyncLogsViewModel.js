@@ -1,15 +1,52 @@
-define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'bootstrap'], 
-        function(kb, ko, async, AppUtils, bennuKo, $) {
-    function SyncLogsViewModel(model, remainingEvents) {
+define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'bootstrap' ], function(
+        kb, ko, async, AppUtils, bennuKo, $) {
+    function SyncLogsViewModel(model, remainingEvents, navbarViewModel, SyncLogsInitializer, templateName) {
         var self = this;
+
+        self.isManager = navbarViewModel.isManager;
         
+        self.navbarViewModel = navbarViewModel;
         
+        self.templateName = templateName;
+        
+        self.init=SyncLogsInitializer;
+
+        self.runSyncherNow = function() {
+            var buttonElement = $('#runnow');
+            var errorFunction = function() {
+                debugger;
+                buttonElement.button('reset');
+                $('#errorRunningNow').addClass('in');
+                window.setTimeout(function() {
+                    self.init(self.navbarViewModel, self.templateName);
+                }, 3000);
+            }
+            buttonElement.button('loading');
+            $.ajax({
+                type : "POST",
+                url : "../api/syncher-web-restserver/synclogs/runnow",
+                success : function(data, textStatus, jqxhr) {
+                    if (jqxhr.status == 204) {
+                        $('#runningNow').addClass('in');
+                        window.setTimeout(function() {
+                            self.init(self.navbarViewModel, self.templateName);
+                        }, 3000);
+                    } else if (errorFunction)
+                        errorFunction();
+                },
+                error : errorFunction
+
+            });
+        }
+
         self.AppUtils = AppUtils;
 
         // self.syncLogsAll = kb.observable(model, 'synclogs');
         self.hasItems = function(item) {
             return item.actions().length > 0 || item.warnings().length > 0 || item.conflicts().length > 0;
         };
+        
+        self.syncLogsCollection = model;
 
         self.syncLogsAll = kb.collectionObservable(model, {
             models_only : true
@@ -94,6 +131,7 @@ define([ 'knockback', 'knockout', 'libs/async', 'AppUtils', 'bennu-knockout', 'b
             });
 
         };
-    };
+    }
+    ;
     return SyncLogsViewModel;
 });

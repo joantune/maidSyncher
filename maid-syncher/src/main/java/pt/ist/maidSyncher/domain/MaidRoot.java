@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -32,9 +33,9 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pt.ist.bennu.core.domain.Bennu;
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
-import pt.ist.fenixframework.DomainRoot;
 import pt.ist.fenixframework.FenixFramework;
 import pt.ist.maidSyncher.api.activeCollab.ACContext;
 import pt.ist.maidSyncher.domain.activeCollab.ACInstance;
@@ -51,6 +52,7 @@ import pt.ist.maidSyncher.domain.sync.logs.SyncActionLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncEventConflictLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
 import pt.ist.maidSyncher.domain.sync.logs.SyncWarningLog;
+import pt.utl.ist.fenix.tools.util.Strings;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -101,25 +103,38 @@ public class MaidRoot extends MaidRoot_Base {
         }
     }
 
+    @Atomic
+    public static void initializeBennu() {
+        if (FenixFramework.getDomainRoot() == null || FenixFramework.getDomainRoot().getBennu() == null) {
+            Bennu bennu = new Bennu();
+        }
+    }
+
     public static MaidRoot getInstance() {
-        if (FenixFramework.getDomainRoot().getMaidRoot() == null) {
+        if (FenixFramework.getDomainRoot() == null || FenixFramework.getDomainRoot().getBennu() == null) {
+            //this shouldn't happen, but it does because Bennu2 doesn't correctly
+            //implement the same singleton pattern as this class
+            initializeBennu();
+        }
+        if (Bennu.getInstance().getMaidRoot() == null) {
             initialize();
         }
-        return FenixFramework.getDomainRoot().getMaidRoot();
+        return Bennu.getInstance().getMaidRoot();
     }
 
     @Atomic
     private static void initialize() {
-        if (FenixFramework.getDomainRoot().getMaidRoot() == null) {
-            FenixFramework.getDomainRoot().setMaidRoot(new MaidRoot(FenixFramework.getDomainRoot()));
+        if (Bennu.getInstance().getMaidRoot() == null) {
+            Bennu.getInstance().setMaidRoot(new MaidRoot());
+            getInstance().init();
         }
     }
 
-    public MaidRoot(DomainRoot domainRoot) {
+    public MaidRoot() {
         super();
-        domainRoot.setMaidRoot(this);
+        Bennu.getInstance().setMaidRoot(this);
         checkIfIsSingleton();
-        init();
+        setRepositoriesToIgnore(new Strings(Collections.<String> emptyList()));
     }
 
     public void init() {
@@ -133,7 +148,8 @@ public class MaidRoot extends MaidRoot_Base {
     }
 
     private void checkIfIsSingleton() {
-        if (FenixFramework.getDomainRoot().getMaidRoot() != null && FenixFramework.getDomainRoot().getMaidRoot() != this) {
+        MaidRoot maidRoot = Bennu.getInstance().getMaidRoot();
+        if (maidRoot != null && maidRoot != this) {
             throw new Error("There can only be one! (instance of MyOrg [aka MaidRoot])");
         }
     }

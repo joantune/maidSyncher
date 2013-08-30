@@ -1,7 +1,17 @@
 package pt.ist.maidSyncher.domain.github;
 
-class .pt.ist.maidSyncher.domain.MaidRoot {
+valueType pt.utl.ist.fenix.tools.util.Strings as Strings {
+    externalizeWith {
+        String exportAsString();
+    }
+
+    internalizeWith importFromString();
 }
+class .pt.ist.maidSyncher.domain.MaidRoot {
+	Strings repositoriesToIgnore;
+	boolean runScheduler;
+}
+
 
 class .pt.ist.maidSyncher.domain.SynchableObject {
   DateTime lastSynchTime;
@@ -135,10 +145,16 @@ class GHComment extends GHObject {
 
 //relations with the root
 
-relation MaidRootDomainRoot {
+//relation MaidRootDomainRoot {
+//	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot;
+//	.pt.ist.fenixframework.DomainRoot playsRole domainRoot;
+//}
+
+relation MaidRootBennu {
 	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRoot;
-	.pt.ist.fenixframework.DomainRoot playsRole domainRoot;
+	.pt.ist.bennu.core.domain.Bennu playsRole bennu;
 }
+
 
 relation MaidRootGHOrganization {
 	.pt.ist.maidSyncher.domain.MaidRoot playsRole maidRootFromOrg {

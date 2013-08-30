@@ -11,11 +11,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import pt.ist.bennu.core.rest.DomainObjectResource;
+import pt.ist.bennu.scheduler.domain.SchedulerSystem;
 import pt.ist.maidSyncher.domain.MaidRoot;
 import pt.ist.maidSyncher.domain.sync.logs.SyncLog;
+import pt.ist.syncherWebRestserver.tasks.SyncherTask;
 
 @Path("synclogs")
 public class SyncLogResource extends DomainObjectResource<SyncLog> {
@@ -79,6 +82,15 @@ public class SyncLogResource extends DomainObjectResource<SyncLog> {
     public String viewSyncWarningLogs(@PathParam("oid") String oid) {
         accessControl(getAccessExpression());
         return view(((SyncLog) readDomainObject(oid)).getSyncWarningsSet(), WARNINGS);
+    }
+
+    @POST
+    @Path("runnow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response runNow() throws Exception {
+        accessControl("#managers");
+        SchedulerSystem.getInstance().runNow(SyncherTask.class.getName());
+        return Response.status(Status.NO_CONTENT).build();
     }
 
     @Override

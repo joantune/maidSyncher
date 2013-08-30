@@ -49,7 +49,7 @@ define([
         };
 
         this.ghPopoverEnabler = function(jQueryElement) {
-            if (self.SyncGHStartTime && self.SyncGHEndTime) {
+            if (self.SyncGHStartTime() != null && self.SyncGHEndTime() != null) {
                 var options = popoverOptionsGenerator(self.SyncGHStartTime(), self.SyncGHEndTime());
                 jQueryElement.popover(options);
                 return true;
@@ -79,7 +79,7 @@ define([
         });
 
         this.acPopoverEnabler = function(jQueryElement) {
-            if (self.SyncACStartTime && self.SyncACEndTime) {
+            if (self.SyncACStartTime() != null && self.SyncACEndTime() != null) {
                 var options = popoverOptionsGenerator(self.SyncACStartTime(), self.SyncACEndTime());
                 options.placement = "top";
                 jQueryElement.popover(options);
